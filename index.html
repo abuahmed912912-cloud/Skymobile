@@ -57,7 +57,6 @@
     <div class="container" id="mainContainer"></div>
 
     <script>
-        // 📌 تهيئة Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDNwIUGqA2dm5Mrx5S06LIEGPJ_VgW3eFc",
             authDomain: "sky-mobile-8e245.firebaseapp.com",
@@ -93,7 +92,6 @@
         let activeCategory = 'all'; 
         let selectedDesignId = null;
 
-        // الاستماع للبيانات الحية من Firebase
         db.ref('appData').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -258,6 +256,7 @@
             img.src = des.image;
         }
 
+        /* دالة رسم بيانات العميل بإطار أسفل الصورة بشكل واضح جداً احترافي */
         function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas || !window.loadedBaseImage) return;
@@ -272,29 +271,31 @@
             const phone = document.getElementById('cPhone')?.value.trim() || '';
 
             const details = [];
-            if (shop) details.push(shop);
+            if (shop) details.push("🏬 " + shop);
             if (phone) details.push("📞 " + phone);
-            if (address) details.push(address);
+            if (address) details.push("📍 " + address);
 
-            const fullText = details.join('  |  ');
+            const fullText = details.join('   |   ');
             if (!fullText) return;
 
-            const fontSize = Math.max(16, canvas.width * 0.035);
+            // حساب الأبعاد بناءً على حجم الصورة
+            const fontSize = Math.max(16, Math.round(canvas.width * 0.032));
+            const barHeight = Math.round(fontSize * 2.2);
+
+            // 1. رسم الإطار السفلي (شريط أسود داكن عالي التباين بعرض الصورة بالكامل)
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)'; 
+            ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+
+            // 2. رسم خط تحديد أزرق جمالي أعلى الشريط
+            ctx.fillStyle = '#007bff';
+            ctx.fillRect(0, canvas.height - barHeight, canvas.width, Math.max(3, Math.round(barHeight * 0.05)));
+
+            // 3. كتابة بيانات العميل بشكل بارز وواضح في منتصف الشريط
             ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, sans-serif`;
-
-            const textWidth = ctx.measureText(fullText).width;
-            const boxWidth = textWidth + 40;
-            const boxHeight = fontSize + 20;
-            const boxX = (canvas.width - boxWidth) / 2;
-            const boxY = canvas.height * 0.88 - (boxHeight / 2);
-
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(fullText, canvas.width / 2, boxY + (boxHeight / 2));
+            ctx.fillText(fullText, canvas.width / 2, canvas.height - (barHeight / 2) + Math.max(1, Math.round(barHeight * 0.02)));
 
             const outImg = document.getElementById('outputImage');
             if (outImg) outImg.src = canvas.toDataURL('image/png');
@@ -411,7 +412,7 @@
                             <select id="newDesignCat">${categoriesOptions}</select>
                         </div>
                         <label class="dropzone-box">
-                            📁 اضغط لاختيار صورة التصميم
+                            📁 اضغط لاختيار صورة من الاستوديو
                             <input type="file" id="designFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
                         </label>
                         <button class="btn-main" id="saveBtn" onclick="addNewDesign()">☁️ رفع التصميم للسحابة فوراً</button>
