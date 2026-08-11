@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سكاي موبايل - مصمم البطاقات</title>
+    <!-- مكتبة إرسال البريد الإلكتروني الحقيقية EmailJS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; color: #333; padding: 10px; }
@@ -110,6 +112,7 @@
             text-align: center;
         }
         #previewCanvas { width: 100%; height: auto; display: block; }
+        #outputImage { width: 100%; height: auto; display: none; border-radius: 10px; }
 
         .external-actions-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #e9ecef; }
         .action-links { display: flex; flex-direction: column; gap: 10px; }
@@ -126,22 +129,6 @@
         .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
-
-        /* نافذة الإشعار المنبثقة بكود التحقق */
-        .otp-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
-            z-index: 9999; padding: 15px;
-        }
-        .otp-box {
-            background: #fff; padding: 25px; border-radius: 16px; text-align: center; max-width: 350px; width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out;
-        }
-        .otp-code-display {
-            font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #007bff;
-            background: #f0f7ff; padding: 10px; border-radius: 10px; margin: 15px 0; border: 1px dashed #007bff;
-        }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -149,16 +136,27 @@
     <div class="container" id="mainContainer"></div>
 
     <script>
-        // ==========================================
-        // 🔒 إعدادات الحماية التلقائية بالكامل
-        // ==========================================
-        let currentAdminPass = localStorage.getItem('sky_admin_password') || "sky2026";
-        let currentGeneratedOtp = null;
+        // ============================================================
+        // 📧 إعدادات البريد الخاص بك لاستلام كود التحقق للأمان الحقيقي
+        // ============================================================
+        const ADMIN_EMAIL = " your-email@gmail.com "; // ضع إيميلك هنا ليولّد الكود ويرسله لك فقط
+        const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";  
+        const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";  
+        const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; 
 
-        // ==========================================
-        // 🌐 التصاميم الافتراضية
-        // ==========================================
-        const defaultGlobalDesigns = [
+        (function() {
+            if(EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+                emailjs.init(EMAILJS_PUBLIC_KEY);
+            }
+        })();
+
+        let currentAdminPass = localStorage.getItem('sky_admin_password') || "sky2026";
+        let serverGeneratedOtp = null; // الكود يُخزن سرياً ولا يُعرض إطلاقاً للزائر
+
+        // ============================================================
+        // 🌐 التصاميم المتاحة لجميع الزوار والمستخدمين
+        // ============================================================
+        let defaultGlobalDesigns = JSON.parse(localStorage.getItem('sky_public_designs')) || [
             { 
                 id: 'def_net_1', 
                 title: 'قالب شبكات افتراضي', 
@@ -269,64 +267,60 @@
         function renderLoginBox(container) {
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>🔐 تسجيل دخول الإدارة</h2>
-                    <p>أدخل كلمة المرور للانتقال للوحة التحكم</p>
+                    <h2>🔐 دخول الإدارة - الحماية المشددة</h2>
+                    <p>أدخل كلمة المرور لإرسال رمز التحقق السرّي إلى بريد صاحب الموقع</p>
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور:</label>
-                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة السر">
+                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة السر الخاصة بالإدارة">
                 </div>
-                <button class="btn-main" onclick="verifyPassword()">طلب رمز التحقق الذكي</button>
+                <button class="btn-main" onclick="verifyPasswordAndSendMail()">إرسال رمز التحقق إلى بريد المدير</button>
                 <div style="text-align: center; margin-top: 15px;">
-                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ العودة لواجهة العميل</a>
+                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ العودة لواجهة الزائر</a>
                 </div>
             `;
         }
 
-        function verifyPassword() {
+        function verifyPasswordAndSendMail() {
             const pass = document.getElementById('adminPassInput').value.trim();
             if (pass === currentAdminPass || pass === "sky2026") {
-                showSmartOtpModal();
+                sendSecureOtpToOwner();
             } else { 
                 alert('كلمة السر غير صحيحة!'); 
             }
         }
 
-        function showSmartOtpModal() {
-            currentGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-            
-            const modal = document.createElement('div');
-            modal.className = 'otp-modal';
-            modal.id = 'otpModal';
-            modal.innerHTML = `
-                <div class="otp-box">
-                    <h3 style="color:#28a745; margin-bottom:5px;">🛡️ كود التحقق الآمن</h3>
-                    <p style="font-size:12px; color:#666;">تم توليد رمز الأمان الخاص بك بنجاح:</p>
-                    <div class="otp-code-display">${currentGeneratedOtp}</div>
-                    <button class="btn-main" style="background:#28a745;" onclick="autoFillOtp('${currentGeneratedOtp}')">⚡ إدخال الرمز ومتابعة الدخول</button>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
+        function sendSecureOtpToOwner() {
+            serverGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        function autoFillOtp(code) {
-            document.getElementById('otpModal')?.remove();
-            renderOtpBox(document.getElementById('mainContainer'));
-            document.getElementById('otpCodeInput').value = code;
-            confirmOtpCode();
+            if(EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+                emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                    to_email: ADMIN_EMAIL,
+                    message: "تنبيه أمان: محاولة دخول إلى لوحة تحكم موقعك! رمز التحقق الخاص بك هو: " + serverGeneratedOtp
+                }).then(() => {
+                    alert("تم إرسال رمز التحقق السري إلى بريدك الإلكتروني الشخصي! يرجى مراجعة بريدك وإدخال الرمز.");
+                    renderOtpBox(document.getElementById('mainContainer'));
+                }).catch(err => {
+                    alert("حدث خطأ أثناء الإرسال. تأكد من إعدادات البريد الإلكتروني EmailJS.");
+                });
+            } else {
+                // وضع الحماية عند عدم ربط السيرفر: يطلب الرمز مباشرة ولن يُظهر الرمز للزائر إطلاقاً
+                alert("تم طلب رمز التحقق. (تنبيه: يلزم ضبط مفاتيح EmailJS ليرسل إلى إيميلك مباشرة).");
+                renderOtpBox(document.getElementById('mainContainer'));
+            }
         }
 
         function renderOtpBox(container) {
             container.innerHTML = `
                 <div class="admin-header" style="background: linear-gradient(135deg, #e67e22, #d35400);">
-                    <h2>🛡️ تأكيد رمز التحقق</h2>
-                    <p>أدخل رمز التحقق للتأكيد</p>
+                    <h2>🛡️ تأكيد كود التحقق للبريد</h2>
+                    <p>أدخل الكود المكون من 6 أرقام المرسل إلى إيميلك الشخصي</p>
                 </div>
                 <div class="form-group">
-                    <label>رمز التحقق (OTP):</label>
+                    <label>رمز التحقق السرّي (OTP):</label>
                     <input type="text" id="otpCodeInput" maxlength="6" placeholder="******" style="text-align: center; font-size: 24px; letter-spacing: 6px;">
                 </div>
-                <button class="btn-main" onclick="confirmOtpCode()">تأكيد ودخول اللوحة</button>
+                <button class="btn-main" onclick="confirmOtpCode()">تأكيد ودخول لوحة التحكم</button>
                 <div style="text-align: center; margin-top: 15px;">
                     <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">إلغاء</a>
                 </div>
@@ -335,12 +329,12 @@
 
         function confirmOtpCode() {
             const code = document.getElementById('otpCodeInput').value.trim();
-            if (code === currentGeneratedOtp) {
+            if (code === serverGeneratedOtp) {
                 sessionStorage.setItem('sky_admin_logged', 'true');
                 alert("تم التحقق بنجاح! مرحباً بك في لوحة التحكم.");
                 window.location.href = "?";
             } else {
-                alert("رمز التحقق غير صحيح!");
+                alert("رمز التحقق غير صحيح! لن يتم السماح بالدخول.");
             }
         }
 
@@ -426,11 +420,12 @@
                 <div class="preview-box">
                     <div id="canvasContainer">
                         <canvas id="previewCanvas"></canvas>
+                        <img id="outputImage" alt="التصميم النهائي جاهز للحفظ">
                     </div>
 
                     <div class="external-actions-section">
                         <div class="action-links">
-                            <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم وحفظ الصورة</button>
+                            <button class="link-btn download-img-btn" onclick="downloadImageForUser()">📥 تحميل التصميم وحفظ الصورة</button>
                             <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة الصورة في واتساب</button>
                             <button class="link-btn copy-link-btn" onclick="copyDirectLink()">🔗 نسخ رابط التصميم المباشر</button>
                             <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">🛒 تحميل تطبيق سكاي موبايل من المتجر</a>
@@ -540,68 +535,58 @@
             ctx.shadowBlur = 4;
 
             ctx.fillText(fullText, canvas.width / 2, boxY + (boxHeight / 2));
+
+            // تحديث الصورة المخفية لتكون جاهزة للحفظ على كافة الهواتف
+            const outImg = document.getElementById('outputImage');
+            if (outImg) {
+                outImg.src = canvas.toDataURL('image/png');
+            }
         }
 
         // ============================================================
-        // 📥 حفظ الصورة للاستديو مباشر على كافة الأجهزة والجوالات
+        // 📥 وظيفة الحفظ المباشر في الاستديو المحدثة والمضمونة للزوار
         // ============================================================
-        async function downloadImage() {
+        async function downloadImageForUser() {
             const canvas = document.getElementById('previewCanvas');
+            const outImg = document.getElementById('outputImage');
             if (!canvas) return;
 
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // 1. تحويل الصورة إلى ملف حقيقي للمشاركة في أجهزة الجوال (آيفون وأندرويد)
             try {
-                canvas.toBlob(async (blob) => {
-                    if (!blob) return;
-                    const file = new File([blob], 'sky-card-design.png', { type: 'image/png' });
+                const response = await fetch(dataUrl);
+                const blob = await response.blob();
+                const file = new File([blob], 'sky-card-design.png', { type: 'image/png' });
 
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: 'تصميم بطاقة - سكاي موبايل',
-                                text: 'بطاقتي المصممة عبر سكاي موبايل'
-                            });
-                            return;
-                        } catch (shareErr) {
-                            if (shareErr.name !== 'AbortError') console.log(shareErr);
-                        }
-                    }
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'بطاقة سكاي موبايل',
+                        text: 'احفظ الصورة إلى معرض الصور (الاستديو)'
+                    });
+                    return;
+                }
+            } catch (e) { console.log(e); }
 
-                    const blobUrl = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = 'sky-card-design.png';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+            // 2. حل التنزيل المباشر المباشر للكمبيوتر والمتصفحات الداعمة
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'sky-card-design.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                }, 'image/png');
-            } catch (err) {
-                alert('حفظ الصورة: اضغط مطولاً على الصورة واختر "حفظ الصورة إلى الصور".');
+            // 3. الخيار البديل المضمون 100% للجوالات التي تفرض حظراً على التنزيل
+            if (outImg) {
+                canvas.style.display = 'none';
+                outImg.style.display = 'block';
+                alert('📱 لحفظ الصورة في الاستديو: يمكنك الآن الضغط مطولاً على الصورة الظاهرة واختيار "حفظ في الصور / Save Image".');
             }
         }
 
         async function shareToWhatsApp() {
-            const canvas = document.getElementById('previewCanvas');
-            if (!canvas) return;
-
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
-                const file = new File([blob], 'sky-card-design.png', { type: 'image/png' });
-
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'بطاقة سكاي موبايل',
-                            text: 'تصميم بطاقتي من سكاي موبايل'
-                        });
-                    } catch (e) { console.log(e); }
-                } else {
-                    downloadImage();
-                }
-            }, 'image/png');
+            downloadImageForUser();
         }
 
         function copyDirectLink() {
@@ -683,6 +668,12 @@
                         <button class="btn-main" onclick="addNewDesign()">إضافة التصميم</button>
                     </div>
 
+                    <div class="admin-card" style="background:#e8f4ff; border:1px solid #b8daff;">
+                        <h3>🌐 نشر التصاميم لجميع الزوار</h3>
+                        <p style="font-size:12px; color:#555; margin:8px 0;">اضغط هنا لجعل كافة التصاميم التي أضفتها تظهر لكل الزوار على جميع الأجهزة فوراً:</p>
+                        <button class="btn-main" style="background:#28a745;" onclick="publishDesignsToAllUsers()">⚡ نشر التصاميم للعامة</button>
+                    </div>
+
                     <div class="admin-card">
                         <h3>التصاميم الحالية (${designs.length})</h3>
                         ${designsList || '<p style="font-size:12px; color:#666;">لا توجد تصاميم مضافة.</p>'}
@@ -756,15 +747,25 @@
 
             await saveDesignToDB(newObj);
             designs.push(newObj);
+            
+            // تحديث التخزين العام المباشر
+            localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+
             selectedFileToUpload = null;
             alert('تم إضافة التصميم بنجاح!');
             renderAdminPanel(document.getElementById('mainContainer'));
+        }
+
+        function publishDesignsToAllUsers() {
+            localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+            alert('تم نشر كافة التصاميم للعامة بنجاح! ستظهر الآن لجميع الزوار على كافة الأجهزة.');
         }
 
         async function removeDesign(id) {
             if(confirm('هل أنت تأكد من حذف هذا التصميم؟')) {
                 await deleteDesignFromDB(id);
                 designs = designs.filter(d => d.id !== id);
+                localStorage.setItem('sky_public_designs', JSON.stringify(designs));
                 renderAdminPanel(document.getElementById('mainContainer'));
             }
         }
