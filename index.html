@@ -189,7 +189,7 @@
                     </div>
 
                     <div class="action-links">
-                        <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
+                        <button class="link-btn download-img-btn" id="dlBtn" onclick="downloadImage()">📥 تحميل وحفظ الصورة مباشرة</button>
                         <button class="link-btn copy-link-btn" id="copyBtn" onclick="copyDesignLink()">🔗 نسخ رابط هذا التصميم</button>
                         <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">🛒 تطبيق سكاي موبايل</a>
                         <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 قناة الواتساب</a>
@@ -256,7 +256,6 @@
             img.src = des.image;
         }
 
-        /* دالة رسم بيانات العميل بإطار أسفل الصورة بشكل واضح جداً احترافي */
         function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas || !window.loadedBaseImage) return;
@@ -278,19 +277,15 @@
             const fullText = details.join('   |   ');
             if (!fullText) return;
 
-            // حساب الأبعاد بناءً على حجم الصورة
             const fontSize = Math.max(16, Math.round(canvas.width * 0.032));
             const barHeight = Math.round(fontSize * 2.2);
 
-            // 1. رسم الإطار السفلي (شريط أسود داكن عالي التباين بعرض الصورة بالكامل)
             ctx.fillStyle = 'rgba(15, 23, 42, 0.92)'; 
             ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
 
-            // 2. رسم خط تحديد أزرق جمالي أعلى الشريط
             ctx.fillStyle = '#007bff';
             ctx.fillRect(0, canvas.height - barHeight, canvas.width, Math.max(3, Math.round(barHeight * 0.05)));
 
-            // 3. كتابة بيانات العميل بشكل بارز وواضح في منتصف الشريط
             ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, sans-serif`;
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
@@ -315,26 +310,36 @@
             }).catch(() => {});
         }
 
-        async function downloadImage() {
+        /* دالة حفظ وتحميل الصورة المباشرة بلمسة واحدة إلى الاستوديو */
+        function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
-            const dataUrl = canvas.toDataURL('image/png');
 
-            try {
-                const response = await fetch(dataUrl);
-                const blob = await response.blob();
-                const file = new File([blob], 'card.png', { type: 'image/png' });
+            const btn = document.getElementById('dlBtn');
+            if (btn) btn.innerText = "⏳ جاري حفظ التصميم...";
 
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'البطاقة' });
-                    return;
-                }
-            } catch(e) {}
+            canvas.toBlob((blob) => {
+                if (!blob) return;
 
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = 'card.png';
-            link.click();
+                const blobUrl = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                
+                // اسم الملف عند الحفظ
+                downloadLink.download = `SkyMobile_Design_${Date.now()}.png`;
+                downloadLink.href = blobUrl;
+                
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+
+                setTimeout(() => {
+                    URL.revokeObjectURL(blobUrl);
+                    if (btn) btn.innerText = "✅ تم الحفظ في الاستوديو!";
+                    setTimeout(() => {
+                        if (btn) btn.innerText = "📥 تحميل وحفظ الصورة مباشرة";
+                    }, 2000);
+                }, 500);
+            }, 'image/png', 1.0);
         }
 
         function renderAdminPanel(container) {
