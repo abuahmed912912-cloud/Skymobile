@@ -3,23 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- حل مشكلة تغير خلفية الموقع في كروم وفيرسل -->
     <meta name="theme-color" content="#f0f2f5">
     <meta name="color-scheme" content="light">
-    
     <title>سكاي موبايل - مصمم البطاقات</title>
+    
+    <!-- مكتبات EmailJS و Firebase السحابية -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <style>
-        /* تثبيت الخلفية الشاملة لمنع تحولها للون الأبيض في المتصفحات */
-        html, body {
-            background-color: #f0f2f5 !important;
-            color: #333;
-            padding: 10px;
-            margin: 0;
-            min-height: 100vh;
-            -webkit-text-size-adjust: 100%;
-        }
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+    <style>
+        html, body { background-color: #f0f2f5 !important; color: #333; padding: 10px; margin: 0; min-height: 100vh; -webkit-text-size-adjust: 100%; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
@@ -74,18 +68,23 @@
     <div class="container" id="mainContainer"></div>
 
     <script>
-        const ADMIN_EMAIL = "your-email@gmail.com"; 
-        const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";  
-        const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";  
-        const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; 
+        // 📌 إعدادات Firebase السحابية (استبدلها بمعلومات مشروعك المجاني من Firebase)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-            emailjs.init(EMAILJS_PUBLIC_KEY);
+        // تهيئة السيرفر السحابي
+        if (!firebase.apps.length && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
         }
 
-        // كلمة المرور القابلة للتقلب والتعديل من لوحة التحكم
         let masterPassword = localStorage.getItem('sky_master_password') || "sky2026"; 
-        let currentOtpCode = null;
 
         let defaultCategories = [
             { id: 'cat_net', name: '📶 الشبكات' },
@@ -99,10 +98,9 @@
             { id: 'def_2', categoryId: 'cat_friday', image: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80' }
         ];
 
-        let categories = JSON.parse(localStorage.getItem('sky_categories_db')) || defaultCategories;
-        let designs = JSON.parse(localStorage.getItem('sky_public_designs')) || defaultDesigns;
-        
-        let globalLinks = JSON.parse(localStorage.getItem('sky_permanent_links_db')) || {
+        let categories = defaultCategories;
+        let designs = defaultDesigns;
+        let globalLinks = {
             appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
             whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
         };
@@ -111,12 +109,42 @@
         let activeCategory = 'all'; 
         let selectedDesignId = null;
 
-        window.onload = function() { checkRoute(); };
+        window.onload = function() { 
+            listenToCloudData();
+        };
+
+        // المزامنة التلقائية مع السيرفر السحابي لكل الأجهزة في نفس اللحظة
+        function listenToCloudData() {
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                const db = firebase.database();
+                db.ref('sky_data').on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        if (data.categories) categories = data.categories;
+                        if (data.designs) designs = data.designs;
+                        if (data.links) globalLinks = data.links;
+                    }
+                    checkRoute();
+                });
+            } else {
+                // في حال عدم إدخال مفاتيح Firebase يعمل محلياً مؤقتاً
+                categories = JSON.parse(localStorage.getItem('sky_categories_db')) || defaultCategories;
+                designs = JSON.parse(localStorage.getItem('sky_public_designs')) || defaultDesigns;
+                checkRoute();
+            }
+        }
 
         function saveAllData() {
-            localStorage.setItem('sky_categories_db', JSON.stringify(categories));
-            localStorage.setItem('sky_public_designs', JSON.stringify(designs));
-            localStorage.setItem('sky_permanent_links_db', JSON.stringify(globalLinks));
+            if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                firebase.database().ref('sky_data').set({
+                    categories: categories,
+                    designs: designs,
+                    links: globalLinks
+                });
+            } else {
+                localStorage.setItem('sky_categories_db', JSON.stringify(categories));
+                localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+            }
         }
 
         function checkRoute() {
@@ -154,13 +182,11 @@
 
         function handleAdminLogin() {
             const pass = document.getElementById('adminPassInput').value.trim();
-
             if (pass === masterPassword) {
                 sessionStorage.setItem('sky_admin_logged', 'true');
                 window.location.href = "?";
                 return;
             }
-
             document.getElementById('loginError').style.display = 'block';
         }
 
@@ -379,7 +405,6 @@
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
-        // دالة ضغط الصور لسرعة الحفظ وحماية المساحة من الامتلاء
         function compressAndSaveImage(file, callback) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -388,15 +413,14 @@
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 900; 
+                    const MAX_WIDTH = 800; 
                     const scaleFactor = MAX_WIDTH / img.width;
                     canvas.width = MAX_WIDTH;
                     canvas.height = img.height * scaleFactor;
 
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
                     callback(compressedBase64);
                 };
             };
@@ -408,7 +432,6 @@
 
             if (activeAdminTab === 'templates') {
                 let categoriesOptions = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                
                 let designsList = designs.map(d => {
                     let catName = categories.find(c => c.id === d.categoryId)?.name || 'غير معروف';
                     return `
@@ -424,7 +447,7 @@
 
                 tabContainer.innerHTML = `
                     <div class="admin-card">
-                        <h3>إضافة تصميم جديد (بدون عنوان)</h3>
+                        <h3>إضافة تصميم جديد (سحابي)</h3>
                         <div class="form-group" style="margin-top:10px;">
                             <label>اختر القسم:</label>
                             <select id="newDesignCat">${categoriesOptions}</select>
@@ -433,7 +456,7 @@
                             📁 اضغط لاختيار صورة التصميم
                             <input type="file" id="designFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
                         </label>
-                        <button class="btn-main" id="saveBtn" onclick="addNewDesign()">حفظ ونشر التصميم</button>
+                        <button class="btn-main" id="saveBtn" onclick="addNewDesign()">حفظ ونشر التصميم عالمياً</button>
                     </div>
 
                     <div class="admin-card">
@@ -497,12 +520,12 @@
         function handleImageUpload(input) {
             if (input.files && input.files[0]) {
                 const saveBtn = document.getElementById('saveBtn');
-                saveBtn.innerText = 'جاري المعالجة والضغط...';
+                saveBtn.innerText = 'جاري الضغط والمعالجة السحابية...';
                 saveBtn.disabled = true;
 
                 compressAndSaveImage(input.files[0], (compressedBase64) => {
                     uploadedCompressedBase64 = compressedBase64;
-                    saveBtn.innerText = 'حفظ ونشر التصميم';
+                    saveBtn.innerText = 'حفظ ونشر التصميم عالمياً';
                     saveBtn.disabled = false;
                 });
             }
@@ -524,7 +547,7 @@
             designs.unshift(newDesign);
             saveAllData();
             uploadedCompressedBase64 = null;
-            alert('تم حفظ ونشر التصميم بنجاح وبسرعة!');
+            alert('تم نشر التصميم بنجاح لجميع الزوار وفي كافة الهواتف!');
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
@@ -558,10 +581,7 @@
 
         function updateAdminPassword() {
             const newPass = document.getElementById('newPassInput').value.trim();
-            if (!newPass) {
-                alert('الرجاء إدخال كلمة المرور الجديدة');
-                return;
-            }
+            if (!newPass) return alert('أدخل كلمة المرور الجديدة');
             masterPassword = newPass;
             localStorage.setItem('sky_master_password', newPass);
             alert('تم تغيير كلمة المرور بنجاح!');
