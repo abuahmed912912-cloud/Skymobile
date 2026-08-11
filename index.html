@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سكاي موبايل - مصمم البطاقات لوحة التحكم</title>
-    <!-- مكتبة إرسال البريد الإلكتروني EmailJS -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <title>سكاي موبايل - مصمم البطاقات</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; color: #333; padding: 10px; }
@@ -128,6 +126,22 @@
         .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
+
+        /* نافذة الإشعار المنبثقة بكود التحقق */
+        .otp-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+            z-index: 9999; padding: 15px;
+        }
+        .otp-box {
+            background: #fff; padding: 25px; border-radius: 16px; text-align: center; max-width: 350px; width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out;
+        }
+        .otp-code-display {
+            font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #007bff;
+            background: #f0f7ff; padding: 10px; border-radius: 10px; margin: 15px 0; border: 1px dashed #007bff;
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -135,18 +149,30 @@
     <div class="container" id="mainContainer"></div>
 
     <script>
-        // --- 0. إعدادات الإيميل والتحقق من الأجهزة ---
-        const ADMIN_EMAIL = "your-email@gmail.com"; 
+        // ==========================================
+        // 🔒 إعدادات الحماية التلقائية بالكامل
+        // ==========================================
+        let currentAdminPass = localStorage.getItem('sky_admin_password') || "sky2026";
         let currentGeneratedOtp = null;
 
-        (function() {
-            emailjs.init("YOUR_PUBLIC_KEY");
-        })();
+        // ==========================================
+        // 🌐 التصاميم الافتراضية
+        // ==========================================
+        const defaultGlobalDesigns = [
+            { 
+                id: 'def_net_1', 
+                title: 'قالب شبكات افتراضي', 
+                categoryId: 'cat_net', 
+                image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80' 
+            },
+            { 
+                id: 'def_friday_1', 
+                title: 'بطاقة جمعة مباركة', 
+                categoryId: 'cat_friday', 
+                image: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80' 
+            }
+        ];
 
-        // --- 1. التصاميم الأساسية الافتراضية ---
-        const defaultGlobalDesigns = [];
-
-        // --- 2. إعداد قاعدة بيانات IndexedDB ---
         function openDB() {
             return new Promise((resolve, reject) => {
                 const req = indexedDB.open('SkyMobileLargeDB', 1);
@@ -196,9 +222,6 @@
             });
         }
 
-        // --- 3. المتغيرات العامة ---
-        let currentAdminPass = localStorage.getItem('sky_admin_password') || "sky2026";
-
         let globalLinks = JSON.parse(localStorage.getItem('sky_permanent_links_db')) || {
             appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
             whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
@@ -217,7 +240,6 @@
         let activeCategory = 'all'; 
         let selectedFileToUpload = null;
 
-        // --- 4. تهيئة التطبيق ---
         window.onload = async function() { 
             await migrateAndLoadData();
             checkRoute(); 
@@ -244,18 +266,17 @@
             }
         }
 
-        // --- 5. نظام تسجيل الدخول المزدوج مع التحقق من الأجهزة (OTP) ---
         function renderLoginBox(container) {
             container.innerHTML = `
                 <div class="admin-header">
                     <h2>🔐 تسجيل دخول الإدارة</h2>
-                    <p>أدخل كلمة السر للوصول إلى لوحة التحكم</p>
+                    <p>أدخل كلمة المرور للانتقال للوحة التحكم</p>
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور:</label>
                     <input type="password" id="adminPassInput" placeholder="أدخل كلمة السر">
                 </div>
-                <button class="btn-main" onclick="verifyPassword()">دخول</button>
+                <button class="btn-main" onclick="verifyPassword()">طلب رمز التحقق الذكي</button>
                 <div style="text-align: center; margin-top: 15px;">
                     <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ العودة لواجهة العميل</a>
                 </div>
@@ -265,44 +286,49 @@
         function verifyPassword() {
             const pass = document.getElementById('adminPassInput').value.trim();
             if (pass === currentAdminPass || pass === "sky2026") {
-                const isTrusted = localStorage.getItem('sky_trusted_device') === 'true';
-
-                if (isTrusted) {
-                    sessionStorage.setItem('sky_admin_logged', 'true');
-                    window.location.href = "?";
-                } else {
-                    sendOtpAndShowVerification();
-                }
+                showSmartOtpModal();
             } else { 
                 alert('كلمة السر غير صحيحة!'); 
             }
         }
 
-        function sendOtpAndShowVerification() {
+        function showSmartOtpModal() {
             currentGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
             
-            emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-                to_email: ADMIN_EMAIL,
-                message: "رمز دخول لوحة التحكم للفي الجوال الجديد هو: " + currentGeneratedOtp
-            }).catch(e => console.log("Email Error:", e));
+            const modal = document.createElement('div');
+            modal.className = 'otp-modal';
+            modal.id = 'otpModal';
+            modal.innerHTML = `
+                <div class="otp-box">
+                    <h3 style="color:#28a745; margin-bottom:5px;">🛡️ كود التحقق الآمن</h3>
+                    <p style="font-size:12px; color:#666;">تم توليد رمز الأمان الخاص بك بنجاح:</p>
+                    <div class="otp-code-display">${currentGeneratedOtp}</div>
+                    <button class="btn-main" style="background:#28a745;" onclick="autoFillOtp('${currentGeneratedOtp}')">⚡ إدخال الرمز ومتابعة الدخول</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
 
-            alert("تم إرسال كود التحقق لبريدك الإلكتروني (رمز الاختبار المباشر: " + currentGeneratedOtp + ")");
+        function autoFillOtp(code) {
+            document.getElementById('otpModal')?.remove();
             renderOtpBox(document.getElementById('mainContainer'));
+            document.getElementById('otpCodeInput').value = code;
+            confirmOtpCode();
         }
 
         function renderOtpBox(container) {
             container.innerHTML = `
                 <div class="admin-header" style="background: linear-gradient(135deg, #e67e22, #d35400);">
-                    <h2>📱 دخول من جوال / جهاز جديد</h2>
-                    <p>أدخل كود التحقق المكون من 6 أرقام المرسل لبريدك</p>
+                    <h2>🛡️ تأكيد رمز التحقق</h2>
+                    <p>أدخل رمز التحقق للتأكيد</p>
                 </div>
                 <div class="form-group">
                     <label>رمز التحقق (OTP):</label>
-                    <input type="text" id="otpCodeInput" maxlength="6" placeholder="******" style="text-align: center; font-size: 22px; letter-spacing: 6px;">
+                    <input type="text" id="otpCodeInput" maxlength="6" placeholder="******" style="text-align: center; font-size: 24px; letter-spacing: 6px;">
                 </div>
-                <button class="btn-main" onclick="confirmOtpCode()">تأكيد وتوثيق الجهاز</button>
+                <button class="btn-main" onclick="confirmOtpCode()">تأكيد ودخول اللوحة</button>
                 <div style="text-align: center; margin-top: 15px;">
-                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ إلغاء</a>
+                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">إلغاء</a>
                 </div>
             `;
         }
@@ -310,9 +336,8 @@
         function confirmOtpCode() {
             const code = document.getElementById('otpCodeInput').value.trim();
             if (code === currentGeneratedOtp) {
-                localStorage.setItem('sky_trusted_device', 'true');
                 sessionStorage.setItem('sky_admin_logged', 'true');
-                alert("تم توثيق هذا الجهاز بنجاح!");
+                alert("تم التحقق بنجاح! مرحباً بك في لوحة التحكم.");
                 window.location.href = "?";
             } else {
                 alert("رمز التحقق غير صحيح!");
@@ -324,7 +349,6 @@
             window.location.href = "?";
         }
 
-        // --- 6. الواجهة الخاصة بالعميل (Client View) ---
         function filterByCategory(catId) {
             activeCategory = catId;
             document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
@@ -459,7 +483,6 @@
             img.src = des.image;
         }
 
-        // --- رسم الصورة وحساب أبعاد النص والقالب الشفاف تلقائياً ---
         function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas || !window.loadedBaseImage) return;
@@ -468,28 +491,23 @@
             canvas.width = window.loadedBaseImage.width;
             canvas.height = window.loadedBaseImage.height;
 
-            // رسم الخلفية الأصلية
             ctx.drawImage(window.loadedBaseImage, 0, 0);
 
             const shop = document.getElementById('cShop')?.value.trim() || '';
             const address = document.getElementById('cAddress')?.value.trim() || '';
             const phone = document.getElementById('cPhone')?.value.trim() || '';
 
-            // تجميع البيانات في سطر واحد مع فاصل أنيق
             const detailsList = [];
             if (shop) detailsList.push(shop);
             if (address) detailsList.push(address);
             if (phone) detailsList.push("📞 " + phone);
 
             const fullText = detailsList.join('  |  ');
+            if (!fullText) return;
 
-            if (!fullText) return; // لا ترسم شيئاً إذا كانت الحقول فارغة
-
-            // ضبط حجم وشكل الخط
             const fontSize = Math.max(14, canvas.width * 0.035);
             ctx.font = `bold ${fontSize}px ${selectedFont}`;
             
-            // حساب أبعاد النص لقالب الخلفية
             const textMetrics = ctx.measureText(fullText);
             const textWidth = textMetrics.width;
             const paddingX = 25;
@@ -500,13 +518,11 @@
             const boxX = (canvas.width - boxWidth) / 2;
             const boxY = canvas.height * 0.88 - (boxHeight / 2);
 
-            // 1. رسم قالب الخلفية النصف شفاف لحماية النص
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'; // خلفية سوداء بنسبة شفافية أنيقة
-            ctx.strokeStyle = '#007bff';           // إطار زرقاء متناسقة
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            ctx.strokeStyle = '#007bff';
             ctx.lineWidth = 2;
 
-            // رسم المستطيل بحواف دائرية
             ctx.beginPath();
             if (ctx.roundRect) {
                 ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 10);
@@ -517,7 +533,6 @@
             ctx.stroke();
             ctx.restore();
 
-            // 2. كتابة النص فوق القالب
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -527,17 +542,66 @@
             ctx.fillText(fullText, canvas.width / 2, boxY + (boxHeight / 2));
         }
 
-        function downloadImage() {
+        // ============================================================
+        // 📥 حفظ الصورة للاستديو مباشر على كافة الأجهزة والجوالات
+        // ============================================================
+        async function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
-            if(!canvas) return;
-            const link = document.createElement('a');
-            link.download = 'sky-card-design.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            if (!canvas) return;
+
+            try {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) return;
+                    const file = new File([blob], 'sky-card-design.png', { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: 'تصميم بطاقة - سكاي موبايل',
+                                text: 'بطاقتي المصممة عبر سكاي موبايل'
+                            });
+                            return;
+                        } catch (shareErr) {
+                            if (shareErr.name !== 'AbortError') console.log(shareErr);
+                        }
+                    }
+
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = 'sky-card-design.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                }, 'image/png');
+            } catch (err) {
+                alert('حفظ الصورة: اضغط مطولاً على الصورة واختر "حفظ الصورة إلى الصور".');
+            }
         }
 
-        function shareToWhatsApp() {
-            alert('قم بتحميل الصورة أولاً ثم مشاركتها عبر الواتساب.');
+        async function shareToWhatsApp() {
+            const canvas = document.getElementById('previewCanvas');
+            if (!canvas) return;
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const file = new File([blob], 'sky-card-design.png', { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'بطاقة سكاي موبايل',
+                            text: 'تصميم بطاقتي من سكاي موبايل'
+                        });
+                    } catch (e) { console.log(e); }
+                } else {
+                    downloadImage();
+                }
+            }, 'image/png');
         }
 
         function copyDirectLink() {
@@ -561,7 +625,6 @@
             }
         }
 
-        // --- 7. لوحة التحكم الكاملة للإدارة (Admin Panel) ---
         function renderAdminPanel(container) {
             container.innerHTML = `
                 <div class="admin-header">
