@@ -3,21 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- حل مشكلة تغير خلفية الموقع في كروم وفيرسل -->
+    <meta name="theme-color" content="#f0f2f5">
+    <meta name="color-scheme" content="light">
+    
     <title>سكاي موبايل - مصمم البطاقات</title>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
+        /* تثبيت الخلفية الشاملة لمنع تحولها للون الأبيض في المتصفحات */
+        html, body {
+            background-color: #f0f2f5 !important;
+            color: #333;
+            padding: 10px;
+            margin: 0;
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f0f2f5; color: #333; padding: 10px; }
         .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
-        .admin-header {
-            background: #007bff;
-            color: white;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
+        .admin-header { background: #007bff; color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         .admin-header h2 { font-size: 20px; }
 
         .top-nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -25,7 +31,7 @@
         .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
 
         .admin-tabs-bar { display: flex; gap: 5px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; overflow-x: auto; }
-        .tab-btn { flex: 1; min-width: 70px; background: transparent; border: none; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; white-space: nowrap; }
+        .tab-btn { flex: 1; min-width: 65px; background: transparent; border: none; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; white-space: nowrap; }
         .tab-btn.active { background: #007bff; color: white; }
 
         .form-group { margin-bottom: 15px; }
@@ -61,7 +67,6 @@
         .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
         .error-text { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; text-align: center; }
-        .btn-secondary { background-color: #6c757d; color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -78,7 +83,8 @@
             emailjs.init(EMAILJS_PUBLIC_KEY);
         }
 
-        const MASTER_PASSWORD = "sky2026"; 
+        // كلمة المرور القابلة للتقلب والتعديل من لوحة التحكم
+        let masterPassword = localStorage.getItem('sky_master_password') || "sky2026"; 
         let currentOtpCode = null;
 
         let defaultCategories = [
@@ -104,7 +110,6 @@
         let activeAdminTab = 'templates'; 
         let activeCategory = 'all'; 
         let selectedDesignId = null;
-        let selectedFileToUpload = null;
 
         window.onload = function() { checkRoute(); };
 
@@ -116,15 +121,17 @@
 
         function checkRoute() {
             const container = document.getElementById('mainContainer');
-            const isAdmin = sessionStorage.getItem('sky_admin_logged') === 'true';
             const urlParams = new URLSearchParams(window.location.search);
+            const isAdmin = sessionStorage.getItem('sky_admin_logged') === 'true';
 
-            if (isAdmin) {
+            if (urlParams.get('preview') === 'true') {
+                renderClientPanel(container, true);
+            } else if (isAdmin) {
                 renderAdminPanel(container);
             } else if (urlParams.get('admin') === 'true') {
                 renderLoginBox(container);
             } else {
-                renderClientPanel(container);
+                renderClientPanel(container, false);
             }
         }
 
@@ -136,7 +143,7 @@
                 <div class="form-group">
                     <label>كلمة المرور:</label>
                     <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور">
-                    <p class="error-text" id="loginError"></p>
+                    <p class="error-text" id="loginError">كلمة المرور غير صحيحة</p>
                 </div>
                 <button class="btn-main" onclick="handleAdminLogin()">دخول</button>
                 <div style="text-align: center; margin-top: 15px;">
@@ -148,46 +155,13 @@
         function handleAdminLogin() {
             const pass = document.getElementById('adminPassInput').value.trim();
 
-            if (pass === MASTER_PASSWORD) {
+            if (pass === masterPassword) {
                 sessionStorage.setItem('sky_admin_logged', 'true');
                 window.location.href = "?";
                 return;
             }
 
-            currentOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-            if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-                emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                    to_email: ADMIN_EMAIL,
-                    message: "رمز التحقق لدخول لوحة التحكم: " + currentOtpCode
-                });
-            }
-
-            renderOtpBox(document.getElementById('mainContainer'));
-        }
-
-        function renderOtpBox(container) {
-            container.innerHTML = `
-                <div class="admin-header">
-                    <h2>تأكيد كود التحقق</h2>
-                </div>
-                <div class="form-group">
-                    <label>أدخل رمز التحقق (OTP):</label>
-                    <input type="text" id="otpInput" maxlength="6" style="text-align:center; font-size:20px; letter-spacing:4px;">
-                    <p class="error-text" id="otpError">الرمز غير صحيح</p>
-                </div>
-                <button class="btn-main" onclick="verifyOtp()">تأكيد</button>
-            `;
-        }
-
-        function verifyOtp() {
-            const inputOtp = document.getElementById('otpInput').value.trim();
-            if (currentOtpCode && inputOtp === currentOtpCode) {
-                sessionStorage.setItem('sky_admin_logged', 'true');
-                window.location.href = "?";
-            } else {
-                document.getElementById('otpError').style.display = 'block';
-            }
+            document.getElementById('loginError').style.display = 'block';
         }
 
         function logoutAdmin() {
@@ -195,13 +169,16 @@
             window.location.href = "?";
         }
 
-        function renderClientPanel(container) {
+        function renderClientPanel(container, isPreview = false) {
             let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" onclick="filterByCategory('all')">📂 الكل</div>`;
             categories.forEach(cat => {
                 categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" onclick="filterByCategory('${cat.id}')">${cat.name}</div>`;
             });
 
+            let adminReturnBtn = isPreview ? `<div style="margin-bottom:10px;"><a href="?" class="btn-home" style="display:block; background:#007bff; text-align:center;">🔙 العودة للوحة التحكم</a></div>` : '';
+
             container.innerHTML = `
+                ${adminReturnBtn}
                 <header style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
                     <h1 style="color: #007bff; font-size: 20px;">🎨 مصمم البطاقات الفوري</h1>
                     <p style="font-size: 12px; color: #666;">سكاي موبايل</p>
@@ -257,7 +234,8 @@
 
         function filterByCategory(catId) {
             activeCategory = catId;
-            renderClientPanel(document.getElementById('mainContainer'));
+            const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+            renderClientPanel(document.getElementById('mainContainer'), isPreview);
         }
 
         function getFilteredDesigns() {
@@ -380,7 +358,7 @@
                     <h2>لوحة التحكم</h2>
                 </div>
                 <div class="top-nav-buttons">
-                    <a href="?" class="btn-home">👁️ واجهة الزوار</a>
+                    <a href="?preview=true" class="btn-home">👁️ واجهة الزوار</a>
                     <button class="btn-logout" onclick="logoutAdmin()">تسجيل الخروج</button>
                 </div>
 
@@ -388,7 +366,7 @@
                     <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">🖼️ التصاميم</button>
                     <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">📁 الأقسام</button>
                     <button class="tab-btn ${activeAdminTab==='links'?'active':''}" onclick="switchAdminTab('links')">🔗 الروابط</button>
-                    <button class="tab-btn ${activeAdminTab==='backup'?'active':''}" onclick="switchAdminTab('backup')">💾 النسخ</button>
+                    <button class="tab-btn ${activeAdminTab==='password'?'active':''}" onclick="switchAdminTab('password')">🔑 كلمة المرور</button>
                 </div>
 
                 <div id="adminTabContent"></div>
@@ -401,31 +379,61 @@
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
+        // دالة ضغط الصور لسرعة الحفظ وحماية المساحة من الامتلاء
+        function compressAndSaveImage(file, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 900; 
+                    const scaleFactor = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleFactor;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    callback(compressedBase64);
+                };
+            };
+        }
+
         function renderAdminTabContent() {
-            const content = document.getElementById('adminTabContent');
-            if (!content) return;
+            const tabContainer = document.getElementById('adminTabContent');
+            if (!tabContainer) return;
 
             if (activeAdminTab === 'templates') {
-                let options = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                let designsList = designs.map((d, index) => `
-                    <div class="sub-img-list">
-                        <span>تصميم #${index + 1}</span>
-                        <button class="btn-delete" onclick="removeDesign('${d.id}')">حذف</button>
-                    </div>
-                `).join('');
+                let categoriesOptions = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                
+                let designsList = designs.map(d => {
+                    let catName = categories.find(c => c.id === d.categoryId)?.name || 'غير معروف';
+                    return `
+                        <div class="sub-img-list">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${d.image}" style="width:40px; height:40px; object-fit:cover; border-radius:5px;">
+                                <span>${catName}</span>
+                            </div>
+                            <button class="btn-delete" onclick="deleteDesign('${d.id}')">حذف</button>
+                        </div>
+                    `;
+                }).join('');
 
-                content.innerHTML = `
+                tabContainer.innerHTML = `
                     <div class="admin-card">
                         <h3>إضافة تصميم جديد (بدون عنوان)</h3>
                         <div class="form-group" style="margin-top:10px;">
                             <label>اختر القسم:</label>
-                            <select id="newDesignCat">${options}</select>
+                            <select id="newDesignCat">${categoriesOptions}</select>
                         </div>
                         <label class="dropzone-box">
                             📁 اضغط لاختيار صورة التصميم
-                            <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
+                            <input type="file" id="designFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
                         </label>
-                        <button class="btn-main" onclick="addNewDesign()">حفظ ونشر التصميم</button>
+                        <button class="btn-main" id="saveBtn" onclick="addNewDesign()">حفظ ونشر التصميم</button>
                     </div>
 
                     <div class="admin-card">
@@ -434,19 +442,18 @@
                     </div>
                 `;
             } else if (activeAdminTab === 'categories') {
-                let catList = categories.map((c, i) => `
+                let catList = categories.map(c => `
                     <div class="sub-img-list">
                         <span>${c.name}</span>
-                        <button class="btn-delete" onclick="removeCategory(${i})">حذف</button>
+                        <button class="btn-delete" onclick="deleteCategory('${c.id}')">حذف</button>
                     </div>
                 `).join('');
 
-                content.innerHTML = `
+                tabContainer.innerHTML = `
                     <div class="admin-card">
                         <h3>إضافة قسم جديد</h3>
                         <div class="form-group" style="margin-top:10px;">
-                            <label>اسم القسم:</label>
-                            <input type="text" id="newCatName" placeholder="مثال: تصاميم العيد">
+                            <input type="text" id="newCatName" placeholder="اسم القسم الجديد">
                         </div>
                         <button class="btn-main" onclick="addNewCategory()">إضافة القسم</button>
                     </div>
@@ -457,65 +464,71 @@
                     </div>
                 `;
             } else if (activeAdminTab === 'links') {
-                content.innerHTML = `
+                tabContainer.innerHTML = `
                     <div class="admin-card">
                         <h3>إدارة الروابط الدائمة</h3>
                         <div class="form-group" style="margin-top:10px;">
-                            <label>رابط التطبيق (Google Play / App Store):</label>
-                            <input type="text" id="linkAppUrl" value="${globalLinks.appUrl}">
+                            <label>رابط التطبيق (Google Play):</label>
+                            <input type="text" id="appUrlInput" value="${globalLinks.appUrl}">
                         </div>
                         <div class="form-group">
                             <label>رابط قناة الواتساب:</label>
-                            <input type="text" id="linkWhatsappUrl" value="${globalLinks.whatsappUrl}">
+                            <input type="text" id="waUrlInput" value="${globalLinks.whatsappUrl}">
                         </div>
                         <button class="btn-main" onclick="saveLinks()">حفظ الروابط</button>
                     </div>
                 `;
-            } else if (activeAdminTab === 'backup') {
-                content.innerHTML = `
+            } else if (activeAdminTab === 'password') {
+                tabContainer.innerHTML = `
                     <div class="admin-card">
-                        <h3>حفظ واسترجاع التصاميم</h3>
-                        <p style="font-size:12px; color:#666; margin: 8px 0;">يمكنك تصدير كافة القوالب والأقسام والروابط لملف خارجي أو نقلها لمتصفح آخر لضمان عدم ضياعها.</p>
-                        <button class="btn-main" onclick="exportBackup()">📥 تصدير نسخة احتياطية</button>
-                        <div style="margin-top: 15px;">
-                            <label class="btn-secondary" style="text-align:center; display:block;">
-                                📤 استيراد نسخة احتياطية
-                                <input type="file" accept=".json" style="display:none;" onchange="importBackup(event)">
-                            </label>
+                        <h3>تغيير كلمة مرور المدير</h3>
+                        <div class="form-group" style="margin-top:10px;">
+                            <label>كلمة المرور الجديدة:</label>
+                            <input type="password" id="newPassInput" placeholder="أدخل كلمة المرور الجديدة">
                         </div>
+                        <button class="btn-main" onclick="updateAdminPassword()">حفظ كلمة المرور الجديدة</button>
                     </div>
                 `;
             }
         }
 
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) { selectedFileToUpload = evt.target.result; };
-                reader.readAsDataURL(file);
+        let uploadedCompressedBase64 = null;
+
+        function handleImageUpload(input) {
+            if (input.files && input.files[0]) {
+                const saveBtn = document.getElementById('saveBtn');
+                saveBtn.innerText = 'جاري المعالجة والضغط...';
+                saveBtn.disabled = true;
+
+                compressAndSaveImage(input.files[0], (compressedBase64) => {
+                    uploadedCompressedBase64 = compressedBase64;
+                    saveBtn.innerText = 'حفظ ونشر التصميم';
+                    saveBtn.disabled = false;
+                });
             }
         }
 
         function addNewDesign() {
+            if (!uploadedCompressedBase64) {
+                alert('الرجاء اختيار صورة أولاً');
+                return;
+            }
+
             const categoryId = document.getElementById('newDesignCat').value;
-
-            if (!selectedFileToUpload) return;
-
-            const newObj = {
+            const newDesign = {
                 id: 'des_' + Date.now(),
                 categoryId: categoryId,
-                image: selectedFileToUpload
+                image: uploadedCompressedBase64
             };
 
-            designs.push(newObj);
+            designs.unshift(newDesign);
             saveAllData();
-
-            selectedFileToUpload = null;
+            uploadedCompressedBase64 = null;
+            alert('تم حفظ ونشر التصميم بنجاح وبسرعة!');
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
-        function removeDesign(id) {
+        function deleteDesign(id) {
             designs = designs.filter(d => d.id !== id);
             saveAllData();
             renderAdminPanel(document.getElementById('mainContainer'));
@@ -523,63 +536,35 @@
 
         function addNewCategory() {
             const name = document.getElementById('newCatName').value.trim();
-            if (name) {
-                categories.push({ id: 'cat_' + Date.now(), name: name });
-                saveAllData();
-                renderAdminPanel(document.getElementById('mainContainer'));
-            }
+            if (!name) return;
+
+            categories.push({ id: 'cat_' + Date.now(), name: name });
+            saveAllData();
+            renderAdminPanel(document.getElementById('mainContainer'));
         }
 
-        function removeCategory(index) {
-            categories.splice(index, 1);
+        function deleteCategory(id) {
+            categories = categories.filter(c => c.id !== id);
             saveAllData();
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
         function saveLinks() {
-            const appUrl = document.getElementById('linkAppUrl').value.trim();
-            const whatsappUrl = document.getElementById('linkWhatsappUrl').value.trim();
-
-            globalLinks.appUrl = appUrl;
-            globalLinks.whatsappUrl = whatsappUrl;
+            globalLinks.appUrl = document.getElementById('appUrlInput').value.trim();
+            globalLinks.whatsappUrl = document.getElementById('waUrlInput').value.trim();
             saveAllData();
-
-            renderAdminPanel(document.getElementById('mainContainer'));
+            alert('تم حفظ الروابط بنجاح!');
         }
 
-        function exportBackup() {
-            const backupData = {
-                categories: categories,
-                designs: designs,
-                globalLinks: globalLinks
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "skymobile_backup.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        function importBackup(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const importedData = JSON.parse(evt.target.result);
-                    if (importedData.categories && importedData.designs) {
-                        categories = importedData.categories;
-                        designs = importedData.designs;
-                        if (importedData.globalLinks) globalLinks = importedData.globalLinks;
-                        saveAllData();
-                        renderAdminPanel(document.getElementById('mainContainer'));
-                    }
-                } catch(err) {}
-            };
-            reader.readAsText(file);
+        function updateAdminPassword() {
+            const newPass = document.getElementById('newPassInput').value.trim();
+            if (!newPass) {
+                alert('الرجاء إدخال كلمة المرور الجديدة');
+                return;
+            }
+            masterPassword = newPass;
+            localStorage.setItem('sky_master_password', newPass);
+            alert('تم تغيير كلمة المرور بنجاح!');
         }
     </script>
 </body>
