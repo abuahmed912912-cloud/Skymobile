@@ -24,8 +24,8 @@
         .btn-home { flex: 1; background-color: #28a745; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
         .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
 
-        .admin-tabs-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; }
-        .tab-btn { flex: 1; background: transparent; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; }
+        .admin-tabs-bar { display: flex; gap: 5px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; overflow-x: auto; }
+        .tab-btn { flex: 1; min-width: 70px; background: transparent; border: none; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; white-space: nowrap; }
         .tab-btn.active { background: #007bff; color: white; }
 
         .form-group { margin-bottom: 15px; }
@@ -52,6 +52,7 @@
         .action-links { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         .link-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; font-weight: bold; font-size: 14px; text-align: center; color: white; border: none; cursor: pointer; text-decoration: none; }
         .download-img-btn { background-color: #007bff; }
+        .copy-link-btn { background-color: #6f42c1; }
         .store-link-btn { background-color: #17a2b8; }
         .whatsapp-channel-btn { background-color: #128c7e; }
 
@@ -102,6 +103,7 @@
 
         let activeAdminTab = 'templates'; 
         let activeCategory = 'all'; 
+        let selectedDesignId = null;
         let selectedFileToUpload = null;
 
         window.onload = function() { checkRoute(); };
@@ -109,6 +111,7 @@
         function saveAllData() {
             localStorage.setItem('sky_categories_db', JSON.stringify(categories));
             localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+            localStorage.setItem('sky_permanent_links_db', JSON.stringify(globalLinks));
         }
 
         function checkRoute() {
@@ -228,6 +231,7 @@
 
                     <div class="action-links">
                         <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
+                        <button class="link-btn copy-link-btn" id="copyBtn" onclick="copyDesignLink()">🔗 نسخ رابط هذا التصميم</button>
                         <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">🛒 تطبيق سكاي موبايل</a>
                         <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 قناة الواتساب</a>
                     </div>
@@ -238,9 +242,17 @@
                 </div>
             `;
 
+            let urlParams = new URLSearchParams(window.location.search);
+            let paramDesignId = urlParams.get('design');
             let filtered = getFilteredDesigns();
-            renderClientThumbnails(filtered[0]?.id);
-            if (filtered[0]) loadSelectedDesign(filtered[0]);
+
+            let targetDesign = filtered.find(d => d.id === paramDesignId) || filtered[0];
+
+            if (targetDesign) {
+                selectedDesignId = targetDesign.id;
+                renderClientThumbnails(targetDesign.id);
+                loadSelectedDesign(targetDesign);
+            }
         }
 
         function filterByCategory(catId) {
@@ -263,6 +275,7 @@
                 const card = document.createElement('div');
                 card.className = `thumb-card ${isSelected}`;
                 card.onclick = () => {
+                    selectedDesignId = des.id;
                     renderClientThumbnails(des.id);
                     loadSelectedDesign(des);
                 };
@@ -273,6 +286,7 @@
 
         function loadSelectedDesign(des) {
             if (!des || !des.image) return;
+            selectedDesignId = des.id;
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = function() {
@@ -324,6 +338,20 @@
             if (outImg) outImg.src = canvas.toDataURL('image/png');
         }
 
+        function copyDesignLink() {
+            if (!selectedDesignId) return;
+            const baseUrl = window.location.origin + window.location.pathname;
+            const fullLink = `${baseUrl}?design=${selectedDesignId}`;
+
+            navigator.clipboard.writeText(fullLink).then(() => {
+                const btn = document.getElementById('copyBtn');
+                if (btn) {
+                    btn.innerText = "✅ تم نسخ الرابط بنجاح!";
+                    setTimeout(() => { btn.innerText = "🔗 نسخ رابط هذا التصميم"; }, 2500);
+                }
+            }).catch(() => {});
+        }
+
         async function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
@@ -357,9 +385,10 @@
                 </div>
 
                 <div class="admin-tabs-bar">
-                    <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">التصاميم</button>
-                    <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">الأقسام</button>
-                    <button class="tab-btn ${activeAdminTab==='backup'?'active':''}" onclick="switchAdminTab('backup')">نسخ البيانات</button>
+                    <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">🖼️ التصاميم</button>
+                    <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">📁 الأقسام</button>
+                    <button class="tab-btn ${activeAdminTab==='links'?'active':''}" onclick="switchAdminTab('links')">🔗 الروابط</button>
+                    <button class="tab-btn ${activeAdminTab==='backup'?'active':''}" onclick="switchAdminTab('backup')">💾 النسخ</button>
                 </div>
 
                 <div id="adminTabContent"></div>
@@ -387,7 +416,7 @@
 
                 content.innerHTML = `
                     <div class="admin-card">
-                        <h3>إضافة تصميم جديد</h3>
+                        <h3>إضافة تصميم جديد (بدون عنوان)</h3>
                         <div class="form-group" style="margin-top:10px;">
                             <label>اختر القسم:</label>
                             <select id="newDesignCat">${options}</select>
@@ -427,11 +456,26 @@
                         ${catList}
                     </div>
                 `;
+            } else if (activeAdminTab === 'links') {
+                content.innerHTML = `
+                    <div class="admin-card">
+                        <h3>إدارة الروابط الدائمة</h3>
+                        <div class="form-group" style="margin-top:10px;">
+                            <label>رابط التطبيق (Google Play / App Store):</label>
+                            <input type="text" id="linkAppUrl" value="${globalLinks.appUrl}">
+                        </div>
+                        <div class="form-group">
+                            <label>رابط قناة الواتساب:</label>
+                            <input type="text" id="linkWhatsappUrl" value="${globalLinks.whatsappUrl}">
+                        </div>
+                        <button class="btn-main" onclick="saveLinks()">حفظ الروابط</button>
+                    </div>
+                `;
             } else if (activeAdminTab === 'backup') {
                 content.innerHTML = `
                     <div class="admin-card">
                         <h3>حفظ واسترجاع التصاميم</h3>
-                        <p style="font-size:12px; color:#666; margin: 8px 0;">يمكنك تصدير كافة القوالب والأقسام لملف خارجي أو نقلها لمتصفح آخر لضمان عدم ضياعها.</p>
+                        <p style="font-size:12px; color:#666; margin: 8px 0;">يمكنك تصدير كافة القوالب والأقسام والروابط لملف خارجي أو نقلها لمتصفح آخر لضمان عدم ضياعها.</p>
                         <button class="btn-main" onclick="exportBackup()">📥 تصدير نسخة احتياطية</button>
                         <div style="margin-top: 15px;">
                             <label class="btn-secondary" style="text-align:center; display:block;">
@@ -492,10 +536,22 @@
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
+        function saveLinks() {
+            const appUrl = document.getElementById('linkAppUrl').value.trim();
+            const whatsappUrl = document.getElementById('linkWhatsappUrl').value.trim();
+
+            globalLinks.appUrl = appUrl;
+            globalLinks.whatsappUrl = whatsappUrl;
+            saveAllData();
+
+            renderAdminPanel(document.getElementById('mainContainer'));
+        }
+
         function exportBackup() {
             const backupData = {
                 categories: categories,
-                designs: designs
+                designs: designs,
+                globalLinks: globalLinks
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
             const downloadAnchor = document.createElement('a');
@@ -517,6 +573,7 @@
                     if (importedData.categories && importedData.designs) {
                         categories = importedData.categories;
                         designs = importedData.designs;
+                        if (importedData.globalLinks) globalLinks = importedData.globalLinks;
                         saveAllData();
                         renderAdminPanel(document.getElementById('mainContainer'));
                     }
