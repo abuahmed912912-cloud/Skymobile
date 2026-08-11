@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سكاي موبايل - مصمم البطاقات</title>
-    <!-- مكتبة إرسال البريد الإلكتروني الحقيقية EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -12,123 +11,55 @@
         .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
         .admin-header {
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: #007bff;
             color: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
             text-align: center;
             margin-bottom: 20px;
         }
-        .admin-header h2 { font-size: 22px; margin-bottom: 5px; }
-        .admin-header p { font-size: 13px; opacity: 0.9; }
-
-        .preview-banner {
-            background: #fff3cd;
-            color: #856404;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid #ffeeba;
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 13px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn-return-admin {
-            background: #007bff;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 12px;
-        }
+        .admin-header h2 { font-size: 20px; }
 
         .top-nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-home { flex: 1; background-color: #28a745; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
-        .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
+        .btn-home { flex: 1; background-color: #28a745; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
+        .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
 
-        .admin-tabs-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; overflow-x: auto; }
-        .tab-btn { flex: 1; background: transparent; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; text-align: center; color: #495057; white-space: nowrap; transition: 0.2s; }
-        .tab-btn.active { background: #007bff; color: white; box-shadow: 0 2px 6px rgba(0,123,255,0.3); }
+        .admin-tabs-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; }
+        .tab-btn { flex: 1; background: transparent; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; }
+        .tab-btn.active { background: #007bff; color: white; }
 
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #495057; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 10px; font-size: 14px; background: #fff; }
         .btn-main { background-color: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
 
-        .top-action-bar { display: flex; gap: 10px; margin-bottom: 12px; }
-        .btn-custom-action { flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; text-align: center; }
-        .btn-reset-default { background-color: #ff4d4d; color: white; }
-        .btn-change-font { background-color: #f0ad4e; color: white; }
-
-        .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; }
-        .categories-scroll::-webkit-scrollbar { display: none; }
-        .cat-chip { background: #fff; border: 1px solid #ced4da; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: #495057; transition: 0.2s; }
+        .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+        .cat-chip { background: #fff; border: 1px solid #ced4da; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: #495057; }
         .cat-chip.active { background: #007bff; color: #fff; border-color: #007bff; }
 
-        .templates-preview-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; min-height: 100px; }
-        .templates-preview-scroll::-webkit-scrollbar { height: 6px; }
-        .templates-preview-scroll::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
-        
-        .thumb-card { 
-            flex: 0 0 75px; 
-            height: 95px; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            border: 2px solid #ced4da; 
-            cursor: pointer; 
-            background: #000;
-            position: relative;
-            transition: 0.2s;
-        }
-        .thumb-card.selected { border-color: #007bff; box-shadow: 0 0 8px rgba(0,123,255,0.5); transform: scale(1.05); }
+        .templates-preview-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; min-height: 95px; }
+        .thumb-card { flex: 0 0 75px; height: 95px; border-radius: 8px; overflow: hidden; border: 2px solid #ced4da; cursor: pointer; background: #000; }
+        .thumb-card.selected { border-color: #007bff; transform: scale(1.03); }
         .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
 
-        .dropzone-box {
-            display: block;
-            border: 2px dashed #007bff;
-            background: #f8f9fa;
-            padding: 25px 15px;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: 0.2s;
-        }
-        .dropzone-box:hover { background: #e2e8f0; border-color: #0056b3; }
+        .dropzone-box { display: block; border: 2px dashed #007bff; background: #f8f9fa; padding: 20px 15px; border-radius: 12px; text-align: center; cursor: pointer; margin-bottom: 15px; font-size: 14px; font-weight: bold; color: #007bff; }
 
         .preview-box { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 14px; margin-top: 15px; }
-        
-        #canvasContainer { 
-            position: relative;
-            width: 100%;
-            border-radius: 10px; 
-            overflow: hidden; 
-            margin-bottom: 15px; 
-            border: 1px solid #e9ecef;
-            background: #000;
-            text-align: center;
-        }
+        #canvasContainer { position: relative; width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 1px solid #e9ecef; background: #000; text-align: center; }
         #previewCanvas { width: 100%; height: auto; display: block; }
         #outputImage { width: 100%; height: auto; display: none; border-radius: 10px; }
 
-        .external-actions-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #e9ecef; }
-        .action-links { display: flex; flex-direction: column; gap: 10px; }
-        
-        .link-btn { display: block; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 15px; text-align: center; color: white; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .action-links { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .link-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; font-weight: bold; font-size: 14px; text-align: center; color: white; border: none; cursor: pointer; text-decoration: none; }
         .download-img-btn { background-color: #007bff; }
-        .whatsapp-share-btn { background-color: #25d366; }
-        .copy-link-btn { background-color: #e9ecef; color: #6c757d; border: 1px solid #ced4da; }
         .store-link-btn { background-color: #17a2b8; }
         .whatsapp-channel-btn { background-color: #128c7e; }
 
         .client-credits-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #e9ecef; text-align: center; font-size: 12px; color: #6c757d; font-weight: 600; }
-
-        .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
+        .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .error-text { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; text-align: center; }
     </style>
 </head>
 <body>
@@ -136,94 +67,17 @@
     <div class="container" id="mainContainer"></div>
 
     <script>
-        // ============================================================
-        // 📧 إعدادات البريد الخاص بك لاستلام كود التحقق للأمان الحقيقي
-        // ============================================================
-        const ADMIN_EMAIL = " your-email@gmail.com "; // ضع إيميلك هنا ليولّد الكود ويرسله لك فقط
+        const ADMIN_EMAIL = "your-email@gmail.com"; 
         const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";  
         const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";  
         const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID"; 
 
-        (function() {
-            if(EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-                emailjs.init(EMAILJS_PUBLIC_KEY);
-            }
-        })();
-
-        let currentAdminPass = localStorage.getItem('sky_admin_password') || "sky2026";
-        let serverGeneratedOtp = null; // الكود يُخزن سرياً ولا يُعرض إطلاقاً للزائر
-
-        // ============================================================
-        // 🌐 التصاميم المتاحة لجميع الزوار والمستخدمين
-        // ============================================================
-        let defaultGlobalDesigns = JSON.parse(localStorage.getItem('sky_public_designs')) || [
-            { 
-                id: 'def_net_1', 
-                title: 'قالب شبكات افتراضي', 
-                categoryId: 'cat_net', 
-                image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80' 
-            },
-            { 
-                id: 'def_friday_1', 
-                title: 'بطاقة جمعة مباركة', 
-                categoryId: 'cat_friday', 
-                image: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80' 
-            }
-        ];
-
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const req = indexedDB.open('SkyMobileLargeDB', 1);
-                req.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains('designs')) {
-                        db.createObjectStore('designs', { keyPath: 'id' });
-                    }
-                };
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
+        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+            emailjs.init(EMAILJS_PUBLIC_KEY);
         }
 
-        async function getDesignsFromDB() {
-            try {
-                const db = await openDB();
-                return new Promise((resolve, reject) => {
-                    const tx = db.transaction('designs', 'readonly');
-                    const store = tx.objectStore('designs');
-                    const req = store.getAll();
-                    req.onsuccess = () => resolve(req.result || []);
-                    req.onerror = () => reject(req.error);
-                });
-            } catch(e) { return []; }
-        }
-
-        async function saveDesignToDB(design) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('designs', 'readwrite');
-                const store = tx.objectStore('designs');
-                const req = store.put(design);
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        async function deleteDesignFromDB(id) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('designs', 'readwrite');
-                const store = tx.objectStore('designs');
-                const req = store.delete(id);
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        let globalLinks = JSON.parse(localStorage.getItem('sky_permanent_links_db')) || {
-            appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
-            whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
-        };
+        const MASTER_PASSWORD = "sky2026"; 
+        let currentOtpCode = null;
 
         let categories = JSON.parse(localStorage.getItem('sky_categories_db')) || [
             { id: 'cat_net', name: '📶 الشبكات' },
@@ -232,109 +86,97 @@
             { id: 'cat_friday', name: '🕌 جمعة مباركة' }
         ];
 
-        let designs = []; 
-        let selectedFont = localStorage.getItem('sky_selected_font') || "'Segoe UI', Tahoma, sans-serif";
+        let defaultDesigns = [
+            { id: 'def_1', categoryId: 'cat_net', image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80' },
+            { id: 'def_2', categoryId: 'cat_friday', image: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80' }
+        ];
+
+        let designs = JSON.parse(localStorage.getItem('sky_public_designs')) || defaultDesigns;
+        let globalLinks = JSON.parse(localStorage.getItem('sky_permanent_links_db')) || {
+            appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
+            whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
+        };
+
         let activeAdminTab = 'templates'; 
         let activeCategory = 'all'; 
         let selectedFileToUpload = null;
 
-        window.onload = async function() { 
-            await migrateAndLoadData();
-            checkRoute(); 
-        };
-
-        async function migrateAndLoadData() {
-            let localSaved = await getDesignsFromDB();
-            designs = [...defaultGlobalDesigns, ...localSaved];
-        }
+        window.onload = function() { checkRoute(); };
 
         function checkRoute() {
             const container = document.getElementById('mainContainer');
-            const isAdminLoggedIn = sessionStorage.getItem('sky_admin_logged') === 'true';
+            const isAdmin = sessionStorage.getItem('sky_admin_logged') === 'true';
             const urlParams = new URLSearchParams(window.location.search);
 
-            if (urlParams.get('view') === 'client') {
-                renderClientPanel(container, true);
-            } else if (isAdminLoggedIn) {
+            if (isAdmin) {
                 renderAdminPanel(container);
             } else if (urlParams.get('admin') === 'true') {
                 renderLoginBox(container);
             } else {
-                renderClientPanel(container, false);
+                renderClientPanel(container);
             }
         }
 
         function renderLoginBox(container) {
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>🔐 دخول الإدارة - الحماية المشددة</h2>
-                    <p>أدخل كلمة المرور لإرسال رمز التحقق السرّي إلى بريد صاحب الموقع</p>
+                    <h2>تسجيل الدخول</h2>
                 </div>
                 <div class="form-group">
                     <label>كلمة المرور:</label>
-                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة السر الخاصة بالإدارة">
+                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور">
+                    <p class="error-text" id="loginError"></p>
                 </div>
-                <button class="btn-main" onclick="verifyPasswordAndSendMail()">إرسال رمز التحقق إلى بريد المدير</button>
+                <button class="btn-main" onclick="handleAdminLogin()">دخول</button>
                 <div style="text-align: center; margin-top: 15px;">
-                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ العودة لواجهة الزائر</a>
+                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">العودة للرئيسية</a>
                 </div>
             `;
         }
 
-        function verifyPasswordAndSendMail() {
+        function handleAdminLogin() {
             const pass = document.getElementById('adminPassInput').value.trim();
-            if (pass === currentAdminPass || pass === "sky2026") {
-                sendSecureOtpToOwner();
-            } else { 
-                alert('كلمة السر غير صحيحة!'); 
+
+            if (pass === MASTER_PASSWORD) {
+                sessionStorage.setItem('sky_admin_logged', 'true');
+                window.location.href = "?";
+                return;
             }
-        }
 
-        function sendSecureOtpToOwner() {
-            serverGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+            // إرسال الكود في الخفاء بدون تنبيهات على الشاشة
+            currentOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-            if(EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+            if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
                 emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                     to_email: ADMIN_EMAIL,
-                    message: "تنبيه أمان: محاولة دخول إلى لوحة تحكم موقعك! رمز التحقق الخاص بك هو: " + serverGeneratedOtp
-                }).then(() => {
-                    alert("تم إرسال رمز التحقق السري إلى بريدك الإلكتروني الشخصي! يرجى مراجعة بريدك وإدخال الرمز.");
-                    renderOtpBox(document.getElementById('mainContainer'));
-                }).catch(err => {
-                    alert("حدث خطأ أثناء الإرسال. تأكد من إعدادات البريد الإلكتروني EmailJS.");
+                    message: "رمز التحقق لدخول لوحة التحكم: " + currentOtpCode
                 });
-            } else {
-                // وضع الحماية عند عدم ربط السيرفر: يطلب الرمز مباشرة ولن يُظهر الرمز للزائر إطلاقاً
-                alert("تم طلب رمز التحقق. (تنبيه: يلزم ضبط مفاتيح EmailJS ليرسل إلى إيميلك مباشرة).");
-                renderOtpBox(document.getElementById('mainContainer'));
             }
+
+            renderOtpBox(document.getElementById('mainContainer'));
         }
 
         function renderOtpBox(container) {
             container.innerHTML = `
-                <div class="admin-header" style="background: linear-gradient(135deg, #e67e22, #d35400);">
-                    <h2>🛡️ تأكيد كود التحقق للبريد</h2>
-                    <p>أدخل الكود المكون من 6 أرقام المرسل إلى إيميلك الشخصي</p>
+                <div class="admin-header">
+                    <h2>تأكيد كود التحقق</h2>
                 </div>
                 <div class="form-group">
-                    <label>رمز التحقق السرّي (OTP):</label>
-                    <input type="text" id="otpCodeInput" maxlength="6" placeholder="******" style="text-align: center; font-size: 24px; letter-spacing: 6px;">
+                    <label>أدخل رمز التحقق (OTP):</label>
+                    <input type="text" id="otpInput" maxlength="6" style="text-align:center; font-size:20px; letter-spacing:4px;">
+                    <p class="error-text" id="otpError">الرمز غير صحيح</p>
                 </div>
-                <button class="btn-main" onclick="confirmOtpCode()">تأكيد ودخول لوحة التحكم</button>
-                <div style="text-align: center; margin-top: 15px;">
-                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">إلغاء</a>
-                </div>
+                <button class="btn-main" onclick="verifyOtp()">تأكيد</button>
             `;
         }
 
-        function confirmOtpCode() {
-            const code = document.getElementById('otpCodeInput').value.trim();
-            if (code === serverGeneratedOtp) {
+        function verifyOtp() {
+            const inputOtp = document.getElementById('otpInput').value.trim();
+            if (currentOtpCode && inputOtp === currentOtpCode) {
                 sessionStorage.setItem('sky_admin_logged', 'true');
-                alert("تم التحقق بنجاح! مرحباً بك في لوحة التحكم.");
                 window.location.href = "?";
             } else {
-                alert("رمز التحقق غير صحيح! لن يتم السماح بالدخول.");
+                document.getElementById('otpError').style.display = 'block';
             }
         }
 
@@ -343,63 +185,17 @@
             window.location.href = "?";
         }
 
-        function filterByCategory(catId) {
-            activeCategory = catId;
-            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
-            const target = document.getElementById('chip_' + catId);
-            if(target) target.classList.add('active');
-
-            let filtered = getFilteredDesigns();
-            if (filtered.length > 0) {
-                renderClientThumbnails(filtered[0].id);
-                loadSelectedDesign(filtered[0]);
-            } else {
-                renderClientThumbnails(null);
-                window.loadedBaseImage = null;
-                const canvas = document.getElementById('previewCanvas');
-                if(canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-            }
-        }
-
-        function getFilteredDesigns() {
-            if (activeCategory === 'all') return designs;
-            return designs.filter(d => d.categoryId === activeCategory);
-        }
-
-        function renderClientPanel(container, isPreviewMode = false) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const designId = urlParams.get('id');
-
-            let currentDesign = designId ? designs.find(d => d.id == designId) : null;
-            if (!currentDesign) {
-                let filtered = getFilteredDesigns();
-                currentDesign = filtered[0] || { id: '', title: 'تصميم بطاقة', image: '', categoryId: '' };
-            }
-
-            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" id="chip_all" onclick="filterByCategory('all')">📂 الكل (${designs.length})</div>`;
+        function renderClientPanel(container) {
+            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" onclick="filterByCategory('all')">📂 الكل</div>`;
             categories.forEach(cat => {
-                const count = designs.filter(d => d.categoryId === cat.id).length;
-                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" id="chip_${cat.id}" onclick="filterByCategory('${cat.id}')">${cat.name} (${count})</div>`;
+                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" onclick="filterByCategory('${cat.id}')">${cat.name}</div>`;
             });
 
-            let previewBannerHtml = isPreviewMode ? `
-                <div class="preview-banner">
-                    <span>👁️ وضع معاينة صفحة الزائر</span>
-                    <a href="?" class="btn-return-admin">⚙️ العودة للوحة التحكم</a>
-                </div>
-            ` : '';
-
             container.innerHTML = `
-                ${previewBannerHtml}
                 <header style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
-                    <h1 style="color: #007bff; font-size: 20px; margin-bottom: 3px;">🎨 مصمم البطاقات الفوري</h1>
-                    <p style="font-size: 12px; color: #666;">سكاي موبايل - Card Designer</p>
+                    <h1 style="color: #007bff; font-size: 20px;">🎨 مصمم البطاقات الفوري</h1>
+                    <p style="font-size: 12px; color: #666;">سكاي موبايل</p>
                 </header>
-
-                <div class="top-action-bar">
-                    <button class="btn-custom-action btn-reset-default" onclick="resetDefaultData()">↺ إرجاع الأصلي</button>
-                    <button class="btn-custom-action btn-change-font" onclick="changeCustomFont()">🔤 تغيير الخط</button>
-                </div>
 
                 <div class="categories-scroll">${categoriesHtml}</div>
                 <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
@@ -420,17 +216,13 @@
                 <div class="preview-box">
                     <div id="canvasContainer">
                         <canvas id="previewCanvas"></canvas>
-                        <img id="outputImage" alt="التصميم النهائي جاهز للحفظ">
+                        <img id="outputImage" alt="التصميم">
                     </div>
 
-                    <div class="external-actions-section">
-                        <div class="action-links">
-                            <button class="link-btn download-img-btn" onclick="downloadImageForUser()">📥 تحميل التصميم وحفظ الصورة</button>
-                            <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة الصورة في واتساب</button>
-                            <button class="link-btn copy-link-btn" onclick="copyDirectLink()">🔗 نسخ رابط التصميم المباشر</button>
-                            <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">🛒 تحميل تطبيق سكاي موبايل من المتجر</a>
-                            <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 الدخول إلى قناة الواتساب</a>
-                        </div>
+                    <div class="action-links">
+                        <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
+                        <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">🛒 تطبيق سكاي موبايل</a>
+                        <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 قناة الواتساب</a>
                     </div>
                 </div>
 
@@ -439,8 +231,19 @@
                 </div>
             `;
 
-            renderClientThumbnails(currentDesign.id);
-            if(currentDesign.image) loadSelectedDesign(currentDesign);
+            let filtered = getFilteredDesigns();
+            renderClientThumbnails(filtered[0]?.id);
+            if (filtered[0]) loadSelectedDesign(filtered[0]);
+        }
+
+        function filterByCategory(catId) {
+            activeCategory = catId;
+            renderClientPanel(document.getElementById('mainContainer'));
+        }
+
+        function getFilteredDesigns() {
+            if (activeCategory === 'all') return designs;
+            return designs.filter(d => d.categoryId === activeCategory);
         }
 
         function renderClientThumbnails(activeId) {
@@ -448,13 +251,7 @@
             if (!scrollContainer) return;
             scrollContainer.innerHTML = '';
 
-            let filteredList = getFilteredDesigns();
-            if (filteredList.length === 0) {
-                scrollContainer.innerHTML = '<p style="font-size:12px; color:#666; padding:10px;">لا توجد تصاميم في هذا القسم.</p>';
-                return;
-            }
-
-            filteredList.forEach(des => {
+            getFilteredDesigns().forEach(des => {
                 const isSelected = des.id == activeId ? 'selected' : '';
                 const card = document.createElement('div');
                 card.className = `thumb-card ${isSelected}`;
@@ -462,7 +259,7 @@
                     renderClientThumbnails(des.id);
                     loadSelectedDesign(des);
                 };
-                card.innerHTML = `<img src="${des.image}" alt="${des.title}">`;
+                card.innerHTML = `<img src="${des.image}">`;
                 scrollContainer.appendChild(card);
             });
         }
@@ -485,146 +282,76 @@
 
             canvas.width = window.loadedBaseImage.width;
             canvas.height = window.loadedBaseImage.height;
-
             ctx.drawImage(window.loadedBaseImage, 0, 0);
 
             const shop = document.getElementById('cShop')?.value.trim() || '';
             const address = document.getElementById('cAddress')?.value.trim() || '';
             const phone = document.getElementById('cPhone')?.value.trim() || '';
 
-            const detailsList = [];
-            if (shop) detailsList.push(shop);
-            if (address) detailsList.push(address);
-            if (phone) detailsList.push("📞 " + phone);
+            const details = [];
+            if (shop) details.push(shop);
+            if (phone) details.push("📞 " + phone);
+            if (address) details.push(address);
 
-            const fullText = detailsList.join('  |  ');
+            const fullText = details.join('  |  ');
             if (!fullText) return;
 
-            const fontSize = Math.max(14, canvas.width * 0.035);
-            ctx.font = `bold ${fontSize}px ${selectedFont}`;
-            
-            const textMetrics = ctx.measureText(fullText);
-            const textWidth = textMetrics.width;
-            const paddingX = 25;
-            const paddingY = 12;
-            const boxWidth = textWidth + (paddingX * 2);
-            const boxHeight = fontSize + (paddingY * 2);
-            
+            const fontSize = Math.max(16, canvas.width * 0.035);
+            ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, sans-serif`;
+
+            const textWidth = ctx.measureText(fullText).width;
+            const boxWidth = textWidth + 40;
+            const boxHeight = fontSize + 20;
             const boxX = (canvas.width - boxWidth) / 2;
             const boxY = canvas.height * 0.88 - (boxHeight / 2);
 
-            ctx.save();
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-            ctx.strokeStyle = '#007bff';
-            ctx.lineWidth = 2;
-
-            ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 10);
-            } else {
-                ctx.rect(boxX, boxY, boxWidth, boxHeight);
-            }
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
 
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.shadowColor = 'rgba(0,0,0,0.8)';
-            ctx.shadowBlur = 4;
-
             ctx.fillText(fullText, canvas.width / 2, boxY + (boxHeight / 2));
 
-            // تحديث الصورة المخفية لتكون جاهزة للحفظ على كافة الهواتف
             const outImg = document.getElementById('outputImage');
-            if (outImg) {
-                outImg.src = canvas.toDataURL('image/png');
-            }
+            if (outImg) outImg.src = canvas.toDataURL('image/png');
         }
 
-        // ============================================================
-        // 📥 وظيفة الحفظ المباشر في الاستديو المحدثة والمضمونة للزوار
-        // ============================================================
-        async function downloadImageForUser() {
+        async function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
-            const outImg = document.getElementById('outputImage');
             if (!canvas) return;
-
             const dataUrl = canvas.toDataURL('image/png');
 
-            // 1. تحويل الصورة إلى ملف حقيقي للمشاركة في أجهزة الجوال (آيفون وأندرويد)
             try {
                 const response = await fetch(dataUrl);
                 const blob = await response.blob();
-                const file = new File([blob], 'sky-card-design.png', { type: 'image/png' });
+                const file = new File([blob], 'card.png', { type: 'image/png' });
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'بطاقة سكاي موبايل',
-                        text: 'احفظ الصورة إلى معرض الصور (الاستديو)'
-                    });
+                    await navigator.share({ files: [file], title: 'البطاقة' });
                     return;
                 }
-            } catch (e) { console.log(e); }
+            } catch(e) {}
 
-            // 2. حل التنزيل المباشر المباشر للكمبيوتر والمتصفحات الداعمة
             const link = document.createElement('a');
             link.href = dataUrl;
-            link.download = 'sky-card-design.png';
-            document.body.appendChild(link);
+            link.download = 'card.png';
             link.click();
-            document.body.removeChild(link);
-
-            // 3. الخيار البديل المضمون 100% للجوالات التي تفرض حظراً على التنزيل
-            if (outImg) {
-                canvas.style.display = 'none';
-                outImg.style.display = 'block';
-                alert('📱 لحفظ الصورة في الاستديو: يمكنك الآن الضغط مطولاً على الصورة الظاهرة واختيار "حفظ في الصور / Save Image".');
-            }
-        }
-
-        async function shareToWhatsApp() {
-            downloadImageForUser();
-        }
-
-        function copyDirectLink() {
-            navigator.clipboard.writeText(window.location.href);
-            alert('تم نسخ رابط التصميم المباشر!');
-        }
-
-        function resetDefaultData() {
-            if(confirm('هل تريد إرجاع كافة الإعدادات إلى وضعها الافتراضي؟')) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-
-        function changeCustomFont() {
-            const font = prompt('أدخل اسم الخط المراد استخدامه:', 'Tahoma');
-            if(font) {
-                selectedFont = font;
-                localStorage.setItem('sky_selected_font', font);
-                drawFinalImage();
-            }
         }
 
         function renderAdminPanel(container) {
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>⚙️ لوحة تحكم الإدارة</h2>
-                    <p>سكاي موبايل - إدارة التصاميم والأقسام</p>
+                    <h2>لوحة التحكم</h2>
                 </div>
                 <div class="top-nav-buttons">
-                    <a href="?view=client" class="btn-home">👁️ معاينة واجهة العميل</a>
-                    <button class="btn-logout" onclick="logoutAdmin()">🚪 تسجيل الخروج</button>
+                    <a href="?" class="btn-home">👁️ واجهة الزوار</a>
+                    <button class="btn-logout" onclick="logoutAdmin()">تسجيل الخروج</button>
                 </div>
 
                 <div class="admin-tabs-bar">
-                    <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">🖼️ التصاميم</button>
-                    <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">📂 الأقسام</button>
-                    <button class="tab-btn ${activeAdminTab==='links'?'active':''}" onclick="switchAdminTab('links')">🔗 الروابط</button>
+                    <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">التصاميم</button>
+                    <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">الأقسام</button>
                 </div>
 
                 <div id="adminTabContent"></div>
@@ -643,9 +370,9 @@
 
             if (activeAdminTab === 'templates') {
                 let options = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                let designsList = designs.map(d => `
+                let designsList = designs.map((d, index) => `
                     <div class="sub-img-list">
-                        <span>${d.title}</span>
+                        <span>تصميم #${index + 1}</span>
                         <button class="btn-delete" onclick="removeDesign('${d.id}')">حذف</button>
                     </div>
                 `).join('');
@@ -654,29 +381,19 @@
                     <div class="admin-card">
                         <h3>إضافة تصميم جديد</h3>
                         <div class="form-group" style="margin-top:10px;">
-                            <label>عنوان التصميم:</label>
-                            <input type="text" id="newDesignTitle" placeholder="مثال: بطاقة شبكة">
-                        </div>
-                        <div class="form-group">
-                            <label>القسم:</label>
+                            <label>اختر القسم:</label>
                             <select id="newDesignCat">${options}</select>
                         </div>
                         <label class="dropzone-box">
-                            📁 اضغط هنا لاختيار صورة التصميم
+                            📁 اضغط لاختيار صورة التصميم
                             <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
                         </label>
-                        <button class="btn-main" onclick="addNewDesign()">إضافة التصميم</button>
-                    </div>
-
-                    <div class="admin-card" style="background:#e8f4ff; border:1px solid #b8daff;">
-                        <h3>🌐 نشر التصاميم لجميع الزوار</h3>
-                        <p style="font-size:12px; color:#555; margin:8px 0;">اضغط هنا لجعل كافة التصاميم التي أضفتها تظهر لكل الزوار على جميع الأجهزة فوراً:</p>
-                        <button class="btn-main" style="background:#28a745;" onclick="publishDesignsToAllUsers()">⚡ نشر التصاميم للعامة</button>
+                        <button class="btn-main" onclick="addNewDesign()">حفظ ونشر التصميم</button>
                     </div>
 
                     <div class="admin-card">
-                        <h3>التصاميم الحالية (${designs.length})</h3>
-                        ${designsList || '<p style="font-size:12px; color:#666;">لا توجد تصاميم مضافة.</p>'}
+                        <h3>التصاميم المضافة (${designs.length})</h3>
+                        ${designsList}
                     </div>
                 `;
             } else if (activeAdminTab === 'categories') {
@@ -692,7 +409,7 @@
                         <h3>إضافة قسم جديد</h3>
                         <div class="form-group" style="margin-top:10px;">
                             <label>اسم القسم:</label>
-                            <input type="text" id="newCatName" placeholder="مثال: 🌙 تصاميم رمضان">
+                            <input type="text" id="newCatName" placeholder="مثال: تصاميم العيد">
                         </div>
                         <button class="btn-main" onclick="addNewCategory()">إضافة القسم</button>
                     </div>
@@ -702,77 +419,47 @@
                         ${catList}
                     </div>
                 `;
-            } else if (activeAdminTab === 'links') {
-                content.innerHTML = `
-                    <div class="admin-card">
-                        <h3>إدارة الروابط الدائمة</h3>
-                        <div class="form-group" style="margin-top:10px;">
-                            <label>رابط التطبيق على المتجر:</label>
-                            <input type="text" id="linkApp" value="${globalLinks.appUrl}">
-                        </div>
-                        <div class="form-group">
-                            <label>رابط قناة الواتساب:</label>
-                            <input type="text" id="linkWa" value="${globalLinks.whatsappUrl}">
-                        </div>
-                        <button class="btn-main" onclick="saveGlobalLinks()">حفظ الروابط</button>
-                    </div>
-                `;
             }
         }
 
         function handleFileSelect(e) {
             const file = e.target.files[0];
-            if(file) {
+            if (file) {
                 const reader = new FileReader();
                 reader.onload = function(evt) { selectedFileToUpload = evt.target.result; };
                 reader.readAsDataURL(file);
             }
         }
 
-        async function addNewDesign() {
-            const title = document.getElementById('newDesignTitle').value.trim();
+        function addNewDesign() {
             const categoryId = document.getElementById('newDesignCat').value;
 
-            if(!title || !selectedFileToUpload) {
-                alert('يرجى كتابة العنوان واختيار صورة أولاً!');
+            if (!selectedFileToUpload) {
                 return;
             }
 
             const newObj = {
                 id: 'des_' + Date.now(),
-                title: title,
                 categoryId: categoryId,
                 image: selectedFileToUpload
             };
 
-            await saveDesignToDB(newObj);
             designs.push(newObj);
-            
-            // تحديث التخزين العام المباشر
             localStorage.setItem('sky_public_designs', JSON.stringify(designs));
 
             selectedFileToUpload = null;
-            alert('تم إضافة التصميم بنجاح!');
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
-        function publishDesignsToAllUsers() {
+        function removeDesign(id) {
+            designs = designs.filter(d => d.id !== id);
             localStorage.setItem('sky_public_designs', JSON.stringify(designs));
-            alert('تم نشر كافة التصاميم للعامة بنجاح! ستظهر الآن لجميع الزوار على كافة الأجهزة.');
-        }
-
-        async function removeDesign(id) {
-            if(confirm('هل أنت تأكد من حذف هذا التصميم؟')) {
-                await deleteDesignFromDB(id);
-                designs = designs.filter(d => d.id !== id);
-                localStorage.setItem('sky_public_designs', JSON.stringify(designs));
-                renderAdminPanel(document.getElementById('mainContainer'));
-            }
+            renderAdminPanel(document.getElementById('mainContainer'));
         }
 
         function addNewCategory() {
             const name = document.getElementById('newCatName').value.trim();
-            if(name) {
+            if (name) {
                 categories.push({ id: 'cat_' + Date.now(), name: name });
                 localStorage.setItem('sky_categories_db', JSON.stringify(categories));
                 renderAdminPanel(document.getElementById('mainContainer'));
@@ -780,18 +467,9 @@
         }
 
         function removeCategory(index) {
-            if(confirm('هل تريد حذف هذا القسم؟')) {
-                categories.splice(index, 1);
-                localStorage.setItem('sky_categories_db', JSON.stringify(categories));
-                renderAdminPanel(document.getElementById('mainContainer'));
-            }
-        }
-
-        function saveGlobalLinks() {
-            globalLinks.appUrl = document.getElementById('linkApp').value.trim();
-            globalLinks.whatsappUrl = document.getElementById('linkWa').value.trim();
-            localStorage.setItem('sky_permanent_links_db', JSON.stringify(globalLinks));
-            alert('تم حفظ الروابط بنجاح!');
+            categories.splice(index, 1);
+            localStorage.setItem('sky_categories_db', JSON.stringify(categories));
+            renderAdminPanel(document.getElementById('mainContainer'));
         }
     </script>
 </body>
