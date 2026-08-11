@@ -60,6 +60,7 @@
         .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
         .error-text { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; text-align: center; }
+        .btn-secondary { background-color: #6c757d; color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -79,7 +80,7 @@
         const MASTER_PASSWORD = "sky2026"; 
         let currentOtpCode = null;
 
-        let categories = JSON.parse(localStorage.getItem('sky_categories_db')) || [
+        let defaultCategories = [
             { id: 'cat_net', name: '📶 الشبكات' },
             { id: 'cat_events', name: '🎉 المناسبات' },
             { id: 'cat_custom', name: '⭐ تصاميم باسم العميل' },
@@ -91,7 +92,9 @@
             { id: 'def_2', categoryId: 'cat_friday', image: 'https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=800&q=80' }
         ];
 
+        let categories = JSON.parse(localStorage.getItem('sky_categories_db')) || defaultCategories;
         let designs = JSON.parse(localStorage.getItem('sky_public_designs')) || defaultDesigns;
+        
         let globalLinks = JSON.parse(localStorage.getItem('sky_permanent_links_db')) || {
             appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
             whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
@@ -102,6 +105,11 @@
         let selectedFileToUpload = null;
 
         window.onload = function() { checkRoute(); };
+
+        function saveAllData() {
+            localStorage.setItem('sky_categories_db', JSON.stringify(categories));
+            localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+        }
 
         function checkRoute() {
             const container = document.getElementById('mainContainer');
@@ -143,7 +151,6 @@
                 return;
             }
 
-            // إرسال الكود في الخفاء بدون تنبيهات على الشاشة
             currentOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
             if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
@@ -352,6 +359,7 @@
                 <div class="admin-tabs-bar">
                     <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">التصاميم</button>
                     <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">الأقسام</button>
+                    <button class="tab-btn ${activeAdminTab==='backup'?'active':''}" onclick="switchAdminTab('backup')">نسخ البيانات</button>
                 </div>
 
                 <div id="adminTabContent"></div>
@@ -419,6 +427,20 @@
                         ${catList}
                     </div>
                 `;
+            } else if (activeAdminTab === 'backup') {
+                content.innerHTML = `
+                    <div class="admin-card">
+                        <h3>حفظ واسترجاع التصاميم</h3>
+                        <p style="font-size:12px; color:#666; margin: 8px 0;">يمكنك تصدير كافة القوالب والأقسام لملف خارجي أو نقلها لمتصفح آخر لضمان عدم ضياعها.</p>
+                        <button class="btn-main" onclick="exportBackup()">📥 تصدير نسخة احتياطية</button>
+                        <div style="margin-top: 15px;">
+                            <label class="btn-secondary" style="text-align:center; display:block;">
+                                📤 استيراد نسخة احتياطية
+                                <input type="file" accept=".json" style="display:none;" onchange="importBackup(event)">
+                            </label>
+                        </div>
+                    </div>
+                `;
             }
         }
 
@@ -434,9 +456,7 @@
         function addNewDesign() {
             const categoryId = document.getElementById('newDesignCat').value;
 
-            if (!selectedFileToUpload) {
-                return;
-            }
+            if (!selectedFileToUpload) return;
 
             const newObj = {
                 id: 'des_' + Date.now(),
@@ -445,7 +465,7 @@
             };
 
             designs.push(newObj);
-            localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+            saveAllData();
 
             selectedFileToUpload = null;
             renderAdminPanel(document.getElementById('mainContainer'));
@@ -453,7 +473,7 @@
 
         function removeDesign(id) {
             designs = designs.filter(d => d.id !== id);
-            localStorage.setItem('sky_public_designs', JSON.stringify(designs));
+            saveAllData();
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
@@ -461,15 +481,48 @@
             const name = document.getElementById('newCatName').value.trim();
             if (name) {
                 categories.push({ id: 'cat_' + Date.now(), name: name });
-                localStorage.setItem('sky_categories_db', JSON.stringify(categories));
+                saveAllData();
                 renderAdminPanel(document.getElementById('mainContainer'));
             }
         }
 
         function removeCategory(index) {
             categories.splice(index, 1);
-            localStorage.setItem('sky_categories_db', JSON.stringify(categories));
+            saveAllData();
             renderAdminPanel(document.getElementById('mainContainer'));
+        }
+
+        function exportBackup() {
+            const backupData = {
+                categories: categories,
+                designs: designs
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "skymobile_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importBackup(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const importedData = JSON.parse(evt.target.result);
+                    if (importedData.categories && importedData.designs) {
+                        categories = importedData.categories;
+                        designs = importedData.designs;
+                        saveAllData();
+                        renderAdminPanel(document.getElementById('mainContainer'));
+                    }
+                } catch(err) {}
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
