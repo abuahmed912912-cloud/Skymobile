@@ -84,7 +84,6 @@
         let categories = JSON.parse(localStorage.getItem('sky_cached_cats')) || defaultCategories;
         let designs = JSON.parse(localStorage.getItem('sky_cached_designs')) || [];
         
-        // ذاكرة مؤقتة فائقة السرعة للصور المحملة
         const imageCache = {};
 
         let globalLinks = {
@@ -102,7 +101,6 @@
             checkRoute();
         });
 
-        // المزامنة مع السحابة بدون تعطيل واجهة المستخدم
         db.ref('appData').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -121,7 +119,6 @@
             checkRoute();
         });
 
-        // التخزين المسبق المباشر في RAM لجعل التنقل لحظياً
         function preloadImagesInMemory() {
             designs.forEach(d => {
                 if (d.image && !imageCache[d.id]) {
@@ -192,8 +189,196 @@
             window.location.href = "?admin=true";
         }
 
-        function openPreview() {
-            window.location.search = "?preview=true";
+        function renderAdminPanel(container) {
+            container.innerHTML = `
+                <div class="top-nav-buttons">
+                    <a href="?preview=true" class="btn-home">👁️ معاينة واجهة الزوار</a>
+                    <button class="btn-logout" onclick="logoutAdmin()">🔒 تسجيل الخروج</button>
+                </div>
+                <div class="admin-header">
+                    <h2>لوحة التحكم السحابية</h2>
+                </div>
+                
+                <div class="admin-tabs-bar">
+                    <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">🖼️ التصاميم</button>
+                    <button class="tab-btn ${activeAdminTab==='manage'?'active':''}" onclick="switchAdminTab('manage')">📂 إدارة</button>
+                    <button class="tab-btn ${activeAdminTab==='cats'?'active':''}" onclick="switchAdminTab('cats')">📁 الأقسام</button>
+                    <button class="tab-btn ${activeAdminTab==='settings'?'active':''}" onclick="switchAdminTab('settings')">🔑 كلمة المرور</button>
+                </div>
+
+                <div id="adminTabContent"></div>
+            `;
+            renderAdminTabContent();
+        }
+
+        function switchAdminTab(tab) {
+            activeAdminTab = tab;
+            renderAdminPanel(document.getElementById('mainContainer'));
+        }
+
+        function renderAdminTabContent() {
+            const contentDiv = document.getElementById('adminTabContent');
+            if (!contentDiv) return;
+
+            if (activeAdminTab === 'templates') {
+                let catOptions = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                contentDiv.innerHTML = `
+                    <div class="admin-card">
+                        <h3 style="font-size:16px; margin-bottom:12px;">إضافة تصميم جديد</h3>
+                        <div class="form-group">
+                            <label>اختر القسم:</label>
+                            <select id="newDesignCat">${catOptions}</select>
+                        </div>
+                        <label class="dropzone-box" for="fileInput">
+                            <span id="uploadStatusText">📁 اضغط هنا لاختيار صورة التصميم</span>
+                            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImageFile(this)">
+                        </label>
+                        <button class="btn-main" id="btnSaveDesign" onclick="saveDesign()" disabled>💾 حفظ ونشر التصميم</button>
+                    </div>
+                `;
+            } else if (activeAdminTab === 'manage') {
+                let listHtml = designs.map(d => {
+                    let cat = categories.find(c => c.id === d.categoryId);
+                    return `
+                        <div class="sub-img-list">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${d.image}" style="width:40px; height:40px; object-fit:cover; border-radius:6px;">
+                                <span>${cat ? cat.name : 'بدون قسم'}</span>
+                            </div>
+                            <button class="btn-delete" onclick="deleteDesign('${d.id}')">حذف</button>
+                        </div>
+                    `;
+                }).join('');
+                contentDiv.innerHTML = `<div class="admin-card"><h3 style="font-size:16px; margin-bottom:12px;">التصاميم المرفوعة حالياً (${designs.length})</h3>${listHtml || '<p style="font-size:12px; color:#999;">لا توجد تصاميم مرفوعة حالياً</p>'}</div>`;
+            } else if (activeAdminTab === 'cats') {
+                let catList = categories.map(c => `
+                    <div class="sub-img-list">
+                        <span>${c.name}</span>
+                        <button class="btn-delete" onclick="deleteCategory('${c.id}')">حذف</button>
+                    </div>
+                `).join('');
+                contentDiv.innerHTML = `
+                    <div class="admin-card">
+                        <h3 style="font-size:16px; margin-bottom:12px;">إضافة قسم جديد</h3>
+                        <div class="form-group">
+                            <input type="text" id="newCatName" placeholder="اسم القسم">
+                        </div>
+                        <button class="btn-main" onclick="addCategory()">➕ إضافة القسم</button>
+                    </div>
+                    <div class="admin-card">
+                        <h3 style="font-size:16px; margin-bottom:12px;">الأقسام الحالية</h3>
+                        ${catList}
+                    </div>
+                `;
+            } else if (activeAdminTab === 'settings') {
+                contentDiv.innerHTML = `
+                    <div class="admin-card">
+                        <h3 style="font-size:16px; margin-bottom:12px;">تغيير كلمة مرور لوحة التحكم</h3>
+                        <div class="form-group">
+                            <input type="password" id="newMasterPass" placeholder="كلمة المرور الجديدة">
+                        </div>
+                        <button class="btn-main" onclick="changePassword()">💾 حفظ كلمة المرور</button>
+                    </div>
+                `;
+            }
+        }
+
+        // 🛠️ دالة ضغط الصور فور الاختيار من المعرض
+        function handleImageFile(input) {
+            if (input.files && input.files[0]) {
+                const statusText = document.getElementById('uploadStatusText');
+                statusText.innerText = "⏳ جاري ضغط وتجهيز الصورة...";
+
+                const file = input.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 1200; // الحد الأقصى للأبعاد لتصغير الحجم
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // ضغط الصورة إلى صيغة JPEG بنسبة جودة 80%
+                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+
+                        statusText.innerText = "✅ تم تجهيز الصورة بنجاح! اضغط للحفظ";
+                        document.getElementById('btnSaveDesign').disabled = false;
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 🛠️ دالة الحفظ المحدثة مع معالجة الأخطاء
+        function saveDesign() {
+            if (!uploadedImageBase64) return;
+            const catElem = document.getElementById('newDesignCat');
+            const catId = catElem ? catElem.value : 'cat_custom';
+            const id = 'design_' + Date.now();
+            const newObj = { id: id, categoryId: catId, image: uploadedImageBase64 };
+
+            const saveBtn = document.getElementById('btnSaveDesign');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "⏳ جاري الرفع والنشر...";
+
+            db.ref('appData/designs/' + id).set(newObj)
+            .then(() => {
+                alert("✅ تم رفع ونشر التصميم بنجاح!");
+                uploadedImageBase64 = null;
+                switchAdminTab('manage');
+            })
+            .catch((error) => {
+                alert("❌ حدث خطأ في قاعدة البيانات: " + error.message);
+                saveBtn.disabled = false;
+                saveBtn.innerText = "💾 حفظ ونشر التصميم";
+            });
+        }
+
+        function deleteDesign(id) {
+            if (confirm("هل أنت تأكد من حذف هذا التصميم؟")) {
+                db.ref('appData/designs/' + id).remove();
+            }
+        }
+
+        function addCategory() {
+            const val = document.getElementById('newCatName').value.trim();
+            if (!val) return;
+            const id = 'cat_' + Date.now();
+            db.ref('appData/categories/' + id).set({ id: id, name: val }).then(() => {
+                switchAdminTab('cats');
+            });
+        }
+
+        function deleteCategory(id) {
+            if (confirm("هل أنت تأكد من حذف هذا القسم؟")) {
+                db.ref('appData/categories/' + id).remove();
+            }
+        }
+
+        function changePassword() {
+            const val = document.getElementById('newMasterPass').value.trim();
+            if (!val) return;
+            db.ref('appData/masterPassword').set(val).then(() => {
+                alert("تم تغيير كلمة المرور بنجاح!");
+            });
         }
 
         function renderClientPanel(container, isPreview = false) {
@@ -218,15 +403,15 @@
 
                 <div class="form-group">
                     <label>اسم المحل أو الشبكة:</label>
-                    <input type="text" id="cShop" placeholder="أدخل اسم محلك" oninput="drawFinalImage()">
+                    <input type="text" id="cShop" placeholder="أكتب اسمك او اسم محلك" oninput="drawFinalImage()">
                 </div>
                 <div class="form-group">
                     <label>العنوان:</label>
-                    <input type="text" id="cAddress" placeholder="أدخل العنوان" oninput="drawFinalImage()">
+                    <input type="text" id="cAddress" placeholder="أكتب عنوانك" oninput="drawFinalImage()">
                 </div>
                 <div class="form-group">
                     <label>رقم التواصل:</label>
-                    <input type="text" id="cPhone" value="738328251" placeholder="رقم الهاتف" oninput="drawFinalImage()">
+                    <input type="text" id="cPhone" placeholder="أكتب رقمك" oninput="drawFinalImage()">
                 </div>
 
                 <div class="preview-box">
@@ -296,7 +481,6 @@
             });
         }
 
-        // اختيار وعرض التصميم بشكل لحظي فوراً (0 ms)
         function selectDesignInstant(des) {
             if (!des) return;
             selectedDesignId = des.id;
@@ -325,308 +509,78 @@
             canvas.height = window.loadedBaseImage.height;
             ctx.drawImage(window.loadedBaseImage, 0, 0);
 
+            // 1️⃣ رسم الإطار العلوي المتناسق (نقطة بيع معتمد)
+            const topText = "نقطة بيع معتمد";
+            const topFontSize = Math.max(14, Math.round(canvas.width * 0.035));
+            ctx.font = `bold ${topFontSize}px 'Segoe UI', Tahoma, sans-serif`;
+
+            const textMetrics = ctx.measureText(topText);
+            const badgeWidth = textMetrics.width + 40;
+            const badgeHeight = topFontSize + 16;
+            const badgeX = (canvas.width - badgeWidth) / 2;
+            const badgeY = 0; 
+
+            ctx.save();
+            ctx.fillStyle = '#007bff';
+            
+            ctx.beginPath();
+            ctx.moveTo(badgeX, badgeY);
+            ctx.lineTo(badgeX + badgeWidth, badgeY);
+            ctx.lineTo(badgeX + badgeWidth, badgeY + badgeHeight - 10);
+            ctx.quadraticCurveTo(badgeX + badgeWidth, badgeY + badgeHeight, badgeX + badgeWidth - 10, badgeY + badgeHeight);
+            ctx.lineTo(badgeX + 10, badgeY + badgeHeight);
+            ctx.quadraticCurveTo(badgeX, badgeY + badgeHeight, badgeX, badgeY + badgeHeight - 10);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(topText, canvas.width / 2, badgeY + (badgeHeight / 2));
+            ctx.restore();
+
+            // 2️⃣ رسم بيانات العميل السفلي (اسم المحل | الهاتف | العنوان)
             const shop = document.getElementById('cShop')?.value.trim() || '';
             const address = document.getElementById('cAddress')?.value.trim() || '';
             const phone = document.getElementById('cPhone')?.value.trim() || '';
 
-            // تجميع اسم المحل والهاتف والعنوان في سطر واحد
             const details = [];
             if (shop) details.push("🏬 " + shop);
             if (phone) details.push("📞 " + phone);
             if (address) details.push("📍 " + address);
 
             const fullText = details.join('   |   ');
-            if (!fullText) return;
+            if (fullText) {
+                const fontSize = Math.max(16, Math.round(canvas.width * 0.032));
+                const barHeight = Math.round(fontSize * 2.2);
 
-            const fontSize = Math.max(16, Math.round(canvas.width * 0.032));
-            const barHeight = Math.round(fontSize * 2.2);
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+                ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
 
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)'; 
-            ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
-
-            ctx.fillStyle = '#007bff';
-            ctx.fillRect(0, canvas.height - barHeight, canvas.width, Math.max(3, Math.round(barHeight * 0.05)));
-
-            ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, sans-serif`;
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(fullText, canvas.width / 2, canvas.height - (barHeight / 2) + Math.max(1, Math.round(barHeight * 0.02)));
-
-            const outImg = document.getElementById('outputImage');
-            if (outImg) outImg.src = canvas.toDataURL('image/png');
-        }
-
-        function copyDesignLink() {
-            if (!selectedDesignId) return;
-            const baseUrl = window.location.origin + window.location.pathname;
-            const fullLink = `${baseUrl}?design=${selectedDesignId}`;
-
-            navigator.clipboard.writeText(fullLink).then(() => {
-                const btn = document.getElementById('copyBtn');
-                if (btn) {
-                    btn.innerText = "✅ تم نسخ الرابط بنجاح!";
-                    setTimeout(() => { btn.innerText = "🔗 نسخ رابط هذا التصميم"; }, 2500);
-                }
-            }).catch(() => {});
+                ctx.font = `bold ${fontSize}px 'Segoe UI', Tahoma, sans-serif`;
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(fullText, canvas.width / 2, canvas.height - (barHeight / 2));
+                ctx.restore();
+            }
         }
 
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
-
-            const btn = document.getElementById('dlBtn');
-            if (btn) btn.innerText = "⏳ جاري حفظ التصميم...";
-
-            canvas.toBlob((blob) => {
-                if (!blob) return;
-
-                const blobUrl = URL.createObjectURL(blob);
-                const downloadLink = document.createElement('a');
-                
-                downloadLink.download = `SkyMobile_Design_${Date.now()}.png`;
-                downloadLink.href = blobUrl;
-                
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-
-                setTimeout(() => {
-                    URL.revokeObjectURL(blobUrl);
-                    if (btn) btn.innerText = "✅ تم الحفظ في الاستوديو!";
-                    setTimeout(() => {
-                        if (btn) btn.innerText = "📥 تحميل وحفظ الصورة مباشرة";
-                    }, 2000);
-                }, 500);
-            }, 'image/png', 1.0);
+            const link = document.createElement('a');
+            link.download = `sky-design-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
-        function renderAdminPanel(container) {
-            container.innerHTML = `
-                <div class="admin-header">
-                    <h2>لوحة التحكم السحابية</h2>
-                </div>
-                <div class="top-nav-buttons">
-                    <button onclick="openPreview()" class="btn-home">👁️ معاينة واجهة الزوار</button>
-                    <button class="btn-logout" onclick="logoutAdmin()">🔒 تسجيل الخروج</button>
-                </div>
-
-                <div class="admin-tabs-bar">
-                    <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">🖼️ التصاميم</button>
-                    <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">📁 الأقسام</button>
-                    <button class="tab-btn ${activeAdminTab==='links'?'active':''}" onclick="switchAdminTab('links')">🔗 الروابط</button>
-                    <button class="tab-btn ${activeAdminTab==='password'?'active':''}" onclick="switchAdminTab('password')">🔑 كلمة المرور</button>
-                </div>
-
-                <div id="adminTabContent"></div>
-            `;
-            renderAdminTabContent();
-        }
-
-        function switchAdminTab(tab) {
-            activeAdminTab = tab;
-            renderAdminPanel(document.getElementById('mainContainer'));
-        }
-
-        function renderAdminTabContent() {
-            const tabContainer = document.getElementById('adminTabContent');
-            if (!tabContainer) return;
-
-            if (activeAdminTab === 'templates') {
-                let categoriesOptions = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                let designsList = designs.map(d => {
-                    let catName = categories.find(c => c.id === d.categoryId)?.name || 'عام';
-                    return `
-                        <div class="sub-img-list">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${d.image}" style="width:40px; height:40px; object-fit:cover; border-radius:5px;">
-                                <span>${catName}</span>
-                            </div>
-                            <button class="btn-delete" onclick="deleteDesign('${d.id}')">حذف</button>
-                        </div>
-                    `;
-                }).join('');
-
-                tabContainer.innerHTML = `
-                    <div class="admin-card">
-                        <h3>إضافة تصميم جديد</h3>
-                        <div class="form-group" style="margin-top:10px;">
-                            <label>اختر القسم:</label>
-                            <select id="newDesignCat">${categoriesOptions}</select>
-                        </div>
-                        <label class="dropzone-box" id="dropzoneLabel">
-                            📁 اضغط لاختيار صورة من الاستوديو
-                            <input type="file" id="designFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
-                        </label>
-                        <button class="btn-main" id="saveBtn" onclick="addNewDesign()">☁️ رفع التصميم فوراً</button>
-                    </div>
-
-                    <div class="admin-card">
-                        <h3>التصاميم المرفوعة حالياً (${designs.length})</h3>
-                        ${designsList.length > 0 ? designsList : '<p style="font-size:12px; color:#777; text-align:center;">لا توجد تصاميم مرفوعة حالياً</p>'}
-                    </div>
-                `;
-            } else if (activeAdminTab === 'categories') {
-                let catList = categories.map(c => `
-                    <div class="sub-img-list">
-                        <span>${c.name}</span>
-                        <button class="btn-delete" onclick="deleteCategory('${c.id}')">حذف</button>
-                    </div>
-                `).join('');
-
-                tabContainer.innerHTML = `
-                    <div class="admin-card">
-                        <h3>إضافة قسم جديد</h3>
-                        <div class="form-group" style="margin-top:10px;">
-                            <input type="text" id="newCatName" placeholder="اسم القسم الجديد">
-                        </div>
-                        <button class="btn-main" onclick="addNewCategory()">إضافة القسم</button>
-                    </div>
-
-                    <div class="admin-card">
-                        <h3>الأقسام الحالية</h3>
-                        ${catList}
-                    </div>
-                `;
-            } else if (activeAdminTab === 'links') {
-                tabContainer.innerHTML = `
-                    <div class="admin-card">
-                        <h3>إدارة الروابط الدائمة</h3>
-                        <div class="form-group" style="margin-top:10px;">
-                            <label>رابط التطبيق (Google Play):</label>
-                            <input type="text" id="appUrlInput" value="${globalLinks.appUrl}">
-                        </div>
-                        <div class="form-group">
-                            <label>رابط قناة الواتساب:</label>
-                            <input type="text" id="waUrlInput" value="${globalLinks.whatsappUrl}">
-                        </div>
-                        <button class="btn-main" onclick="saveLinks()">حفظ الروابط</button>
-                    </div>
-                `;
-            } else if (activeAdminTab === 'password') {
-                tabContainer.innerHTML = `
-                    <div class="admin-card">
-                        <h3>تغيير كلمة مرور المدير</h3>
-                        <div class="form-group" style="margin-top:10px;">
-                            <label>كلمة المرور الجديدة:</label>
-                            <input type="password" id="newPassInput" placeholder="أدخل كلمة المرور الجديدة">
-                        </div>
-                        <button class="btn-main" onclick="updateAdminPassword()">حفظ كلمة المرور الجديدة</button>
-                    </div>
-                `;
-            }
-        }
-
-        // معالجة وضغط الصورة لحظياً لجعل حجمها ~30KB فقط
-        function handleImageUpload(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const label = document.getElementById('dropzoneLabel');
-                const saveBtn = document.getElementById('saveBtn');
-
-                label.innerText = "⏳ جاري المعالجة والضغط الفوري...";
-                if (saveBtn) saveBtn.disabled = true;
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        const maxDim = 700; // أبعاد خفيفة وسريعة جداً للموبايل
-
-                        if (width > maxDim || height > maxDim) {
-                            if (width > height) {
-                                height = Math.round((height * maxDim) / width);
-                                width = maxDim;
-                            } else {
-                                width = Math.round((width * maxDim) / height);
-                                height = maxDim;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        // ضغط ممتاز وحجم خفيف للغاية
-                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.50);
-                        label.innerText = "✅ تم تجهيز الصورة! اضغط للرفع المباشر";
-                        if (saveBtn) saveBtn.disabled = false;
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function addNewDesign() {
-            if (!uploadedImageBase64) {
-                alert('الرجاء اختيار صورة أولاً من الاستوديو');
-                return;
-            }
-
-            const categoryId = document.getElementById('newDesignCat').value;
-            const newId = 'des_' + Date.now();
-            const newDesign = {
-                id: newId,
-                categoryId: categoryId,
-                image: uploadedImageBase64
-            };
-
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.innerText = "⏳ جاري الرفع...";
-            saveBtn.disabled = true;
-
-            db.ref('appData/designs/' + newId).set(newDesign).then(() => {
-                alert('🎉 تم الرفع بنجاح وستظهر فوراً للجميع!');
-                uploadedImageBase64 = null;
-                saveBtn.innerText = "☁️ رفع التصميم فوراً";
-                saveBtn.disabled = false;
-                const label = document.getElementById('dropzoneLabel');
-                if (label) label.innerText = "📁 اضغط لاختيار صورة من الاستوديو";
-            }).catch((err) => {
-                alert('فشل الرفع: ' + err.message);
-                saveBtn.innerText = "☁️ رفع التصميم فوراً";
-                saveBtn.disabled = false;
-            });
-        }
-
-        function deleteDesign(id) {
-            if (confirm('هل أنت متأكد من حذف هذا التصميم؟')) {
-                db.ref('appData/designs/' + id).remove();
-            }
-        }
-
-        function addNewCategory() {
-            const name = document.getElementById('newCatName').value.trim();
-            if (!name) return;
-            const newId = 'cat_' + Date.now();
-
-            db.ref('appData/categories/' + newId).set({ id: newId, name: name });
-        }
-
-        function deleteCategory(id) {
-            if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
-                db.ref('appData/categories/' + id).remove();
-            }
-        }
-
-        function saveLinks() {
-            const appUrl = document.getElementById('appUrlInput').value.trim();
-            const waUrl = document.getElementById('waUrlInput').value.trim();
-            db.ref('appData/links').set({ appUrl: appUrl, whatsappUrl: waUrl }).then(() => {
-                alert('تم حفظ الروابط بنجاح!');
-            });
-        }
-
-        function updateAdminPassword() {
-            const newPass = document.getElementById('newPassInput').value.trim();
-            if (!newPass) return alert('أدخل كلمة المرور الجديدة');
-            db.ref('appData/masterPassword').set(newPass).then(() => {
-                alert('تم تغيير كلمة المرور بنجاح!');
+        function copyDesignLink() {
+            if (!selectedDesignId) return;
+            const link = `${window.location.origin}${window.location.pathname}?design=${selectedDesignId}`;
+            navigator.clipboard.writeText(link).then(() => {
+                alert("تم نسخ رابط التصميم بنجاح!");
             });
         }
     </script>
