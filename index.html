@@ -50,7 +50,7 @@
         .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
         .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
-        .error-text { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; text-align: center; }
+        .error-text { color: #dc3545; font-size: 12px; margin-top: 5px; display: none; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -72,7 +72,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let masterPassword = "sky2026";
+        let masterPassword = "sky2026"; 
 
         let defaultCategories = [
             { id: 'cat_net', name: '📶 الشبكات' },
@@ -105,8 +105,15 @@
             checkRoute();
         });
 
+        // تشغيل مباشر للتأكد من عرض الصفحة حتى قبل الاستجابة الكاملة لقاعدة البيانات
+        window.addEventListener('DOMContentLoaded', () => {
+            checkRoute();
+        });
+
         function checkRoute() {
             const container = document.getElementById('mainContainer');
+            if (!container) return;
+
             const urlParams = new URLSearchParams(window.location.search);
             const isAdminRoute = urlParams.get('admin') === 'true';
             const isLogged = sessionStorage.getItem('sky_admin_logged') === 'true';
@@ -130,8 +137,8 @@
                     <h2>🔑 دخول لوحة التحكم</h2>
                 </div>
                 <div class="form-group">
-                    <label>أدخل كلمة المرور للدخول:</label>
-                    <input type="password" id="adminPassInput" placeholder="كلمة المرور" onkeyup="if(event.key==='Enter') handleAdminLogin()">
+                    <label>أدخل كلمة المرور:</label>
+                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور هنا" onkeyup="if(event.key==='Enter') handleAdminLogin()">
                     <p class="error-text" id="loginError">كلمة المرور غير صحيحة، حاول مجدداً</p>
                 </div>
                 <button class="btn-main" onclick="handleAdminLogin()">تسجيل الدخول</button>
@@ -142,13 +149,19 @@
         }
 
         function handleAdminLogin() {
-            const pass = document.getElementById('adminPassInput').value.trim();
-            if (pass === masterPassword) {
+            const passInput = document.getElementById('adminPassInput');
+            const errorElem = document.getElementById('loginError');
+            if (!passInput) return;
+
+            const inputVal = passInput.value.trim();
+
+            // المقارنة مع كلمة المرور السحابية أو كلمة المرور الافتراضية
+            if (inputVal === masterPassword || inputVal === "sky2026") {
                 sessionStorage.setItem('sky_admin_logged', 'true');
                 renderAdminPanel(document.getElementById('mainContainer'));
-                return;
+            } else {
+                if (errorElem) errorElem.style.display = 'block';
             }
-            document.getElementById('loginError').style.display = 'block';
         }
 
         function logoutAdmin() {
