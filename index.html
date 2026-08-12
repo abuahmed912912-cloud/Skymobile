@@ -18,7 +18,7 @@
         .admin-header { background: #007bff; color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
         .admin-header h2 { font-size: 20px; }
         .top-nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-home { flex: 1; background-color: #28a745; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
+        .btn-home { flex: 1; background-color: #28a745; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; display: inline-block; }
         .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 14px; }
         .admin-tabs-bar { display: flex; gap: 5px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; overflow-x: auto; }
         .tab-btn { flex: 1; min-width: 65px; background: transparent; border: none; padding: 10px 5px; border-radius: 8px; font-weight: bold; font-size: 11px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; white-space: nowrap; }
@@ -94,6 +94,7 @@
         let selectedDesignId = null;
         let uploadedImageBase64 = null;
 
+        // جلب البيانات من Firebase مع معالجة الأخطاء
         db.ref('appData').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -103,9 +104,11 @@
                 if (data.masterPassword) masterPassword = data.masterPassword;
             }
             checkRoute();
+        }, (err) => {
+            console.error("Firebase fetch error:", err);
+            checkRoute();
         });
 
-        // تشغيل مباشر للتأكد من عرض الصفحة حتى قبل الاستجابة الكاملة لقاعدة البيانات
         window.addEventListener('DOMContentLoaded', () => {
             checkRoute();
         });
@@ -116,9 +119,10 @@
 
             const urlParams = new URLSearchParams(window.location.search);
             const isAdminRoute = urlParams.get('admin') === 'true';
+            const isPreviewRoute = urlParams.get('preview') === 'true';
             const isLogged = sessionStorage.getItem('sky_admin_logged') === 'true';
 
-            if (urlParams.get('preview') === 'true') {
+            if (isPreviewRoute) {
                 renderClientPanel(container, true);
             } else if (isAdminRoute) {
                 if (isLogged) {
@@ -155,7 +159,6 @@
 
             const inputVal = passInput.value.trim();
 
-            // المقارنة مع كلمة المرور السحابية أو كلمة المرور الافتراضية
             if (inputVal === masterPassword || inputVal === "sky2026") {
                 sessionStorage.setItem('sky_admin_logged', 'true');
                 renderAdminPanel(document.getElementById('mainContainer'));
@@ -169,13 +172,17 @@
             window.location.href = "?";
         }
 
+        function openPreview() {
+            window.location.search = "?preview=true";
+        }
+
         function renderClientPanel(container, isPreview = false) {
             let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" onclick="filterByCategory('all')">📂 الكل</div>`;
             categories.forEach(cat => {
                 categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" onclick="filterByCategory('${cat.id}')">${cat.name}</div>`;
             });
 
-            let adminReturnBtn = isPreview ? `<div style="margin-bottom:10px;"><a href="?admin=true" class="btn-home" style="display:block; background:#007bff; text-align:center;">🔙 العودة للوحة التحكم</a></div>` : '';
+            let adminReturnBtn = isPreview ? `<div style="margin-bottom:15px;"><a href="?admin=true" class="btn-home" style="display:block; background:#007bff; text-align:center;">🔙 العودة للوحة التحكم</a></div>` : '';
 
             container.innerHTML = `
                 ${adminReturnBtn}
@@ -185,7 +192,9 @@
                 </header>
 
                 <div class="categories-scroll">${categoriesHtml}</div>
-                <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
+                <div class="templates-preview-scroll" id="templatesScrollContainer">
+                    ${designs.length === 0 ? '<p style="font-size:12px; color:#999; padding:10px;">جاري تحميل التصاميم...</p>' : ''}
+                </div>
 
                 <div class="form-group">
                     <label>اسم المحل أو الشبكة:</label>
@@ -248,7 +257,13 @@
             if (!scrollContainer) return;
             scrollContainer.innerHTML = '';
 
-            getFilteredDesigns().forEach(des => {
+            const list = getFilteredDesigns();
+            if (list.length === 0) {
+                scrollContainer.innerHTML = '<p style="font-size:12px; color:#999; padding:10px;">لا توجد تصاميم في هذا القسم</p>';
+                return;
+            }
+
+            list.forEach(des => {
                 const isSelected = des.id == activeId ? 'selected' : '';
                 const card = document.createElement('div');
                 card.className = `thumb-card ${isSelected}`;
@@ -364,7 +379,7 @@
                     <h2>لوحة التحكم السحابية</h2>
                 </div>
                 <div class="top-nav-buttons">
-                    <a href="?preview=true" class="btn-home">👁️ معاينة واجهة الزوار</a>
+                    <button onclick="openPreview()" class="btn-home">👁️ معاينة واجهة الزوار</button>
                     <button class="btn-logout" onclick="logoutAdmin()">تسجيل الخروج</button>
                 </div>
 
@@ -413,14 +428,14 @@
                         </div>
                         <label class="dropzone-box" id="dropzoneLabel">
                             📁 اضغط لاختيار صورة من الاستوديو
-                            <input type="file" id="designFileInput" style="display:none;" onchange="handleImageUpload(this)">
+                            <input type="file" id="designFileInput" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
                         </label>
                         <button class="btn-main" id="saveBtn" onclick="addNewDesign()">☁️ رفع التصميم للسحابة فوراً</button>
                     </div>
 
                     <div class="admin-card">
                         <h3>التصاميم الحالية (${designs.length})</h3>
-                        ${designsList}
+                        ${designsList.length > 0 ? designsList : '<p style="font-size:12px; color:#777; text-align:center;">لا توجد تصاميم مرفوعة حالياً</p>'}
                     </div>
                 `;
             } else if (activeAdminTab === 'categories') {
@@ -474,31 +489,46 @@
             }
         }
 
+        // دالة مخصصة لضغط الصورة وتقليل أبعادها قبل رفعها لتكون خفيفة جداً
         function handleImageUpload(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 const label = document.getElementById('dropzoneLabel');
                 const saveBtn = document.getElementById('saveBtn');
 
-                if (file.type && !file.type.startsWith('image/')) {
-                    alert('عذراً، يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, HEIC)');
-                    input.value = '';
-                    return;
-                }
-                
-                label.innerText = "⏳ جاري قراءة الصورة...";
-                saveBtn.disabled = true;
+                label.innerText = "⏳ جاري ضغط ومعالجة الصورة...";
+                if (saveBtn) saveBtn.disabled = true;
 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    uploadedImageBase64 = e.target.result;
-                    label.innerText = "✅ تم اختيار الصورة بنجاح! اضغط للرفع";
-                    saveBtn.disabled = false;
-                };
-                reader.onerror = function() {
-                    alert("حدث خطأ أثناء قراءة الصورة من الهاتف، حاول مجدداً.");
-                    label.innerText = "📁 اضغط لاختيار صورة من الاستوديو";
-                    saveBtn.disabled = false;
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 1080; // أقصى أبعاد مسموحة لضمان السرعة
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // ضغط الصورة لجودة 75%
+                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+                        label.innerText = "✅ تم تجهيز الصورة بنجاح! اضغط للرفع";
+                        if (saveBtn) saveBtn.disabled = false;
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
@@ -523,7 +553,7 @@
             saveBtn.disabled = true;
 
             db.ref('appData/designs/' + newId).set(newDesign).then(() => {
-                alert('🎉 تم رفع التصميم سحابياً بنجاح! سيظهر لجميع الزوار فوراً.');
+                alert('🎉 تم رفع التصميم بنجاح! سيظهر لجميع الزوار على هواتفهم الآن.');
                 uploadedImageBase64 = null;
                 saveBtn.innerText = "☁️ رفع التصميم للسحابة فوراً";
                 saveBtn.disabled = false;
