@@ -32,7 +32,7 @@
         .cat-chip { background: #fff; border: 1px solid #ced4da; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: #495057; }
         .cat-chip.active { background: #007bff; color: #fff; border-color: #007bff; }
         .templates-preview-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; min-height: 95px; }
-        .thumb-card { flex: 0 0 75px; height: 95px; border-radius: 8px; overflow: hidden; border: 2px solid #ced4da; cursor: pointer; background: #000; }
+        .thumb-card { flex: 0 0 75px; height: 95px; border-radius: 8px; overflow: hidden; border: 2px solid #ced4da; cursor: pointer; background: #e9ecef; }
         .thumb-card.selected { border-color: #007bff; transform: scale(1.03); }
         .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
         .dropzone-box { display: block; border: 2px dashed #007bff; background: #f8f9fa; padding: 20px 15px; border-radius: 12px; text-align: center; cursor: pointer; margin-bottom: 15px; font-size: 14px; font-weight: bold; color: #007bff; }
@@ -81,8 +81,9 @@
             { id: 'cat_friday', name: '🕌 جمعة مباركة' }
         ];
 
-        let categories = defaultCategories;
-        let designs = [];
+        // تحميل فوري من الذاكرة المحلية (Cache) لمنع أي تأخير عند فتح الصفحة
+        let categories = JSON.parse(localStorage.getItem('sky_cached_cats')) || defaultCategories;
+        let designs = JSON.parse(localStorage.getItem('sky_cached_designs')) || [];
 
         let globalLinks = {
             appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
@@ -94,22 +95,29 @@
         let selectedDesignId = null;
         let uploadedImageBase64 = null;
 
-        // جلب البيانات من Firebase مع معالجة الأخطاء
+        // تشغيل واجهة المستخدم فوراً بدون انتظار Firebase
+        window.addEventListener('DOMContentLoaded', () => {
+            checkRoute();
+        });
+
+        // مزامنة البيانات من Firebase في الخلفية وتحديث الذاكرة
         db.ref('appData').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                if (data.categories) categories = Object.values(data.categories);
-                if (data.designs) designs = Object.values(data.designs);
+                if (data.categories) {
+                    categories = Object.values(data.categories);
+                    localStorage.setItem('sky_cached_cats', JSON.stringify(categories));
+                }
+                if (data.designs) {
+                    designs = Object.values(data.designs);
+                    localStorage.setItem('sky_cached_designs', JSON.stringify(designs));
+                }
                 if (data.links) globalLinks = data.links;
                 if (data.masterPassword) masterPassword = data.masterPassword;
             }
             checkRoute();
         }, (err) => {
-            console.error("Firebase fetch error:", err);
-            checkRoute();
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
+            console.warn("جاري استخدام التخزين المحلي نظراً للاتصال:", err);
             checkRoute();
         });
 
@@ -142,7 +150,7 @@
                 </div>
                 <div class="form-group">
                     <label>أدخل كلمة المرور:</label>
-                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور هنا" onkeyup="if(event.key==='Enter') handleAdminLogin()">
+                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور" onkeyup="if(event.key==='Enter') handleAdminLogin()">
                     <p class="error-text" id="loginError">كلمة المرور غير صحيحة، حاول مجدداً</p>
                 </div>
                 <button class="btn-main" onclick="handleAdminLogin()">تسجيل الدخول</button>
@@ -169,7 +177,7 @@
 
         function logoutAdmin() {
             sessionStorage.removeItem('sky_admin_logged');
-            window.location.href = "?";
+            window.location.href = "?admin=true";
         }
 
         function openPreview() {
@@ -192,9 +200,7 @@
                 </header>
 
                 <div class="categories-scroll">${categoriesHtml}</div>
-                <div class="templates-preview-scroll" id="templatesScrollContainer">
-                    ${designs.length === 0 ? '<p style="font-size:12px; color:#999; padding:10px;">جاري تحميل التصاميم...</p>' : ''}
-                </div>
+                <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
 
                 <div class="form-group">
                     <label>اسم المحل أو الشبكة:</label>
@@ -234,9 +240,10 @@
 
             let targetDesign = filtered.find(d => d.id === paramDesignId) || filtered[0];
 
+            renderClientThumbnails(selectedDesignId || (targetDesign ? targetDesign.id : null));
+
             if (targetDesign) {
                 selectedDesignId = targetDesign.id;
-                renderClientThumbnails(targetDesign.id);
                 loadSelectedDesign(targetDesign);
             }
         }
@@ -259,7 +266,7 @@
 
             const list = getFilteredDesigns();
             if (list.length === 0) {
-                scrollContainer.innerHTML = '<p style="font-size:12px; color:#999; padding:10px;">لا توجد تصاميم في هذا القسم</p>';
+                scrollContainer.innerHTML = '<p style="font-size:12px; color:#999; padding:10px;">لا توجد تصاميم في هذا القسم حالياً</p>';
                 return;
             }
 
@@ -272,7 +279,7 @@
                     renderClientThumbnails(des.id);
                     loadSelectedDesign(des);
                 };
-                card.innerHTML = `<img src="${des.image}">`;
+                card.innerHTML = `<img src="${des.image}" loading="eager">`;
                 scrollContainer.appendChild(card);
             });
         }
@@ -380,7 +387,7 @@
                 </div>
                 <div class="top-nav-buttons">
                     <button onclick="openPreview()" class="btn-home">👁️ معاينة واجهة الزوار</button>
-                    <button class="btn-logout" onclick="logoutAdmin()">تسجيل الخروج</button>
+                    <button class="btn-logout" onclick="logoutAdmin()">🔒 تسجيل الخروج</button>
                 </div>
 
                 <div class="admin-tabs-bar">
@@ -489,14 +496,14 @@
             }
         }
 
-        // دالة مخصصة لضغط الصورة وتقليل أبعادها قبل رفعها لتكون خفيفة جداً
+        // ضغط فائق للصور (800px أقصى عرض / جودة 60%) لسرعة فورية
         function handleImageUpload(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 const label = document.getElementById('dropzoneLabel');
                 const saveBtn = document.getElementById('saveBtn');
 
-                label.innerText = "⏳ جاري ضغط ومعالجة الصورة...";
+                label.innerText = "⏳ جاري الضغط السريع للصورة...";
                 if (saveBtn) saveBtn.disabled = true;
 
                 const reader = new FileReader();
@@ -506,7 +513,7 @@
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const maxDim = 1080; // أقصى أبعاد مسموحة لضمان السرعة
+                        const maxDim = 800; // أبعاد مثالية وخفيفة جداً لسرعة التحميل
 
                         if (width > maxDim || height > maxDim) {
                             if (width > height) {
@@ -523,9 +530,9 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // ضغط الصورة لجودة 75%
-                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
-                        label.innerText = "✅ تم تجهيز الصورة بنجاح! اضغط للرفع";
+                        // ضغط جودة الصورة إلى 60% لتقليل الحجم إلى ~50KB فقط
+                        uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.60);
+                        label.innerText = "✅ تم تجهيز الصورة! اضغط للرفع السريع";
                         if (saveBtn) saveBtn.disabled = false;
                     };
                     img.src = e.target.result;
@@ -549,11 +556,11 @@
             };
 
             const saveBtn = document.getElementById('saveBtn');
-            saveBtn.innerText = "⏳ جاري الرفع للسحابة...";
+            saveBtn.innerText = "⏳ جاري الرفع السريع...";
             saveBtn.disabled = true;
 
             db.ref('appData/designs/' + newId).set(newDesign).then(() => {
-                alert('🎉 تم رفع التصميم بنجاح! سيظهر لجميع الزوار على هواتفهم الآن.');
+                alert('🎉 تم رفع التصميم بنجاح وبسرعة فايقة!');
                 uploadedImageBase64 = null;
                 saveBtn.innerText = "☁️ رفع التصميم للسحابة فوراً";
                 saveBtn.disabled = false;
