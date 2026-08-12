@@ -14,7 +14,7 @@
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f0f2f5; color: #333; padding: 10px; }
+        body { background-color: #f0f2f5; color: #333; padding: 10px; line-height: 1.25; }
         .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
         .admin-header {
@@ -91,7 +91,7 @@
             overflow: hidden; 
             margin-bottom: 15px; 
             border: 1px solid #e9ecef;
-            background: #000;
+            background: #f8f9fa;
             text-align: center;
         }
         #previewCanvas { width: 100%; height: auto; display: block; }
@@ -115,6 +115,7 @@
         .admin-login-trigger button { background: none; border: none; color: #6c757d; font-size: 12px; cursor: pointer; text-decoration: underline; }
         
         .cloud-sync-badge { font-size: 11px; color: #28a745; text-align: center; margin-top: 4px; font-weight: bold; }
+        .empty-category-msg { text-align: center; color: #6c757d; padding: 20px 10px; font-size: 13px; background: #f8f9fa; border-radius: 8px; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -160,14 +161,7 @@
             whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
         };
 
-        let defaultCategories = [
-            { id: 'cat_net', name: '📶 الشبكات' },
-            { id: 'cat_events', name: '🎉 المناسبات' },
-            { id: 'cat_custom', name: '⭐ تصاميم باسم العميل' },
-            { id: 'cat_friday', name: '🕌 جمعة مباركة' }
-        ];
-
-        let categories = JSON.parse(localStorage.getItem('sky_categories_cache')) || defaultCategories;
+        let categories = JSON.parse(localStorage.getItem('sky_categories_cache')) || [];
         let designs = JSON.parse(localStorage.getItem('sky_designs_cache')) || [];
 
         let selectedFont = localStorage.getItem('sky_selected_font') || "'Segoe UI', Tahoma, sans-serif";
@@ -190,14 +184,11 @@
                 }
             });
 
-            // جلب البيانات مع التعامل مع أخطاء الأمان
             db.ref('designs').on('value', (snapshot) => {
                 const data = snapshot.val();
                 designs = data ? Object.values(data) : [];
                 localStorage.setItem('sky_designs_cache', JSON.stringify(designs));
                 refreshCurrentView();
-            }, (error) => {
-                console.error("Firebase Read Error: ", error);
             });
 
             db.ref('categories').on('value', (snapshot) => {
@@ -224,10 +215,11 @@
             if(!isAdminLoggedIn) {
                 const scrollContainer = document.getElementById('templatesScrollContainer');
                 if (scrollContainer) {
-                    const activeCard = document.querySelector('.thumb-card.selected');
                     const filteredList = getFilteredDesigns();
+                    let activeId = null;
+                    const activeCard = document.querySelector('.thumb-card.selected');
                     
-                    let activeId = activeCard ? activeCard.getAttribute('data-id') : null;
+                    if (activeCard) activeId = activeCard.getAttribute('data-id');
                     if (!activeId || !filteredList.some(d => d.id == activeId)) {
                         activeId = filteredList[0] ? filteredList[0].id : null;
                     }
@@ -236,6 +228,14 @@
                     const selectedDesignObj = designs.find(d => d.id == activeId);
                     if (selectedDesignObj) {
                         loadSelectedDesign(selectedDesignObj);
+                    } else if (filteredList.length === 0) {
+                        window.loadedBaseImage = null;
+                        const canvas = document.getElementById('previewCanvas');
+                        if (canvas) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            canvas.height = 0;
+                        }
                     }
                 }
             } else {
@@ -257,7 +257,7 @@
         }
 
         // ==========================================
-        // 🔐 تسجبل الدخول
+        // 🔐 تسجيل الدخول
         // ==========================================
         function renderLoginBox(container) {
             container.innerHTML = `
@@ -356,11 +356,13 @@
                 if(canvas) {
                     const ctx = canvas.getContext('2d');
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    canvas.height = 0;
                 }
             }
         }
 
         function getFilteredDesigns() {
+            if (!designs || designs.length === 0) return [];
             let filtered = activeCategory === 'all' ? designs : designs.filter(d => d.categoryId === activeCategory);
             return filtered.slice().sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
         }
@@ -369,21 +371,20 @@
             const urlParams = new URLSearchParams(window.location.search);
             const designId = urlParams.get('id');
 
-            let filteredList = getFilteredDesigns();
-            let currentDesign = null;
-
             if (designId && designs.length > 0) {
-                currentDesign = designs.find(d => d.id == designId);
-                if (currentDesign && currentDesign.categoryId) activeCategory = currentDesign.categoryId;
-            } 
-            
-            if (!currentDesign) {
-                currentDesign = filteredList[0] || designs[0] || null;
+                const found = designs.find(d => d.id == designId);
+                if (found && found.categoryId) activeCategory = found.categoryId;
+            } else {
+                activeCategory = 'all';
             }
 
-            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" id="chip_all" onclick="filterByCategory('all')">📂 الكل</div>`;
+            let filteredList = getFilteredDesigns();
+            let currentDesign = filteredList[0] || designs[0] || null;
+
+            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" id="chip_all" onclick="filterByCategory('all')">📂 الكل (${designs.length})</div>`;
             categories.forEach(cat => {
-                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" id="chip_${cat.id}" onclick="filterByCategory('${cat.id}')">${cat.name}</div>`;
+                const catCount = designs.filter(d => d.categoryId === cat.id).length;
+                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" id="chip_${cat.id}" onclick="filterByCategory('${cat.id}')">${cat.name} (${catCount})</div>`;
             });
 
             container.innerHTML = `
@@ -462,7 +463,7 @@
 
             let filteredList = getFilteredDesigns();
             if (filteredList.length === 0) {
-                scrollContainer.innerHTML = '<p style="font-size:12px; color:#666; padding:10px;">لا توجد تصاميم متوفرة حالياً في هذا القسم.</p>';
+                scrollContainer.innerHTML = '<div class="empty-category-msg">⚠️ لا توجد تصاميم مرفوعة في هذا القسم بعد.<br>اختر قسم <b>"📂 الكل"</b> لرؤية التصاميم الأخرى.</div>';
                 return;
             }
 
@@ -499,6 +500,7 @@
             }
         }
 
+        // 🎨 رسم الصورة مع شريط علوي أنيق للعبارة وبدون أي تداخل مع القالب
         function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas || !window.loadedBaseImage) return;
@@ -508,30 +510,32 @@
             const imgWidth = img.naturalWidth || 800;
             const imgHeight = img.naturalHeight || 1000;
 
-            const topBarHeight = Math.round(imgHeight * 0.08);
-            const bottomBarHeight = Math.round(imgHeight * 0.12);
+            // أبعاد الشريط العلوي والسفلي المخصصين
+            const topBarHeight = Math.round(imgHeight * 0.08); 
+            const bottomBarHeight = Math.round(imgHeight * 0.10);
 
             canvas.width = imgWidth;
             canvas.height = imgHeight + topBarHeight + bottomBarHeight;
 
-            // 1. الشريط العلوي
+            // 1. رسم الشريط العلوي الأزرق (خارج نطاق التصميم لعدم التداخل)
             const topGradient = ctx.createLinearGradient(0, 0, 0, topBarHeight);
-            topGradient.addColorStop(0, '#002855');
-            topGradient.addColorStop(1, '#0056b3');
+            topGradient.addColorStop(0, '#0056b3');
+            topGradient.addColorStop(1, '#003d80');
             ctx.fillStyle = topGradient;
             ctx.fillRect(0, 0, canvas.width, topBarHeight);
 
-            const topFontSize = Math.max(14, Math.round(canvas.width * 0.038));
+            // كتابة عبارة نقطة بيع معتمدة في الشريط العلوي
+            const topFontSize = Math.max(12, Math.round(canvas.width * 0.032));
             ctx.fillStyle = '#ffffff';
             ctx.font = `bold ${topFontSize}px ${selectedFont}`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('📌 نقطة بيع معتمد لتطبيق سكاي موبايل', canvas.width / 2, topBarHeight / 2);
+            ctx.fillText('📱 نقطة بيع معتمدة - تطبيق سكاي موبايل', canvas.width / 2, topBarHeight / 2);
 
-            // 2. صورة القالب
+            // 2. رسم صورة القالب الأساسية تحت الشريط العلوي مباشرة
             ctx.drawImage(img, 0, topBarHeight, imgWidth, imgHeight);
 
-            // 3. الشريط السفلي
+            // 3. رسم الشريط السفلي الموحد لبيانات المحل والتواصل
             const bottomY = topBarHeight + imgHeight;
             const bottomGradient = ctx.createLinearGradient(0, bottomY, 0, bottomY + bottomBarHeight);
             bottomGradient.addColorStop(0, '#001a35');
@@ -541,16 +545,16 @@
 
             const shop = document.getElementById('cShop')?.value.trim() || '';
             const address = document.getElementById('cAddress')?.value.trim() || '';
-            const phone = document.getElementById('cPhone')?.value.trim() || '738328251';
+            const phone = document.getElementById('cPhone')?.value.trim() || '';
 
             let lineParts = [];
             if (shop) lineParts.push(`🏪 ${shop}`);
             if (address) lineParts.push(`📍 ${address}`);
             if (phone) lineParts.push(`📞 ${phone}`);
 
-            const fullLineText = lineParts.length > 0 ? lineParts.join('   |   ') : '📱 سكاي موبايل - خدمات الرصيد والشبكات';
+            const fullLineText = lineParts.length > 0 ? lineParts.join('   |   ') : '📞 للتواصل والاستفسار اضغط على زر المشاركة بالأسفل';
 
-            const bottomFontSize = Math.max(12, Math.round(canvas.width * 0.032));
+            const bottomFontSize = Math.max(11, Math.round(canvas.width * 0.028));
             ctx.fillStyle = '#ffffff';
             ctx.font = `bold ${bottomFontSize}px ${selectedFont}`;
             ctx.textAlign = 'center';
@@ -560,7 +564,10 @@
 
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
-            if(!canvas) return;
+            if(!canvas || canvas.height === 0) {
+                alert('يرجى اختيار تصميم أولاً قبل التحميل!');
+                return;
+            }
             const a = document.createElement('a');
             a.download = `SkyMobile_Card_${Date.now()}.png`;
             a.href = canvas.toDataURL('image/png');
@@ -586,7 +593,7 @@
 
             let categoriesManageList = categories.map(c => `
                 <div class="sub-img-list">
-                    <span><b>${c.name}</b> (ID: ${c.id})</span>
+                    <span><b>${c.name}</b></span>
                     <button class="btn-delete" onclick="deleteCategory('${c.id}')">🗑️ حذف القسم</button>
                 </div>
             `).join('');
@@ -654,10 +661,10 @@
                     <button class="btn-main" id="btnSaveCloud" onclick="saveNewDesignToCloud()">☁️ حفظ ونشر التصميم سحابياً</button>
                 </div>
 
-                <!-- 3. عرض، تثبيت وإدارة القوالب -->
+                <!-- 3. عرض وتثبيت القوالب -->
                 <div class="admin-card">
                     <h3 style="font-size:15px; margin-bottom:10px; color:#007bff;">📌 إدارة وتثبيت القوالب المرفوعة (${designs.length})</h3>
-                    <p style="font-size:11px; color:#6c757d; margin-bottom:10px;">القوالب المثبتة تظهر أولاً بشكل تلقائي لجميع الزوار فوراً وبدون تأخير.</p>
+                    <p style="font-size:11px; color:#6c757d; margin-bottom:10px;">القوالب المثبتة تظهر أولاً بشكل تلقائي لجميع الزوار فوراً.</p>
                     ${designsListHtml}
                 </div>
 
@@ -727,7 +734,7 @@
         function handleFastFileSelect(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                document.getElementById('uploadStatusText').innerText = "⏳ جاري ضغط الصورة ومعالجتها بأسلوب سريع...";
+                document.getElementById('uploadStatusText').innerText = "⏳ جاري ضغط الصورة ومعالجتها لسرعة فائقة...";
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -736,7 +743,7 @@
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const max_size = 800; // تقليل الحجم لسرعة فائقة جداً
+                        const max_size = 600;
 
                         if (width > height) {
                             if (width > max_size) {
@@ -755,9 +762,8 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // ضغط ممتاز بقدر 65% لجعل الحجم خفيفاً جداً
-                        selectedCompressedImage = canvas.toDataURL('image/jpeg', 0.65);
-                        document.getElementById('uploadStatusText').innerText = "✅ تم تجهيز الصورة وضغطها لسرعة فائقة!";
+                        selectedCompressedImage = canvas.toDataURL('image/jpeg', 0.50);
+                        document.getElementById('uploadStatusText').innerText = "✅ تم تجهيز الصورة وضغطها بنجاح (جاهزة للنشر الفوري)!";
                     };
                     img.src = e.target.result;
                 };
@@ -776,13 +782,13 @@
             
             if(saveBtn) {
                 saveBtn.disabled = true;
-                saveBtn.innerText = "⏳ جاري النشر السريع...";
+                saveBtn.innerText = "⏳ جاري النشر للسحابة...";
             }
 
             const newDoc = { id: newId, categoryId: catId, image: selectedCompressedImage, isPinned: false };
 
             db.ref('designs/' + newId).set(newDoc).then(() => {
-                alert('✅ تم نشر التصميم فورياً!');
+                alert('🚀 تم نشر التصميم سحابياً فوراً وظهر الآن عند جميع الزوار!');
                 selectedCompressedImage = null;
                 renderAdminPanel(document.getElementById('mainContainer'));
             }).catch((err) => {
