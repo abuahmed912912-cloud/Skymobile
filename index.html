@@ -60,13 +60,16 @@
             overflow: hidden; 
             border: 2px solid #ced4da; 
             cursor: pointer; 
-            background: #000;
+            background: #e9ecef;
             position: relative;
             transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .thumb-card.selected { border-color: #007bff; box-shadow: 0 0 8px rgba(0,123,255,0.5); transform: scale(1.05); }
         .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
-        .pin-badge { position: absolute; top: 3px; right: 3px; background: #ffc107; color: #000; font-size: 9px; padding: 2px 4px; border-radius: 4px; font-weight: bold; }
+        .pin-badge { position: absolute; top: 3px; right: 3px; background: #ffc107; color: #000; font-size: 9px; padding: 2px 4px; border-radius: 4px; font-weight: bold; z-index: 2; }
 
         .dropzone-box {
             border: 2px dashed #007bff;
@@ -111,18 +114,13 @@
         .admin-login-trigger { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; }
         .admin-login-trigger button { background: none; border: none; color: #6c757d; font-size: 12px; cursor: pointer; text-decoration: underline; }
         
-        .cloud-sync-badge {
-            font-size: 11px;
-            color: #28a745;
-            text-align: center;
-            margin-top: 4px;
-        }
+        .cloud-sync-badge { font-size: 11px; color: #28a745; text-align: center; margin-top: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="container" id="mainContainer">
-        <!-- يتم تحميل الواجهة فوراً عبر JavaScript -->
+        <!-- يتم التحميل الفوري عبر JavaScript -->
     </div>
 
     <script>
@@ -170,23 +168,20 @@
         ];
 
         let categories = JSON.parse(localStorage.getItem('sky_categories_cache')) || defaultCategories;
-
-        let cachedDesigns = localStorage.getItem('sky_designs_cache');
-        let designs = cachedDesigns ? JSON.parse(cachedDesigns) : [];
+        let designs = JSON.parse(localStorage.getItem('sky_designs_cache')) || [];
 
         let selectedFont = localStorage.getItem('sky_selected_font') || "'Segoe UI', Tahoma, sans-serif";
         let activeCategory = 'all'; 
         let selectedCompressedImage = null;
         let pendingOtpCode = null;
 
-        // ⚡ الفتح الفوري ومزامنة السحابة اللحظية
         window.onload = function() { 
             checkRoute();
             listenToCloudDatabase();
         };
 
+        // ⚡ الاستماع السحابي السريع
         function listenToCloudDatabase() {
-            // 1. مزامنة كلمة المرور سحابياً
             db.ref('admin_password').on('value', (snapshot) => {
                 const pass = snapshot.val();
                 if (pass) {
@@ -195,15 +190,16 @@
                 }
             });
 
-            // 2. مزامنة التصاميم والقوالب فورياً وتطبيق التغييرات دون تأخير لدى الزوار
+            // جلب البيانات مع التعامل مع أخطاء الأمان
             db.ref('designs').on('value', (snapshot) => {
                 const data = snapshot.val();
                 designs = data ? Object.values(data) : [];
                 localStorage.setItem('sky_designs_cache', JSON.stringify(designs));
                 refreshCurrentView();
+            }, (error) => {
+                console.error("Firebase Read Error: ", error);
             });
 
-            // 3. مزامنة الأقسام الديناميكية
             db.ref('categories').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -213,7 +209,6 @@
                 }
             });
 
-            // 4. مزامنة الروابط الديناميكية
             db.ref('links').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -262,7 +257,7 @@
         }
 
         // ==========================================
-        // 🔐 تسجبل الدخول والتحقق الأمني
+        // 🔐 تسجبل الدخول
         // ==========================================
         function renderLoginBox(container) {
             container.innerHTML = `
@@ -289,7 +284,7 @@
                 
                 if (isTrustedDevice) {
                     sessionStorage.setItem('sky_admin_logged', 'true');
-                    alert("✅ تم التعرف على جوالك الموثوق! تم الدخول بنجاح.");
+                    alert("✅ تم الدخول بنجاح.");
                     window.location.href = "?";
                 } else {
                     pendingOtpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -302,17 +297,11 @@
         }
 
         function sendSecretEmailOtp(code) {
-            const serviceID = "service_u442bl8";   
-            const templateID = "template_bt171u3";  
-
-            const templateParams = { otp_code: code };
-
-            emailjs.send(serviceID, templateID, templateParams)
+            emailjs.send("service_u442bl8", "template_bt171u3", { otp_code: code })
                 .then(() => {
-                    alert("🔒 تنبيه أمني: تم إرسال رمز التحقق السري إلى بريدك الإلكتروني الشخصي.");
-                }, (error) => {
-                    console.error("FAILED...", error);
-                    alert("❌ تعذر إرسال رمز التحقق، تحقق من الاتصال بالإنترنت.");
+                    alert("🔒 تم إرسال رمز التحقق السري إلى بريدك الإلكتروني.");
+                }, () => {
+                    alert("❌ تعذر إرسال رمز التحقق.");
                 });
         }
 
@@ -320,16 +309,13 @@
             container.innerHTML = `
                 <div class="admin-header" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
                     <h2>🛡️ تأكيد رمز التحقق السري</h2>
-                    <p>تم إرسال كود الدخول إلى بريدك الإلكتروني الشخصي</p>
+                    <p>تم إرسال كود الدخول إلى بريدك الإلكتروني</p>
                 </div>
                 <div class="form-group">
-                    <label>أدخل كود التحقق المكون من 6 أرقام:</label>
+                    <label>أدخل كود التحقق (6 أرقام):</label>
                     <input type="text" id="otpCodeInput" placeholder="******" style="text-align:center; font-size:20px; letter-spacing:5px;" maxlength="6">
                 </div>
                 <button class="btn-main" onclick="confirmOtpCode()">تأكيد ودخول اللوحة</button>
-                <div style="text-align: center; margin-top: 15px;">
-                    <a href="?admin=true" style="color: #ff4d4d; text-decoration: none; font-size: 13px;">إلغاء</a>
-                </div>
             `;
         }
 
@@ -338,7 +324,7 @@
             if (entered === pendingOtpCode) {
                 localStorage.setItem('sky_trusted_device_token', 'TRUSTED_DEVICE_' + Date.now());
                 sessionStorage.setItem('sky_admin_logged', 'true');
-                alert("✅ تم اعتماد هذا الجوال كجهاز موثوق!");
+                alert("✅ تم اعتماد الجهاز بنجاح!");
                 window.location.href = "?";
             } else {
                 alert("❌ رمز التحقق غير صحيح!");
@@ -482,11 +468,11 @@
 
             filteredList.forEach(des => {
                 const isSelected = des.id == activeId ? 'selected' : '';
-                const pinBadge = des.isPinned ? `<span class="pin-badge">📌 مثبّت</span>` : '';
+                const pinBadge = des.isPinned ? `<span class="pin-badge">📌</span>` : '';
                 const card = document.createElement('div');
                 card.className = `thumb-card ${isSelected}`;
                 card.setAttribute('data-id', des.id);
-                card.innerHTML = `${pinBadge}<img src="${des.image}">`;
+                card.innerHTML = `${pinBadge}<img src="${des.image}" loading="lazy">`;
                 card.onclick = () => {
                     renderClientThumbnails(des.id);
                     loadSelectedDesign(des);
@@ -729,17 +715,12 @@
                 document.getElementById('oldAdminPassInput').value = '';
                 document.getElementById('newAdminPassInput').value = '';
                 document.getElementById('confirmAdminPassInput').value = '';
-            }).catch(err => {
-                alert('❌ حدث خطأ أثناء الحفظ: ' + err.message);
             });
         }
 
         function togglePinDesign(designId, isCurrentlyPinned) {
             db.ref('designs/' + designId + '/isPinned').set(!isCurrentlyPinned).then(() => {
-                const statusMsg = !isCurrentlyPinned ? '📌 تم تثبيت هذا القالب ليكون في المقدمة لصفحة الزوار!' : '🔓 تم إلغاء تثبيت القالب.';
-                alert(statusMsg);
-            }).catch(err => {
-                alert('❌ حدث خطأ: ' + err.message);
+                alert(!isCurrentlyPinned ? '📌 تم تثبيت القالب في المقدمة!' : '🔓 تم إلغاء تثبيت القالب.');
             });
         }
 
@@ -755,7 +736,7 @@
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const max_size = 1200;
+                        const max_size = 800; // تقليل الحجم لسرعة فائقة جداً
 
                         if (width > height) {
                             if (width > max_size) {
@@ -774,8 +755,9 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        selectedCompressedImage = canvas.toDataURL('image/jpeg', 0.80);
-                        document.getElementById('uploadStatusText').innerText = "✅ تم تجهيز الصورة بنجاح وتصغير حجمها لسرعة فائقة!";
+                        // ضغط ممتاز بقدر 65% لجعل الحجم خفيفاً جداً
+                        selectedCompressedImage = canvas.toDataURL('image/jpeg', 0.65);
+                        document.getElementById('uploadStatusText').innerText = "✅ تم تجهيز الصورة وضغطها لسرعة فائقة!";
                     };
                     img.src = e.target.result;
                 };
@@ -800,7 +782,7 @@
             const newDoc = { id: newId, categoryId: catId, image: selectedCompressedImage, isPinned: false };
 
             db.ref('designs/' + newId).set(newDoc).then(() => {
-                alert('✅ تم نشر التصميم فورياً لجميع الزوار!');
+                alert('✅ تم نشر التصميم فورياً!');
                 selectedCompressedImage = null;
                 renderAdminPanel(document.getElementById('mainContainer'));
             }).catch((err) => {
@@ -822,7 +804,7 @@
             const newCategoryObj = { id: newCatId, name: catName };
 
             db.ref('categories/' + newCatId).set(newCategoryObj).then(() => {
-                alert('✅ تم إضافة القسم الجديد بنجاح!');
+                alert('✅ تم إضافة القسم جديد!');
                 renderAdminPanel(document.getElementById('mainContainer'));
             });
         }
@@ -844,7 +826,7 @@
                 appUrl: appUrl,
                 whatsappUrl: whatsappUrl
             }).then(() => {
-                alert('✅ تم تحديث الروابط بنجاح في السحابة!');
+                alert('✅ تم تحديث الروابط بنجاح!');
             });
         }
 
@@ -853,8 +835,6 @@
                 db.ref('designs/' + designId).remove().then(() => {
                     alert('✅ تم الحذف بنجاح!');
                     renderAdminPanel(document.getElementById('mainContainer'));
-                }).catch((err) => {
-                    alert('خطأ أثناء الحذف: ' + err.message);
                 });
             }
         }
