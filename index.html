@@ -72,7 +72,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let masterPassword = "sky2026"; 
+        let masterPassword = "sky2026";
 
         let defaultCategories = [
             { id: 'cat_net', name: '📶 الشبكات' },
@@ -108,14 +108,17 @@
         function checkRoute() {
             const container = document.getElementById('mainContainer');
             const urlParams = new URLSearchParams(window.location.search);
-            const isAdmin = sessionStorage.getItem('sky_admin_logged') === 'true';
+            const isAdminRoute = urlParams.get('admin') === 'true';
+            const isLogged = sessionStorage.getItem('sky_admin_logged') === 'true';
 
             if (urlParams.get('preview') === 'true') {
                 renderClientPanel(container, true);
-            } else if (isAdmin) {
-                renderAdminPanel(container);
-            } else if (urlParams.get('admin') === 'true') {
-                renderLoginBox(container);
+            } else if (isAdminRoute) {
+                if (isLogged) {
+                    renderAdminPanel(container);
+                } else {
+                    renderLoginBox(container);
+                }
             } else {
                 renderClientPanel(container, false);
             }
@@ -124,16 +127,16 @@
         function renderLoginBox(container) {
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>تسجيل الدخول</h2>
+                    <h2>🔑 دخول لوحة التحكم</h2>
                 </div>
                 <div class="form-group">
-                    <label>كلمة المرور:</label>
-                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور">
-                    <p class="error-text" id="loginError">كلمة المرور غير صحيحة</p>
+                    <label>أدخل كلمة المرور للدخول:</label>
+                    <input type="password" id="adminPassInput" placeholder="كلمة المرور" onkeyup="if(event.key==='Enter') handleAdminLogin()">
+                    <p class="error-text" id="loginError">كلمة المرور غير صحيحة، حاول مجدداً</p>
                 </div>
-                <button class="btn-main" onclick="handleAdminLogin()">دخول</button>
+                <button class="btn-main" onclick="handleAdminLogin()">تسجيل الدخول</button>
                 <div style="text-align: center; margin-top: 15px;">
-                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">العودة للرئيسية</a>
+                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">العودة للواجهة الرئيسية</a>
                 </div>
             `;
         }
@@ -142,7 +145,7 @@
             const pass = document.getElementById('adminPassInput').value.trim();
             if (pass === masterPassword) {
                 sessionStorage.setItem('sky_admin_logged', 'true');
-                window.location.href = "?";
+                renderAdminPanel(document.getElementById('mainContainer'));
                 return;
             }
             document.getElementById('loginError').style.display = 'block';
@@ -159,7 +162,7 @@
                 categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" onclick="filterByCategory('${cat.id}')">${cat.name}</div>`;
             });
 
-            let adminReturnBtn = isPreview ? `<div style="margin-bottom:10px;"><a href="?" class="btn-home" style="display:block; background:#007bff; text-align:center;">🔙 العودة للوحة التحكم</a></div>` : '';
+            let adminReturnBtn = isPreview ? `<div style="margin-bottom:10px;"><a href="?admin=true" class="btn-home" style="display:block; background:#007bff; text-align:center;">🔙 العودة للوحة التحكم</a></div>` : '';
 
             container.innerHTML = `
                 ${adminReturnBtn}
@@ -348,7 +351,7 @@
                     <h2>لوحة التحكم السحابية</h2>
                 </div>
                 <div class="top-nav-buttons">
-                    <a href="?preview=true" class="btn-home">👁️ واجهة الزوار</a>
+                    <a href="?preview=true" class="btn-home">👁️ معاينة واجهة الزوار</a>
                     <button class="btn-logout" onclick="logoutAdmin()">تسجيل الخروج</button>
                 </div>
 
@@ -396,9 +399,8 @@
                             <select id="newDesignCat">${categoriesOptions}</select>
                         </div>
                         <label class="dropzone-box" id="dropzoneLabel">
-                            📁 اضغط لاختيار صورة (معرض الصور / مدير الملفات)
-                            <!-- تم فتح نطاق الامتدادات لفك تقييد نظام الأندرويد والآيفون -->
-                            <input type="file" id="designFileInput" accept="image/png, image/jpeg, image/jpg, image/webp, image/heic, .png, .jpg, .jpeg, .webp, .heic, image/*" style="display:none;" onchange="handleImageUpload(this)">
+                            📁 اضغط لاختيار صورة من الاستوديو
+                            <input type="file" id="designFileInput" style="display:none;" onchange="handleImageUpload(this)">
                         </label>
                         <button class="btn-main" id="saveBtn" onclick="addNewDesign()">☁️ رفع التصميم للسحابة فوراً</button>
                     </div>
@@ -461,8 +463,15 @@
 
         function handleImageUpload(input) {
             if (input.files && input.files[0]) {
+                const file = input.files[0];
                 const label = document.getElementById('dropzoneLabel');
                 const saveBtn = document.getElementById('saveBtn');
+
+                if (file.type && !file.type.startsWith('image/')) {
+                    alert('عذراً، يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, HEIC)');
+                    input.value = '';
+                    return;
+                }
                 
                 label.innerText = "⏳ جاري قراءة الصورة...";
                 saveBtn.disabled = true;
@@ -478,7 +487,7 @@
                     label.innerText = "📁 اضغط لاختيار صورة من الاستوديو";
                     saveBtn.disabled = false;
                 };
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(file);
             }
         }
 
