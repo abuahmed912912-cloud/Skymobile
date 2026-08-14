@@ -33,6 +33,19 @@
         .tab-btn { flex: 1; background: transparent; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; }
         .tab-btn.active { background: #007bff; color: white; box-shadow: 0 2px 6px rgba(0,123,255,0.3); }
 
+        /* مربعات الإدخال المنفصلة للعميل */
+        .client-input-card {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .client-input-card label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #0056b3; }
+        .client-input-card input { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; outline: none; }
+        .client-input-card input:focus { border-color: #007bff; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
+
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #495057; }
         input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 10px; font-size: 14px; background: #fff; }
@@ -125,6 +138,18 @@
         .btn-copy { background-color: #17a2b8; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
 
+        /* كروت الإحصائيات */
+        .stats-grid { display: flex; gap: 10px; margin-bottom: 15px; }
+        .stat-box { flex: 1; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #cbd5e1; }
+        .stat-box h4 { font-size: 12px; color: #64748b; margin-bottom: 5px; }
+        .stat-box .num { font-size: 22px; font-weight: bold; color: #007bff; }
+
+        .log-item { font-size: 12px; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .log-item:last-child { border-bottom: none; }
+        .log-tag { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        .tag-visit { background: #e0f2fe; color: #0369a1; }
+        .tag-download { background: #dcfce7; color: #15803d; }
+
         .admin-login-trigger { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; }
         .admin-login-trigger button { background: none; border: none; color: #6c757d; font-size: 12px; cursor: pointer; text-decoration: underline; }
     </style>
@@ -136,7 +161,6 @@
     </div>
 
     <script>
-        // إعدادات Firebase الخاصة بمشروعك (sky-mobile-8e245)
         const firebaseConfig = {
             apiKey: "AIzaSyDNwIUGqA2dm5Mrx5S06LIEGPJ_VgW3eFc",
             authDomain: "sky-mobile-8e245.firebaseapp.com",
@@ -148,7 +172,6 @@
             measurementId: "G-PWC1MKDL56"
         };
 
-        // تهيئة السحابة
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -168,12 +191,14 @@
         ];
 
         let designs = [];
+        let analytics = { views: 0, downloads: 0, logs: {} };
         let selectedFont = localStorage.getItem('sky_selected_font') || "'Segoe UI', Tahoma, sans-serif";
         let activeAdminTab = 'templates'; 
         let activeCategory = 'all'; 
         let selectedFileToUpload = null;
+        let currentDesignId = null;
+        let hasLoggedVisit = false;
 
-        // جلب البيانات من السحابة عند التحميل
         window.onload = function() {
             listenToCloudData();
         };
@@ -186,9 +211,35 @@
                     if (data.designs) designs = Object.values(data.designs);
                     if (data.links) globalLinks = data.links;
                     if (data.adminPass) currentAdminPass = data.adminPass;
+                    if (data.analytics) analytics = data.analytics;
                 }
                 checkRoute();
             });
+        }
+
+        function trackActivity(type, extraDetails = {}) {
+            const timeStr = new Date().toLocaleString('ar-YE', { hour12: true });
+            
+            if (type === 'visit') {
+                if (hasLoggedVisit) return;
+                hasLoggedVisit = true;
+                db.ref('sky_data/analytics/views').transaction(count => (count || 0) + 1);
+                db.ref('sky_data/analytics/logs').push({
+                    type: 'زيارة',
+                    time: timeStr,
+                    design: currentDesignId || 'عام'
+                });
+            } else if (type === 'download' || type === 'share') {
+                db.ref('sky_data/analytics/downloads').transaction(count => (count || 0) + 1);
+                db.ref('sky_data/analytics/logs').push({
+                    type: type === 'download' ? 'تحميل' : 'مشاركة واتساب',
+                    time: timeStr,
+                    shop: extraDetails.shop || 'غير مسمى',
+                    phone: extraDetails.phone || 'بدون رقم',
+                    address: extraDetails.address || 'بدون عنوان',
+                    design: currentDesignId || 'عام'
+                });
+            }
         }
 
         function checkRoute() {
@@ -198,7 +249,10 @@
 
             if (isAdminLoggedIn) renderAdminPanel(container);
             else if (urlParams.has('admin')) renderLoginBox(container);
-            else renderClientPanel(container);
+            else {
+                renderClientPanel(container);
+                trackActivity('visit');
+            }
         }
 
         function renderLoginBox(container) {
@@ -276,6 +330,8 @@
                 currentDesign = filtered[0] || designs[0] || { id: '', title: 'تصميم بطاقة', image: '', categoryId: '' };
             }
 
+            currentDesignId = currentDesign.id;
+
             let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" id="chip_all" onclick="filterByCategory('all')">📂 الكل (${designs.length})</div>`;
             categories.forEach(cat => {
                 const count = designs.filter(d => d.categoryId === cat.id).length;
@@ -297,17 +353,20 @@
 
                 <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
 
-                <div class="form-group">
-                    <label>اسم المحل أو الشبكة:</label>
-                    <input type="text" id="cShop" placeholder="أدخل اسم محلك" oninput="drawFinalImage()">
+                <!-- مربعات إدخال بيانات العميل مستقلة ومفصولة -->
+                <div class="client-input-card">
+                    <label>🏪 اسم المحل أو اسم الشخص:</label>
+                    <input type="text" id="cShop" value="" placeholder="أدخل اسم المحل أو اسمك هنا" oninput="drawFinalImage()">
                 </div>
-                <div class="form-group">
-                    <label>العنوان:</label>
-                    <input type="text" id="cAddress" placeholder="أدخل العنوان" oninput="drawFinalImage()">
+
+                <div class="client-input-card">
+                    <label>📍 العنوان والتواجد:</label>
+                    <input type="text" id="cAddress" placeholder="أدخل العنوان (مثال: المهرة - الغيظة)" oninput="drawFinalImage()">
                 </div>
-                <div class="form-group">
-                    <label>رقم التواصل:</label>
-                    <input type="text" id="cPhone" value="738328251" placeholder="رقم الهاتف" oninput="drawFinalImage()">
+
+                <div class="client-input-card">
+                    <label>📞 رقم التواصل / الهاتف:</label>
+                    <input type="text" id="cPhone" value="738328251" placeholder="رقم الهاتف للتواصل" oninput="drawFinalImage()">
                 </div>
 
                 <div class="preview-box">
@@ -341,6 +400,7 @@
         }
 
         function loadSelectedDesign(des) {
+            currentDesignId = des.id;
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = function() {
@@ -393,6 +453,67 @@
             }
         }
 
+        // =========================================================================
+        //  دالة رسم البالونات - محاذاة النص لأعلى البالونة الخاصة باسم المحل/العميل
+        // =========================================================================
+        function drawPillBadge(ctx, text, icon, xRight, yCenter, fontSize, isPrimary = false) {
+            if (!text) return 0;
+            ctx.font = `bold ${fontSize}px ${selectedFont}`;
+            const fullText = icon ? `${icon} ${text}` : text;
+            const textMetrics = ctx.measureText(fullText);
+            
+            const paddingX = Math.max(16, fontSize * 0.85);
+            // زيادة الهامش ليُعطي ارتفاعاً مناسباً يتسع لكتابة النص بأعلى البالونة
+            const paddingY = isPrimary ? Math.max(16, fontSize * 0.95) : Math.max(8, fontSize * 0.55);
+            
+            const boxWidth = textMetrics.width + (paddingX * 2);
+            const boxHeight = fontSize + (paddingY * 2); 
+            
+            const boxX = xRight - boxWidth;
+            const boxY = yCenter - (boxHeight / 2);
+            const radius = boxHeight / 2;
+
+            ctx.save();
+            ctx.beginPath();
+            
+            if (ctx.roundRect) {
+                ctx.roundRect(boxX, boxY, boxWidth, boxHeight, radius);
+            } else {
+                ctx.moveTo(boxX + radius, boxY);
+                ctx.arcTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + boxHeight, radius);
+                ctx.arcTo(boxX + boxWidth, boxY + boxHeight, boxX, boxY + boxHeight, radius);
+                ctx.arcTo(boxX, boxY + boxHeight, boxX, boxY, radius);
+                ctx.arcTo(boxX, boxY, boxX + boxWidth, boxY, radius);
+                ctx.closePath();
+            }
+            
+            if (isPrimary) {
+                ctx.fillStyle = '#0056b3';
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+
+                // جعل الكتابة في أعلى البالونة مع مراعاة الهامش العلوي
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(fullText, boxX + (boxWidth / 2), boxY + (paddingY * 0.65));
+            } else {
+                ctx.fillStyle = '#f0f7ff';
+                ctx.fill();
+                ctx.lineWidth = Math.max(1.8, Math.round(fontSize * 0.09));
+                ctx.strokeStyle = '#007bff';
+                ctx.stroke();
+                ctx.fillStyle = '#004085';
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(fullText, boxX + (boxWidth / 2), yCenter);
+            }
+
+            ctx.restore();
+
+            return boxWidth;
+        }
+
         function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas || !window.loadedBaseImage) return;
@@ -402,13 +523,13 @@
             const imgWidth = img.naturalWidth || 800;
             const imgHeight = img.naturalHeight || 1000;
 
-            const topBarHeight = Math.round(imgHeight * 0.08);
-            const bottomBarHeight = Math.round(imgHeight * 0.13);
+            const topBarHeight = Math.round(imgHeight * 0.075);
+            const bottomBarHeight = Math.round(imgHeight * 0.23);
 
             canvas.width = imgWidth;
             canvas.height = imgHeight + topBarHeight + bottomBarHeight;
 
-            // 1. رسم الشريط العلوي
+            // 1. الشريط العلوي
             const topGradient = ctx.createLinearGradient(0, 0, 0, topBarHeight);
             topGradient.addColorStop(0, '#002855');
             topGradient.addColorStop(1, '#0056b3');
@@ -429,41 +550,61 @@
             ctx.textBaseline = 'middle';
             ctx.fillText('📌 نقطة بيع معتمد لتطبيق سكاي موبايل', canvas.width / 2, topBarHeight / 2);
 
-            // 2. رسم الصورة الأصلية
+            // 2. خلفية القالب الأساسي
             ctx.drawImage(img, 0, topBarHeight, imgWidth, imgHeight);
 
-            // 3. رسم الشريط السفلي
+            // 3. الشريط السفلي White Section
             const bottomBarY = topBarHeight + imgHeight;
-            const bottomGradient = ctx.createLinearGradient(0, bottomBarY, 0, canvas.height);
-            bottomGradient.addColorStop(0, '#0056b3');
-            bottomGradient.addColorStop(1, '#002855');
-            ctx.fillStyle = bottomGradient;
+            
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, bottomBarY, canvas.width, bottomBarHeight);
 
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = Math.max(2, Math.round(canvas.width * 0.003));
             ctx.beginPath();
             ctx.moveTo(0, bottomBarY);
             ctx.lineTo(canvas.width, bottomBarY);
             ctx.stroke();
 
-            const shop = document.getElementById('cShop').value.trim() || "اسم المحل أو الشبكة";
-            const address = document.getElementById('cAddress').value.trim() || "العنوان";
-            const phone = document.getElementById('cPhone').value.trim() || "738328251";
+            const shop = document.getElementById('cShop').value.trim();
+            const address = document.getElementById('cAddress').value.trim();
+            const phone = document.getElementById('cPhone').value.trim();
 
-            const baseFontSize = Math.max(15, Math.round(canvas.width * 0.035));
-            
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${Math.round(baseFontSize * 1.2)}px ${selectedFont}`;
-            ctx.textAlign = 'center';
-            ctx.fillText(shop, canvas.width / 2, bottomBarY + (bottomBarHeight * 0.35));
+            const titleFontSize = Math.max(15, Math.round(canvas.width * 0.040));
+            const detailsFontSize = Math.max(12, Math.round(canvas.width * 0.034));
 
-            ctx.font = `${baseFontSize}px ${selectedFont}`;
-            ctx.fillStyle = '#e2e8f0';
-            ctx.fillText(`📍 ${address}   |   📞 ${phone}`, canvas.width / 2, bottomBarY + (bottomBarHeight * 0.72));
+            const marginRight = canvas.width * 0.04;
+            const row1Y = bottomBarY + (bottomBarHeight * 0.33); 
+            const row2Y = bottomBarY + (bottomBarHeight * 0.80);
+
+            // --- الصف الأول: بالونة اسم المحل / العميل (الكتابة أعلى البالونة) ---
+            if (shop) {
+                drawPillBadge(ctx, shop, '🏪', canvas.width - marginRight, row1Y, titleFontSize, true);
+            }
+
+            // --- الصف الثاني: بالونة العنوان وعلى يسارها بالونة الهاتف ---
+            let currentXRight = canvas.width - marginRight;
+
+            if (address) {
+                const addressWidth = drawPillBadge(ctx, address, '📍', currentXRight, row2Y, detailsFontSize, false);
+                const gap = Math.max(10, canvas.width * 0.02);
+                currentXRight -= (addressWidth + gap);
+            }
+
+            if (phone) {
+                drawPillBadge(ctx, phone, '📞', currentXRight, row2Y, detailsFontSize, false);
+            }
         }
 
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
+
+            const shop = document.getElementById('cShop').value.trim();
+            const phone = document.getElementById('cPhone').value.trim();
+            const address = document.getElementById('cAddress').value.trim();
+
+            trackActivity('download', { shop, phone, address });
 
             try {
                 const dataUrl = canvas.toDataURL('image/png');
@@ -481,6 +622,13 @@
         function shareToWhatsApp() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
+
+            const shop = document.getElementById('cShop').value.trim();
+            const phone = document.getElementById('cPhone').value.trim();
+            const address = document.getElementById('cAddress').value.trim();
+
+            trackActivity('share', { shop, phone, address });
+
             canvas.toBlob(blob => {
                 const file = new File([blob], 'sky-mobile-card.png', { type: 'image/png' });
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -570,11 +718,55 @@
                     </div>
                 `;
             } else {
+                let logsHtml = '';
+                if (analytics.logs) {
+                    const logsArray = Object.values(analytics.logs).reverse();
+                    logsArray.forEach(log => {
+                        const tagClass = (log.type === 'تحميل' || log.type === 'مشاركة واتساب') ? 'tag-download' : 'tag-visit';
+                        let detailsStr = '';
+                        if (log.shop || log.phone) {
+                            detailsStr = `<br><span style="color:#0056b3; font-weight:bold;">👤 ${log.shop || 'غير مسمى'}</span> | 📞 ${log.phone || '-'} | 📍 ${log.address || '-'}`;
+                        }
+
+                        logsHtml += `
+                            <div class="log-item">
+                                <div>
+                                    <span class="log-tag ${tagClass}">${log.type}</span>
+                                    ${detailsStr}
+                                </div>
+                                <div style="color:#888; font-size:10px; text-align:left;">${log.time}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                if (!logsHtml) {
+                    logsHtml = '<p style="font-size:12px; color:#888; text-align:center; padding:10px;">لا توجد سجلات بعد.</p>';
+                }
+
                 tabContentHtml = `
                     <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:10px; color:#007bff;">📊 إحصائيات النظام السحابي</h3>
-                        <p style="font-size: 13px; color: #666;">إجمالي القوالب الرئيسية: <b>${categories.length} أقسام</b></p>
-                        <p style="font-size: 13px; color: #666; margin-top:5px;">إجمالي التصاميم الفرعية: <b>${designs.length} تصميم</b></p>
+                        <h3 style="font-size:16px; margin-bottom:12px; color:#007bff;">📊 إحصائيات النظام والتفاعل</h3>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <h4>👀 إجمالي الزيارات</h4>
+                                <div class="num">${analytics.views || 0}</div>
+                            </div>
+                            <div class="stat-box">
+                                <h4>📥 إجمالي التحميلات</h4>
+                                <div class="num" style="color:#28a745;">${analytics.downloads || 0}</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                            <h4 style="font-size:14px; color:#333;">📜 سجل حركة العملاء (من دخل ومن حمل):</h4>
+                            <button onclick="clearAnalyticsLogs()" style="background:#dc3545; color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer;">مسح السجل</button>
+                        </div>
+
+                        <div style="max-height:250px; overflow-y:auto; background:#f8f9fa; border:1px solid #e2e8f0; border-radius:8px;">
+                            ${logsHtml}
+                        </div>
                     </div>
 
                     <div class="admin-card">
@@ -604,7 +796,7 @@
             container.innerHTML = `
                 <div class="admin-header">
                     <h2>⚙️ لوحة التحكم السحابية</h2>
-                    <p>إدارة القوالب والتصاميم — سكاي موبايل</p>
+                    <p>إدارة القوالب، الإحصائيات والتسجيل — سكاي موبايل</p>
                 </div>
 
                 <div class="top-nav-buttons">
@@ -614,11 +806,19 @@
 
                 <div class="admin-tabs-bar">
                     <button class="tab-btn ${activeAdminTab === 'templates' ? 'active' : ''}" onclick="switchAdminTab('templates')">🖼️ القوالب والتصاميم</button>
-                    <button class="tab-btn ${activeAdminTab === 'dashboard' ? 'active' : ''}" onclick="switchAdminTab('dashboard')">📊 الإعدادات والروابط</button>
+                    <button class="tab-btn ${activeAdminTab === 'dashboard' ? 'active' : ''}" onclick="switchAdminTab('dashboard')">📊 الإحصائيات والروابط</button>
                 </div>
 
                 <div id="tabContentArea">${tabContentHtml}</div>
             `;
+        }
+
+        function clearAnalyticsLogs() {
+            if (confirm('هل أنت متأكد من مسح جميع سجلات الحركة والزيارات؟')) {
+                db.ref('sky_data/analytics/logs').remove().then(() => {
+                    alert('تم مسح السجلات بنجاح!');
+                });
+            }
         }
 
         function handleDragOver(e) {
