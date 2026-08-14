@@ -30,8 +30,8 @@
         .btn-home { flex: 1; background-color: #007bff; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
         .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
 
-        .admin-tabs-bar { display: flex; gap: 10px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; }
-        .tab-btn { flex: 1; background: transparent; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; }
+        .admin-tabs-bar { display: flex; gap: 5px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; overflow-x: auto; }
+        .tab-btn { flex: 1; white-space: nowrap; background: transparent; border: none; padding: 10px 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; }
         .tab-btn.active { background: #007bff; color: white; box-shadow: 0 2px 6px rgba(0,123,255,0.3); }
 
         /* قسم البحث في كبينة WIFI */
@@ -176,7 +176,7 @@
         const db = firebase.database();
 
         // دليل شبكات كبينة WIFI
-        const networksDB = {
+        let networksDB = {
             "2": "شبكة المواسط نت",
             "3": "المنصوري",
             "4": "حبيب نت",
@@ -204,7 +204,7 @@
         let activeAdminTab = 'templates'; 
         let activeCategory = 'all'; 
         let currentDesignId = null;
-        let currentNetworkName = ""; // اسم الشبكة التي تم البحث عنها
+        let currentNetworkName = ""; 
         let hasLoggedVisit = false;
 
         window.onload = function() {
@@ -216,6 +216,7 @@
                 const data = snapshot.val();
                 if (data) {
                     if (data.categories) categories = Object.values(data.categories);
+                    if (data.networks) networksDB = data.networks;
                     if (data.designs) designs = Object.values(data.designs);
                     if (data.links) globalLinks = data.links;
                     if (data.adminPass) currentAdminPass = data.adminPass;
@@ -490,7 +491,6 @@
                 canvas.height = window.loadedBaseImage.height;
                 ctx.drawImage(window.loadedBaseImage, 0, 0);
             } else {
-                // خلفية افتراضية في حال عدم تحميل صورة
                 canvas.width = 600;
                 canvas.height = 800;
                 ctx.fillStyle = "#1a1a1a";
@@ -504,7 +504,6 @@
             ctx.direction = "rtl";
             ctx.textAlign = "center";
 
-            // رسم اسم الشبكة إذا تمت العثور عليها عبر البحث
             if (currentNetworkName) {
                 ctx.font = `bold ${canvas.width * 0.052}px ${selectedFont}`;
                 ctx.fillStyle = "#ffca28";
@@ -514,7 +513,6 @@
                 ctx.fillText(`شبكة: ${currentNetworkName}`, canvas.width / 2, canvas.height * 0.65);
             }
 
-            // رسم اسم المحل أو الشخص
             if (shop) {
                 ctx.font = `bold ${canvas.width * 0.048}px ${selectedFont}`;
                 ctx.fillStyle = "#ffffff";
@@ -524,7 +522,6 @@
                 ctx.fillText(shop, canvas.width / 2, canvas.height * 0.74);
             }
 
-            // رسم العنوان والتواجد
             if (address) {
                 ctx.font = `${canvas.width * 0.035}px ${selectedFont}`;
                 ctx.fillStyle = "#e2e8f0";
@@ -534,7 +531,6 @@
                 ctx.fillText(address, canvas.width / 2, canvas.height * 0.81);
             }
 
-            // رسم رقم التواصل
             if (phone) {
                 ctx.font = `bold ${canvas.width * 0.040}px ${selectedFont}`;
                 ctx.fillStyle = "#ffffff";
@@ -611,7 +607,7 @@
             container.innerHTML = `
                 <div class="admin-header">
                     <h2>⚙️ لوحة تحكم الإدارة</h2>
-                    <p>إدارة التصاميم، الأقسام، والإحصائيات</p>
+                    <p>إدارة التصاميم، الأقسام، الشبكات، والإحصائيات</p>
                 </div>
 
                 <div class="top-nav-buttons">
@@ -621,6 +617,8 @@
 
                 <div class="admin-tabs-bar">
                     <button class="tab-btn ${activeAdminTab==='templates'?'active':''}" onclick="switchAdminTab('templates')">🖼️ التصاميم</button>
+                    <button class="tab-btn ${activeAdminTab==='categories'?'active':''}" onclick="switchAdminTab('categories')">📂 الأقسام</button>
+                    <button class="tab-btn ${activeAdminTab==='networks'?'active':''}" onclick="switchAdminTab('networks')">📶 إدارة الشبكات</button>
                     <button class="tab-btn ${activeAdminTab==='links'?'active':''}" onclick="switchAdminTab('links')">🔗 الروابط</button>
                     <button class="tab-btn ${activeAdminTab==='stats'?'active':''}" onclick="switchAdminTab('stats')">📊 الإحصائيات</button>
                 </div>
@@ -678,6 +676,62 @@
                     <div class="admin-card">
                         <h3 style="margin-bottom: 10px; font-size: 15px;">📂 التصاميم المتاحة (${designs.length})</h3>
                         ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم مضافة حتى الآن.</p>'}
+                    </div>
+                `;
+            } else if (activeAdminTab === 'categories') {
+                let categoriesListHtml = '';
+                categories.forEach(cat => {
+                    categoriesListHtml += `
+                        <div class="sub-img-list">
+                            <span><b>${cat.name}</b> (ID: ${cat.id})</span>
+                            <button class="btn-delete" onclick="deleteCategory('${cat.id}')">حذف القسم</button>
+                        </div>
+                    `;
+                });
+
+                content.innerHTML = `
+                    <div class="admin-card">
+                        <h3 style="margin-bottom: 10px; font-size: 15px;">📂 إضافة قسم تصاميم جديد</h3>
+                        <div class="form-group">
+                            <label>اسم القسم (مثال: 🎉 المناسبات):</label>
+                            <input type="text" id="newCatName" placeholder="أدخل اسم القسم مع إيموجي">
+                        </div>
+                        <button class="btn-main" onclick="addNewCategory()">إضافة القسم</button>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3 style="margin-bottom: 10px; font-size: 15px;">📋 الأقسام المتاحة حالياً (${categories.length})</h3>
+                        ${categoriesListHtml || '<p style="font-size:12px; color:#888;">لا توجد أقسام.</p>'}
+                    </div>
+                `;
+            } else if (activeAdminTab === 'networks') {
+                let networksListHtml = '';
+                Object.keys(networksDB).forEach(numId => {
+                    networksListHtml += `
+                        <div class="sub-img-list">
+                            <span><b>رقم ${numId}</b>: ${networksDB[numId]}</span>
+                            <button class="btn-delete" onclick="deleteNetwork('${numId}')">حذف الشبكة</button>
+                        </div>
+                    `;
+                });
+
+                content.innerHTML = `
+                    <div class="admin-card">
+                        <h3 style="margin-bottom: 10px; font-size: 15px;">📶 إضافة شبكة جديدة في كبينة WIFI</h3>
+                        <div class="form-group">
+                            <label>رقم الشبكة (مثال: 8):</label>
+                            <input type="number" id="newNetId" placeholder="أدخل رقم الشبكة">
+                        </div>
+                        <div class="form-group">
+                            <label>اسم الشبكة (مثال: شبكة الفجر نت):</label>
+                            <input type="text" id="newNetName" placeholder="أدخل اسم الشبكة الكامل">
+                        </div>
+                        <button class="btn-main" onclick="addNewNetwork()">حفظ الشبكة</button>
+                    </div>
+
+                    <div class="admin-card">
+                        <h3 style="margin-bottom: 10px; font-size: 15px;">📡 دليل الشبكات المسجلة (${Object.keys(networksDB).length})</h3>
+                        ${networksListHtml || '<p style="font-size:12px; color:#888;">لا توجد شبكات مسجلة.</p>'}
                     </div>
                 `;
             } else if (activeAdminTab === 'links') {
@@ -757,6 +811,56 @@
             if (confirm('هل أنت تأكد من حذف هذا التصميم؟')) {
                 db.ref('sky_data/designs/' + id).remove().then(() => {
                     designs = designs.filter(d => d.id !== id);
+                    renderAdminTabContent();
+                });
+            }
+        }
+
+        function addNewCategory() {
+            const name = document.getElementById('newCatName').value.trim();
+            if (!name) {
+                alert('الرجاء إدخال اسم القسم!');
+                return;
+            }
+            const id = 'cat_' + Date.now();
+            const catObj = { id, name };
+
+            db.ref('sky_data/categories/' + id).set(catObj).then(() => {
+                alert('✅ تم إضافة القسم بنجاح!');
+                categories.push(catObj);
+                renderAdminTabContent();
+            });
+        }
+
+        function deleteCategory(id) {
+            if (confirm('هل أنت تأكد من حذف هذا القسم؟')) {
+                db.ref('sky_data/categories/' + id).remove().then(() => {
+                    categories = categories.filter(c => c.id !== id);
+                    renderAdminTabContent();
+                });
+            }
+        }
+
+        function addNewNetwork() {
+            const numId = document.getElementById('newNetId').value.trim();
+            const netName = document.getElementById('newNetName').value.trim();
+
+            if (!numId || !netName) {
+                alert('الرجاء إدخال رقم الشبكة واسمها!');
+                return;
+            }
+
+            db.ref('sky_data/networks/' + numId).set(netName).then(() => {
+                alert('✅ تم إضافة/تحديث الشبكة بنجاح!');
+                networksDB[numId] = netName;
+                renderAdminTabContent();
+            });
+        }
+
+        function deleteNetwork(numId) {
+            if (confirm(`هل أنت تأكد من حذف الشبكة رقم ${numId}؟`)) {
+                db.ref('sky_data/networks/' + numId).remove().then(() => {
+                    delete networksDB[numId];
                     renderAdminTabContent();
                 });
             }
