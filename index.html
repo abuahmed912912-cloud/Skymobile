@@ -12,7 +12,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; color: #333; padding: 10px; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); min-height: 200px; }
         
         .admin-header {
             background: linear-gradient(135deg, #007bff, #0056b3);
@@ -151,9 +151,7 @@
 </head>
 <body>
 
-    <div class="container" id="mainContainer">
-        <p style="text-align: center; color: #007bff; padding: 20px; font-weight: bold;">⚡ جاري فتح النظام بسرعة...</p>
-    </div>
+    <div class="container" id="mainContainer"></div>
 
     <script>
         const firebaseConfig = {
@@ -193,12 +191,14 @@
         let selectedFileToUpload = null;
         let currentDesignId = null;
         let hasLoggedVisit = false;
+        
+        // ذاكرة تخزين مؤقت للصور لسرعة التبديل اللحظي
+        const imageCache = {};
 
         window.onload = function() {
             loadCloudDataOnce();
         };
 
-        // جلب البيانات مرة واحدة فقط عند الفتح لضمان أقصى سرعة
         function loadCloudDataOnce() {
             db.ref('sky_data').once('value').then((snapshot) => {
                 const data = snapshot.val();
@@ -397,9 +397,18 @@
 
         function loadSelectedDesign(des) {
             currentDesignId = des.id;
+            
+            // تسريع الفتح بالتخزين الموقت اللحظي
+            if (imageCache[des.id]) {
+                window.loadedBaseImage = imageCache[des.id];
+                drawFinalImage();
+                return;
+            }
+
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = function() {
+                imageCache[des.id] = img;
                 window.loadedBaseImage = img;
                 drawFinalImage();
             };
@@ -805,7 +814,9 @@
         function clearAnalyticsLogs() {
             if (confirm('هل أنت متأكد من مسح جميع سجلات الحركة والزيارات؟')) {
                 db.ref('sky_data/analytics/logs').remove().then(() => {
+                    analytics.logs = {};
                     alert('تم مسح السجلات بنجاح!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
                 });
             }
         }
@@ -842,15 +853,16 @@
 
         function addNewCategory() {
             const catNameInput = document.getElementById('newCategoryName');
-            const name = catNameInput.value.trim();
+            const name = catNameInput ? catNameInput.value.trim() : '';
             if(!name) return alert('الرجاء كتابة اسم القالب الرئيسي!');
             
             const catId = 'cat_' + Date.now();
             const newCat = { id: catId, name: name };
             
             db.ref('sky_data/categories/' + catId).set(newCat).then(() => {
+                categories.push(newCat);
                 alert('تمت إضافة القالب السحابي بنجاح!');
-                location.reload();
+                renderAdminPanel(document.getElementById('mainContainer'));
             });
         }
 
@@ -871,7 +883,7 @@
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const maxDim = 800; // تقليل أقصى أبعاد للصورة لزيادة خفة السحابة
+                        const maxDim = 800;
 
                         if (width > maxDim || height > maxDim) {
                             if (width > height) {
@@ -888,7 +900,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // ضغط الصورة إلى 60% لتقليل الحجم وتسريع الفتح
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
                         const desId = 'des_' + Date.now();
@@ -921,8 +932,9 @@
         function saveDesignsAndFinish(newObj) {
             db.ref('sky_data/designs/' + newObj.id).set(newObj).then(() => {
                 selectedFileToUpload = null;
+                designs.push(newObj);
                 alert('تم رفع ونشر التصميم سحابياً لجميع الزوار!');
-                location.reload();
+                renderAdminPanel(document.getElementById('mainContainer'));
             }).catch(() => {
                 alert('حدث خطأ في الاتصال بقاعدة البيانات السحابية!');
             });
@@ -931,7 +943,8 @@
         function deleteDesign(id) {
             if (confirm('هل أنت متأكد من حذف هذا التصميم سحابياً؟')) {
                 db.ref('sky_data/designs/' + id).remove().then(() => {
-                    location.reload();
+                    designs = designs.filter(d => d.id !== id);
+                    renderAdminPanel(document.getElementById('mainContainer'));
                 });
             }
         }
@@ -946,6 +959,7 @@
                 whatsappUrl: document.getElementById('adminWhatsappUrl').value.trim()
             };
             db.ref('sky_data/links').set(links).then(() => {
+                globalLinks = links;
                 alert('تم حفظ الروابط سحابياً بنجاح!');
             });
         }
@@ -954,6 +968,7 @@
             const newPass = document.getElementById('newAdminPasswordInput').value.trim();
             if (!newPass) return alert('الرجاء إدخال كلمة سر جديدة.');
             db.ref('sky_data/adminPass').set(newPass).then(() => {
+                currentAdminPass = newPass;
                 alert('تم تحديث كلمة المرور سحابياً بنجاح!');
             });
         }
