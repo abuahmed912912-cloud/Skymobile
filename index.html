@@ -11,6 +11,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
@@ -26,8 +27,31 @@
             background: var(--sky-gradient);
             background-attachment: fixed;
             color: #2d3436; 
-            padding: 15px 10px; 
+            padding: 10px 10px 20px 10px; 
             min-height: 100vh;
+        }
+
+        .ticker-wrap {
+            width: 100%;
+            background: rgba(12, 36, 97, 0.9);
+            color: #00a8ff;
+            padding: 6px 0;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid rgba(0, 168, 255, 0.3);
+        }
+        .ticker-move {
+            display: inline-block;
+            white-space: nowrap;
+            padding-right: 100%;
+            animation: ticker 18s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(100%, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
 
         .container { 
@@ -56,11 +80,54 @@
             user-select: none;
         }
         .brand-header h1 { color: #0c2461; font-size: 22px; font-weight: 700; }
-        .brand-header p { font-size: 13px; color: #00a8ff; font-weight: bold; }
 
-        .client-input-card { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; }
-        .client-input-card label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #0c2461; }
-        .client-input-card input, .client-input-card select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
+        .section-frame {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            padding: 14px 16px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .section-frame.network-special {
+            background: linear-gradient(135deg, #0c2461 0%, #0a3d62 100%);
+            border: 2px solid #00a8ff;
+            color: #ffffff;
+        }
+        .frame-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0c2461;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .section-frame.network-special .frame-title {
+            color: #00a8ff;
+            border-bottom-color: rgba(0, 168, 255, 0.3);
+        }
+
+        .client-input-card { margin-bottom: 10px; }
+        .client-input-card label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 12px; color: #0c2461; }
+        .section-frame.network-special label { color: #e2e8f0; }
+        
+        .client-input-card input, .client-input-card select { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            font-size: 13px; 
+            outline: none; 
+            background: #fff; 
+        }
+
+        .colors-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .color-item { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 6px 10px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        .color-item label { font-size: 11px; margin-bottom: 0; }
+        .color-item input[type="color"] { width: 35px; height: 30px; border: none; cursor: pointer; background: transparent; padding: 0; }
 
         .top-action-bar { display: flex; gap: 10px; margin-bottom: 15px; }
         .btn-custom-action { flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; text-align: center; color: white; }
@@ -90,7 +157,8 @@
 
         .external-actions-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #f1f5f9; }
         .action-links { display: flex; flex-direction: column; gap: 10px; }
-        .link-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 14px; text-align: center; color: white; border: none; cursor: pointer; }
+        .link-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 14px; text-align: center; color: white; border: none; cursor: pointer; transition: transform 0.2s; }
+        .link-btn:active { transform: scale(0.98); }
         .download-img-btn { background-color: #00a8ff; }
         .whatsapp-share-btn { background-color: #25d366; }
         .copy-link-btn { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
@@ -274,12 +342,18 @@
                 categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" id="chip_${cat.id}" onclick="filterByCategory('${cat.id}')">${cat.name} (${count})</div>`;
             });
 
-            let networksOptionsHtml = `<option value="" data-name="">اختر الشبكة المسجلة تلقائياً</option>`;
+            let networksOptionsHtml = `<option value="" data-name="">اختر شبكتك المسجلة من القائمة</option>`;
             networkCodes.forEach(net => {
-                networksOptionsHtml += `<option value="${net.code}" data-name="${net.name}">${net.name} - (رقم: ${net.code})</option>`;
+                networksOptionsHtml += `<option value="${net.code}" data-name="${net.name}">${net.name} - (رمز: ${net.code})</option>`;
             });
 
             container.innerHTML = `
+                <div class="ticker-wrap">
+                    <div class="ticker-move">
+                        🔥 أهلاً بكم في تطبيق سكاي موبايل! صمم بطاقاتك وإعلاناتك مجاناً وبسرعة عالية 🚀  |  💳 تسوق وتسديد باقات الإنترنت والواي فاي بسهولة بأفضل الأسعار  |  ✨ انضم لقناتنا على الواتساب لمعرفة جديد العروض!
+                    </div>
+                </div>
+
                 <header class="brand-header">
                     <svg class="brand-logo" onclick="handleSecretLogoClick()" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M40 50 C 70 10, 130 10, 160 50" stroke="#00a8ff" stroke-width="12" stroke-linecap="round"/>
@@ -304,32 +378,87 @@
 
                 <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
 
-                <div class="client-input-card">
-                    <label>🌐 اختر الشبكة المسجلة:</label>
-                    <select id="cNetSelect" onchange="applySelectedNetworkCode()" style="margin-bottom:8px;">
-                        ${networksOptionsHtml}
-                    </select>
+                <!-- إطار خاص ومستقل لأصحاب الشبكات -->
+                <div class="section-frame network-special">
+                    <div class="frame-title">📶 خاص بأصحاب الشبكات (اظهار تلقائي على التصميم)</div>
+                    <p style="font-size: 11px; color: #00a8ff; margin-bottom: 10px;">أدخل رقم شبكتك في تطبيق سكاي موبايل ليظهر اسمها ورقمها فوراً داخل البالونة التفاعلية على التصميم:</p>
+
+                    <div class="client-input-card">
+                        <label>اختر الشبكة المسجلة:</label>
+                        <select id="cNetSelect" onchange="applySelectedNetworkCode()" style="margin-bottom:8px;">
+                            ${networksOptionsHtml}
+                        </select>
+                        
+                        <label>أو ادخل رقم الشبكة بالتطبيق مباشرة:</label>
+                        <input type="text" id="cNetCode" placeholder="مثال: 102" oninput="autoMatchNetworkCode()" style="margin-bottom:8px;">
+
+                        <label>اسم الشبكة:</label>
+                        <input type="text" id="cNetName" placeholder="مثال: الفجر" oninput="debouncedDraw()">
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-top: 10px;">
+                        <label style="color:#00a8ff;">📊 حاسبة أرباحك المتوقعة:</label>
+                        <div style="display: flex; gap: 6px; margin-top: 4px;">
+                            <input type="number" id="calcCardsCount" placeholder="الكروت المباعة يومياً" oninput="calculateNetworkProfit()" style="padding:6px; border-radius:6px; border:none; font-size:12px;">
+                            <input type="number" id="calcCardPrice" placeholder="سعر الكرت" oninput="calculateNetworkProfit()" style="padding:6px; border-radius:6px; border:none; font-size:12px;">
+                        </div>
+                        <div id="profitResult" style="margin-top: 6px; font-size: 11px; text-align: center; color: #4cd137; font-weight: bold;"></div>
+                    </div>
+
+                    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-top: 10px;">
+                        <label style="color:#00a8ff;">📢 ولّد نص ترويجي لشبكتك بالواتساب:</label>
+                        <button onclick="copyBadgeText()" style="width:100%; margin-top:6px; background: #00a8ff; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">📋 نسخ نص الإعلان لمجموعات المشتركين</button>
+                    </div>
+
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(0, 168, 255, 0.4); text-align: center;">
+                        <p style="font-size: 11px; color: #e2e8f0; margin-bottom: 6px;">هل شبكتك غير مسجلة وتريد إدراجها مجاناً؟</p>
+                        <div style="display: flex; gap: 6px; flex-direction: column;">
+                            <input type="text" id="reqNetName" placeholder="اسم الشبكة المراد إدراجها" style="padding:6px; border-radius:6px; border:none; font-size:12px;">
+                            <input type="text" id="reqNetLocation" placeholder="المدينة / المنطقة" style="padding:6px; border-radius:6px; border:none; font-size:12px;">
+                            <button onclick="sendNetworkAddRequest()" style="background: #25d366; color: white; border: none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px;">📲 طلب إضافة الشبكة عبر الواتساب</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-frame">
+                    <div class="frame-title">📝 بياناتك التجارية للتصميم</div>
                     
-                    <label>رقم الشبكة في تطبيق سكاي موبايل (يتم البحث واقتراح الاسم تلقائياً):</label>
-                    <input type="text" id="cNetCode" placeholder="مثال: 102" oninput="autoMatchNetworkCode()" style="margin-bottom:8px;">
+                    <div class="client-input-card">
+                        <label>🏪 اسم المحل أو صاحب النقطة:</label>
+                        <input type="text" id="cShop" placeholder="أدخل اسم المحل أو اسمك هنا" oninput="debouncedDraw()">
+                    </div>
 
-                    <label>اسم الشبكة:</label>
-                    <input type="text" id="cNetName" placeholder="مثال: شبكة الفجر" oninput="debouncedDraw()">
+                    <div class="client-input-card">
+                        <label>📍 العنوان والتواجد:</label>
+                        <input type="text" id="cAddress" placeholder="مثال: المهرة - الغيضة" oninput="debouncedDraw()">
+                    </div>
+
+                    <div class="client-input-card">
+                        <label>📞 رقم التواصل / الهاتف:</label>
+                        <input type="text" id="cPhone" value="738328251" placeholder="رقم الهاتف للتواصل" oninput="debouncedDraw()">
+                    </div>
                 </div>
 
-                <div class="client-input-card">
-                    <label>🏪 اسم المحل أو اسم الشخص:</label>
-                    <input type="text" id="cShop" placeholder="أدخل اسم المحل أو اسمك هنا" oninput="debouncedDraw()">
-                </div>
-
-                <div class="client-input-card">
-                    <label>📍 العنوان والتواجد:</label>
-                    <input type="text" id="cAddress" placeholder="أدخل العنوان (مثال: المهرة - الغيضة)" oninput="debouncedDraw()">
-                </div>
-
-                <div class="client-input-card">
-                    <label>📞 رقم التواصل / الهاتف:</label>
-                    <input type="text" id="cPhone" value="738328251" placeholder="رقم الهاتف للتواصل" oninput="debouncedDraw()">
+                <div class="section-frame">
+                    <div class="frame-title">🎨 تخصيص ألوان التصميم</div>
+                    <div class="colors-picker-grid">
+                        <div class="color-item">
+                            <label>خلفية البالونات:</label>
+                            <input type="color" id="colBg" value="#0c2461" onchange="debouncedDraw()">
+                        </div>
+                        <div class="color-item">
+                            <label>العبارات الرئيسية:</label>
+                            <input type="color" id="colText1" value="#ffffff" onchange="debouncedDraw()">
+                        </div>
+                        <div class="color-item">
+                            <label>العبارات الفرعية:</label>
+                            <input type="color" id="colText2" value="#00a8ff" onchange="debouncedDraw()">
+                        </div>
+                        <div class="color-item">
+                            <label>إطار الخطوط والبالونة:</label>
+                            <input type="color" id="colBorder" value="#00a8ff" onchange="debouncedDraw()">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="preview-box">
@@ -470,6 +599,11 @@
             const netName = document.getElementById('cNetName')?.value.trim() || "";
             const netCode = document.getElementById('cNetCode')?.value.trim() || "";
 
+            const colBg = document.getElementById('colBg')?.value || "#0c2461";
+            const colText1 = document.getElementById('colText1')?.value || "#ffffff";
+            const colText2 = document.getElementById('colText2')?.value || "#00a8ff";
+            const colBorder = document.getElementById('colBorder')?.value || "#00a8ff";
+
             const hasFooterData = shopName || address || phone;
             const footerHeight = hasFooterData ? Math.max(90, loadedBaseImage.height * 0.14) : 0;
 
@@ -478,71 +612,84 @@
 
             const selectedFontFamily = fontList[currentFontIndex].family;
 
-            // 1. رسم القالب الأساسي
             ctx.drawImage(loadedBaseImage, 0, 0, loadedBaseImage.width, loadedBaseImage.height);
 
-            // 2. شريط أعلى التصميم
             const topBadgeHeight = loadedBaseImage.height * 0.06;
-            ctx.fillStyle = "rgba(12, 36, 97, 0.92)";
+            ctx.fillStyle = colBg;
             ctx.fillRect(0, 0, canvas.width, topBadgeHeight);
             
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = colText1;
             ctx.font = `bold ${topBadgeHeight * 0.55}px ${selectedFontFamily}`;
             ctx.fillText("⭐ نقطة بيع معتمد لتطبيق سكاي موبايل ⭐", canvas.width / 2, topBadgeHeight / 2);
 
-            // 3. مربع الشبكة: أنيق، نحيف، بالوني، ويمتد من الطرف للطرف في أسفل التصميم
             if (netName || netCode) {
-                const netBadgeWidth = canvas.width; // ممتد من الطرف إلى الطرف الآخر
-                const netBadgeHeight = loadedBaseImage.height * 0.095; // نحيف وأنيق
-                const netX = 0;
-                const netY = loadedBaseImage.height - netBadgeHeight - 10;
+                const netBadgeHeight = loadedBaseImage.height * 0.11;
+                const fontLine1 = `bold ${netBadgeHeight * 0.38}px ${selectedFontFamily}`;
+                const fontLine2 = `bold ${netBadgeHeight * 0.32}px ${selectedFontFamily}`;
 
-                ctx.fillStyle = "rgba(12, 36, 97, 0.96)";
-                ctx.strokeStyle = "#00a8ff";
+                const textLine1 = netName ? `📶 ${netName}` : "";
+                const textLine2 = netCode ? `رمز الشبكة بالتطبيق: (${netCode})` : "";
+
+                ctx.font = fontLine1;
+                const w1 = ctx.measureText(textLine1).width;
+                ctx.font = fontLine2;
+                const w2 = ctx.measureText(textLine2).width;
+
+                const maxTextWidth = Math.max(w1, w2);
+                const paddingHorizontal = 40;
+                const minBadgeWidth = canvas.width * 0.45;
+                const maxBadgeWidth = canvas.width * 0.92;
+
+                const netBadgeWidth = Math.min(Math.max(maxTextWidth + paddingHorizontal, minBadgeWidth), maxBadgeWidth);
+                const netX = (canvas.width - netBadgeWidth) / 2;
+                const netY = topBadgeHeight + 12;
+
+                ctx.fillStyle = colBg;
+                ctx.strokeStyle = colBorder;
                 ctx.lineWidth = 3;
 
-                // تصميم بالوني بحواف مستديرة بالكامل
                 ctx.beginPath();
-                ctx.roundRect(netX, netY, netBadgeWidth, netBadgeHeight, netBadgeHeight / 2);
+                ctx.roundRect(netX, netY, netBadgeWidth, netBadgeHeight, 18);
                 ctx.fill();
                 ctx.stroke();
 
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
-                let mainText = "";
                 if (netName && netCode) {
-                    mainText = `📶 شبكة: ${netName}  |  رمز الشبكة: (${netCode})`;
-                } else if (netName) {
-                    mainText = `📶 شبكة: ${netName}`;
-                } else if (netCode) {
-                    mainText = `📶 رمز الشبكة بالتطبيق: (${netCode})`;
+                    ctx.fillStyle = colText1;
+                    ctx.font = fontLine1;
+                    ctx.fillText(textLine1, canvas.width / 2, netY + (netBadgeHeight * 0.30));
+
+                    const lineY = netY + (netBadgeHeight * 0.54);
+                    const lineMargin = netBadgeWidth * 0.15;
+                    ctx.beginPath();
+                    ctx.strokeStyle = colBorder;
+                    ctx.lineWidth = 1.5;
+                    ctx.moveTo(netX + lineMargin, lineY);
+                    ctx.lineTo(netX + netBadgeWidth - lineMargin, lineY);
+                    ctx.stroke();
+
+                    ctx.fillStyle = colText2;
+                    ctx.font = fontLine2;
+                    ctx.fillText(textLine2, canvas.width / 2, netY + (netBadgeHeight * 0.76));
+                } else {
+                    const singleText = textLine1 || textLine2;
+                    ctx.fillStyle = colText1;
+                    ctx.font = fontLine1;
+                    ctx.fillText(singleText, canvas.width / 2, netY + (netBadgeHeight / 2));
                 }
-
-                // سطر اسم ورقم الشبكة (نحيف وبسيط)
-                ctx.fillStyle = "#ffffff";
-                ctx.font = `bold ${netBadgeHeight * 0.35}px ${selectedFontFamily}`;
-                ctx.fillText(mainText, canvas.width / 2, netY + (netBadgeHeight * 0.33));
-
-                // سطر الشراء (خط واضح وعريض)
-                ctx.fillStyle = "#00a8ff";
-                ctx.font = `bold ${netBadgeHeight * 0.32}px ${selectedFontFamily}`;
-                ctx.fillText("💳 يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل", canvas.width / 2, netY + (netBadgeHeight * 0.72));
             }
 
-            // 4. شريط معلومات المحل والتواصل في أسفل الكانفاس
             if (hasFooterData) {
                 const footerY = loadedBaseImage.height;
 
-                const grad = ctx.createLinearGradient(0, footerY, canvas.width, canvas.height);
-                grad.addColorStop(0, '#0c2461');
-                grad.addColorStop(1, '#00a8ff');
-                ctx.fillStyle = grad;
+                ctx.fillStyle = colBg;
                 ctx.fillRect(0, footerY, canvas.width, footerHeight);
 
-                ctx.fillStyle = '#f39c12';
+                ctx.fillStyle = colBorder;
                 ctx.fillRect(0, footerY, canvas.width, 4);
 
                 ctx.textAlign = "center";
@@ -551,7 +698,7 @@
                 if (shopName) {
                     const shopFontSize = footerHeight * 0.30;
                     ctx.font = `bold ${shopFontSize}px ${selectedFontFamily}`;
-                    ctx.fillStyle = "#ffffff";
+                    ctx.fillStyle = colText1;
                     
                     const shopY = (address || phone) ? footerY + (footerHeight * 0.32) : footerY + (footerHeight * 0.50);
                     ctx.fillText(shopName, canvas.width / 2, shopY);
@@ -565,12 +712,55 @@
                 if (subDetails) {
                     const subFontSize = footerHeight * 0.22;
                     ctx.font = `${subFontSize}px ${selectedFontFamily}`;
-                    ctx.fillStyle = "#f1c40f";
+                    ctx.fillStyle = colText2;
 
                     const subY = shopName ? footerY + (footerHeight * 0.70) : footerY + (footerHeight * 0.50);
                     ctx.fillText(subDetails, canvas.width / 2, subY);
                 }
             }
+        }
+
+        function calculateNetworkProfit() {
+            const count = parseFloat(document.getElementById('calcCardsCount')?.value) || 0;
+            const price = parseFloat(document.getElementById('calcCardPrice')?.value) || 0;
+            const resultDiv = document.getElementById('profitResult');
+
+            if (resultDiv && count > 0 && price > 0) {
+                const monthlySales = count * price * 30;
+                const hoursSaved = Math.round((count * 2 * 30) / 60);
+                resultDiv.innerHTML = `💵 مبيعاتك الشهرية المتوقعة: ${monthlySales.toLocaleString()} ريال | ⏱️ الوقت الموفر شهرياً: ${hoursSaved} ساعة!`;
+            } else if(resultDiv) {
+                resultDiv.innerHTML = "";
+            }
+        }
+
+        function copyBadgeText() {
+            const name = document.getElementById('cNetName')?.value.trim() || "شبكتنا";
+            const code = document.getElementById('cNetCode')?.value.trim() || "---";
+            const text = `📱 مشتركينا الكرام، الآن يمكنك تسديد وسحب كروت شبكة (${name}) إلكترونياً وبأقل جهد عبر تطبيق سكاي موبايل!\n\n🔹 رمز الشبكة داخل التطبيق: ${code}\n🔹 حمل التطبيق وسدد كرتك فوراً من أي مكان.`;
+            
+            navigator.clipboard.writeText(text);
+            alert("✅ تم نسخ النص الترويجي لشبكتك! يمكنك الآن لصقه ونشره في مجموعات المشتركين.");
+        }
+
+        /* دالة تحويل طلب إضافة الشبكة مباشرة إلى رقمك المعتمد عبر الواتساب */
+        function sendNetworkAddRequest() {
+            const netName = document.getElementById('reqNetName')?.value.trim();
+            const netLoc = document.getElementById('reqNetLocation')?.value.trim();
+            
+            // رقمك المعتمد تلقائياً
+            const adminPhone = "738328251"; 
+
+            if (!netName) {
+                alert("يرجى إدخال اسم الشبكة أولاً!");
+                return;
+            }
+
+            const messageText = `السلام عليكم ورحمة الله وبركاته،\nأرغب في إدراج شبكتي ضمن تطبيق سكاي موبايل:\n\n🔹 **اسم الشبكة:** ${netName}\n🔹 **المنطقة/الموقع:** ${netLoc || "غير محدد"}\n\nيرجى تزويدي بالرمز والترتيب الخاص بربط الشبكة.`;
+            const encodedMessage = encodeURIComponent(messageText);
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=967${adminPhone}&text=${encodedMessage}`;
+
+            window.open(whatsappUrl, '_blank');
         }
 
         function changeCustomFont() {
@@ -586,6 +776,11 @@
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+            }
+
             const link = document.createElement('a');
             link.download = `سكاي_موبايل_${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -604,12 +799,16 @@
 
         function resetDefaultData() {
             if(confirm("هل تريد إرجاع الحقول إلى القيم الافتراضية؟")) {
-                document.getElementById('cShop').value = "";
-                document.getElementById('cAddress').value = "";
-                document.getElementById('cPhone').value = "738328251";
+                if(document.getElementById('cShop')) document.getElementById('cShop').value = "";
+                if(document.getElementById('cAddress')) document.getElementById('cAddress').value = "";
+                if(document.getElementById('cPhone')) document.getElementById('cPhone').value = "738328251";
                 if(document.getElementById('cNetCode')) document.getElementById('cNetCode').value = "";
                 if(document.getElementById('cNetName')) document.getElementById('cNetName').value = "";
                 if(document.getElementById('cNetSelect')) document.getElementById('cNetSelect').value = "";
+                if(document.getElementById('colBg')) document.getElementById('colBg').value = "#0c2461";
+                if(document.getElementById('colText1')) document.getElementById('colText1').value = "#ffffff";
+                if(document.getElementById('colText2')) document.getElementById('colText2').value = "#00a8ff";
+                if(document.getElementById('colBorder')) document.getElementById('colBorder').value = "#00a8ff";
                 drawFinalImage();
             }
         }
@@ -634,7 +833,7 @@
 
             let networksListHtml = networkCodes.map(n => `
                 <div class="sub-img-list">
-                    <span><strong>${n.name}</strong> - (رقم: ${n.code})</span>
+                    <span><strong>${n.name}</strong> - (رمز: ${n.code})</span>
                     <button class="btn-delete" onclick="deleteNetworkCode('${n.id}')">🗑️ حذف</button>
                 </div>
             `).join('');
@@ -652,9 +851,9 @@
                     <br>
                     <div class="form-group">
                         <label>كلمة المرور الجديدة:</label>
-                        <input type="password" id="newAdminPasswordInput" placeholder="أدخل كلمة مرور جديدة للوحة الإدارة">
+                        <input type="password" id="newAdminPasswordInput" placeholder="أدخل كلمة مرور جديدة">
                     </div>
-                    <button class="btn-main" onclick="changeAdminPassword()" style="background:#e67e22;">🔒 حفظ كلمة السر في السحابة</button>
+                    <button class="btn-main" onclick="changeAdminPassword()" style="background:#e67e22;">🔒 حفظ كلمة السر</button>
                 </div>
 
                 <div class="admin-card">
@@ -662,7 +861,7 @@
                     <br>
                     <div class="form-group">
                         <label>اسم الشبكة:</label>
-                        <input type="text" id="adminNetName" placeholder="مثال: شبكة الفجر لاسلكية">
+                        <input type="text" id="adminNetName" placeholder="مثال: الفجر">
                     </div>
                     <div class="form-group">
                         <label>رقم الشبكة في تطبيق سكاي موبايل:</label>
@@ -683,7 +882,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>القسم (اختر قسم تصاميم كروت الشبكات):</label>
+                        <label>القسم:</label>
                         <select id="newDesignCat">
                             ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                         </select>
