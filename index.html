@@ -3,150 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سكاي موبايل - مصمم البطاقات الفوري</title>
+    <title>  -   </title>
     
-    <!-- مكتبات Firebase للتخزين السحابي الفوري -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;700&family=Almarai:wght@400;700&family=Cairo:wght@400;700&family=Changa:wght@400;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f0f2f5; color: #333; padding: 10px; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); min-height: 200px; }
+        :root {
+            --sky-primary: #0a3d62;
+            --sky-accent: #00a8ff;
+            --sky-gradient: linear-gradient(135deg, #0c2461 0%, #0a3d62 50%, #00a8ff 100%);
+            --font-current: 'Cairo', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-current); transition: font-family 0.2s ease; }
+
+        body { 
+            background: var(--sky-gradient);
+            background-attachment: fixed;
+            color: #2d3436; 
+            padding: 15px 10px; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
         
-        .admin-header {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 20px;
+        .brand-header { 
+            text-align: center; 
+            margin-bottom: 20px; 
+            padding-bottom: 15px; 
+            border-bottom: 2px dashed #00a8ff; 
         }
-        .admin-header h2 { font-size: 22px; margin-bottom: 5px; }
-        .admin-header p { font-size: 13px; opacity: 0.9; }
-
-        .top-nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
-        .btn-home { flex: 1; background-color: #007bff; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
-        .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
-
-        .admin-tabs-bar { display: flex; gap: 10px; margin-bottom: 20px; background: #e9ecef; padding: 5px; border-radius: 12px; }
-        .tab-btn { flex: 1; background: transparent; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; text-align: center; color: #495057; transition: 0.2s; }
-        .tab-btn.active { background: #007bff; color: white; box-shadow: 0 2px 6px rgba(0,123,255,0.3); }
-
-        .client-input-card {
-            background: #f8f9fa;
-            border: 1px solid #e2e8f0;
-            padding: 12px 15px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        .brand-logo {
+            width: 90px;
+            height: auto;
+            margin-bottom: 8px;
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.15));
+            cursor: pointer;
+            user-select: none;
         }
-        .client-input-card label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #0056b3; }
-        .client-input-card input { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; outline: none; }
-        .client-input-card input:focus { border-color: #007bff; box-shadow: 0 0 5px rgba(0,123,255,0.2); }
+        .brand-header h1 { color: #0c2461; font-size: 22px; font-weight: 700; }
+        .brand-header p { font-size: 13px; color: #00a8ff; font-weight: bold; }
 
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #495057; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 10px; font-size: 14px; background: #fff; }
-        .btn-main { background-color: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .client-input-card { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; }
+        .client-input-card label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #0c2461; }
+        .client-input-card input, .client-input-card select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; background: #fff; }
 
-        .top-action-bar { display: flex; gap: 10px; margin-bottom: 12px; }
-        .btn-custom-action { flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; border: none; cursor: pointer; text-align: center; }
-        .btn-reset-default { background-color: #ff4d4d; color: white; }
-        .btn-change-font { background-color: #f0ad4e; color: white; }
+        .top-action-bar { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-custom-action { flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; text-align: center; color: white; }
+        .btn-reset-default { background-color: #e74c3c; }
+        .btn-change-font { background-color: #f39c12; }
+
+        .font-indicator { text-align: center; font-size: 11px; color: #0a3d62; margin-top: -8px; margin-bottom: 12px; font-weight: bold; }
 
         .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; }
         .categories-scroll::-webkit-scrollbar { display: none; }
-        .cat-chip { background: #fff; border: 1px solid #ced4da; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: #495057; transition: 0.2s; }
-        .cat-chip.active { background: #007bff; color: #fff; border-color: #007bff; }
+        .cat-chip { background: #fff; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; color: #475569; }
+        .cat-chip.active { background: #0a3d62; color: #fff; border-color: #0a3d62; }
 
-        .templates-preview-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; min-height: 100px; }
-        .templates-preview-scroll::-webkit-scrollbar { height: 6px; }
-        .templates-preview-scroll::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+        .templates-preview-scroll { 
+            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; min-height: 100px; -webkit-overflow-scrolling: touch;
+        }
         
         .thumb-card { 
-            flex: 0 0 75px; 
-            height: 95px; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            border: 2px solid #ced4da; 
-            cursor: pointer; 
-            background: #000;
-            position: relative;
-            transition: 0.2s;
+            flex: 0 0 80px; height: 100px; border-radius: 10px; overflow: hidden; border: 2px solid #cbd5e1; cursor: pointer; background: #e2e8f0; position: relative;
         }
-        .thumb-card.selected { border-color: #007bff; box-shadow: 0 0 8px rgba(0,123,255,0.5); transform: scale(1.05); }
-        .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb-card.selected { border-color: #00a8ff; box-shadow: 0 0 10px rgba(0,168,255,0.6); transform: scale(1.03); }
+        .thumb-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        .dropzone-box {
-            border: 2px dashed #007bff;
-            background: #f8f9fa;
-            padding: 25px 15px;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: 0.2s;
-        }
-        .dropzone-box:hover, .dropzone-box.dragover { background: #e2e8f0; border-color: #0056b3; }
+        .preview-box { background: #fff; border: 2px dashed #00a8ff; padding: 12px; border-radius: 14px; margin-top: 15px; }
+        #canvasContainer { position: relative; width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 15px; background: #f8fafc; }
+        #previewCanvas { width: 100%; height: auto; display: block; }
 
-        .preview-box { background: #fff; border: 2px dashed #007bff; padding: 15px; border-radius: 14px; margin-top: 15px; }
-        
-        #canvasContainer { 
-            position: relative;
-            width: 100%;
-            border-radius: 10px; 
-            overflow: hidden; 
-            margin-bottom: 15px; 
-            border: 1px solid #e9ecef;
-            background: #000;
-            text-align: center;
-        }
-        #previewCanvas {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .external-actions-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #e9ecef;
-        }
+        .external-actions-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #f1f5f9; }
         .action-links { display: flex; flex-direction: column; gap: 10px; }
-        
-        .link-btn { display: block; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 15px; text-align: center; color: white; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .download-img-btn { background-color: #007bff; color: white; }
-        .whatsapp-share-btn { background-color: #25d366; color: white; }
-        .copy-link-btn { background-color: #e9ecef; color: #6c757d; border: 1px solid #ced4da; }
-        .store-link-btn { background-color: #17a2b8; color: white; }
-        .whatsapp-channel-btn { background-color: #128c7e; color: white; }
+        .link-btn { display: block; width: 100%; padding: 13px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 14px; text-align: center; color: white; border: none; cursor: pointer; }
+        .download-img-btn { background-color: #00a8ff; }
+        .whatsapp-share-btn { background-color: #25d366; }
+        .copy-link-btn { background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+        .store-link-btn { background-color: #0a3d62; }
+        .whatsapp-channel-btn { background-color: #128c7e; }
 
-        .client-credits-footer {
-            margin-top: 20px;
-            padding-top: 12px;
-            border-top: 1px solid #e9ecef;
-            text-align: center;
-            font-size: 12px;
-            color: #6c757d;
-            font-weight: 600;
-        }
+        .client-credits-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #64748b; font-weight: 600; }
 
-        .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
-        .btn-copy { background-color: #17a2b8; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
-        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; }
-
-        .stats-grid { display: flex; gap: 10px; margin-bottom: 15px; }
-        .stat-box { flex: 1; background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #cbd5e1; }
-        .stat-box h4 { font-size: 12px; color: #64748b; margin-bottom: 5px; }
-        .stat-box .num { font-size: 22px; font-weight: bold; color: #007bff; }
-
-        .log-item { font-size: 12px; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .log-item:last-child { border-bottom: none; }
-        .log-tag { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
-        .tag-visit { background: #e0f2fe; color: #0369a1; }
-        .tag-download { background: #dcfce7; color: #15803d; }
+        .admin-header { background: var(--sky-gradient); color: white; padding: 20px; border-radius: 14px; text-align: center; margin-bottom: 20px; }
+        .admin-card { background: #fff; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #495057; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 10px; font-size: 14px; }
+        .btn-main { background: var(--sky-gradient); color: white; border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
+        .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-copy { background-color: #00a8ff; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        .btn-delete { background-color: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        .btn-exit-admin { background-color: #e74c3c; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -159,138 +121,276 @@
             authDomain: "sky-mobile-8e245.firebaseapp.com",
             databaseURL: "https://sky-mobile-8e245-default-rtdb.firebaseio.com",
             projectId: "sky-mobile-8e245",
-            storageBucket: "sky-mobile-8e245.firebasestorage.app",
             messagingSenderId: "1066510361417",
-            appId: "1:1066510361417:web:a5e17c7f3c8e267b1d3098",
-            measurementId: "G-PWC1MKDL56"
+            appId: "1:1066510361417:web:a5e17c7f3c8e267b1d3098"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let currentAdminPass = "sky2026";
+        let currentAdminPass = "sky2026"; 
+
         let globalLinks = {
             appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
             whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
         };
 
-        let categories = [
-            { id: 'cat_net', name: '📶 الشبكات' },
-            { id: 'cat_events', name: '🎉 المناسبات' },
-            { id: 'cat_custom', name: '⭐ تصاميم باسم العميل' },
-            { id: 'cat_friday', name: '🕌 جمعة مباركة' }
+        const fontList = [
+            { name: ' (Cairo)', family: "'Cairo', sans-serif" },
+            { name: ' (Tajawal)', family: "'Tajawal', sans-serif" },
+            { name: ' (Almarai)', family: "'Almarai', sans-serif" },
+            { name: ' (Alexandria)', family: "'Alexandria', sans-serif" },
+            { name: ' (Changa)', family: "'Changa', sans-serif" }
         ];
+        let currentFontIndex = parseInt(localStorage.getItem('sky_font_idx') || '0');
 
+        let categories = [{ id: 'cat_wifi_networks', name: '   ' }];
         let designs = [];
-        let analytics = { views: 0, downloads: 0, logs: {} };
-        let selectedFont = localStorage.getItem('sky_selected_font') || "'Segoe UI', Tahoma, sans-serif";
-        let activeAdminTab = 'templates'; 
+        let networkCodes = []; 
+        let imageCache = {}; 
         let activeCategory = 'all'; 
-        let selectedFileToUpload = null;
         let currentDesignId = null;
-        let hasLoggedVisit = false;
-        
-        // ذاكرة تخزين مؤقت للصور لسرعة التبديل اللحظي
-        const imageCache = {};
+        let loadedBaseImage = null;
+        let renderDebounceTimer = null;
+        let logoClickCounter = 0;
+        let logoClickTimer = null;
 
         window.onload = function() {
-            loadCloudDataOnce();
+            applyFontToBody();
+            listenToCloudData();
         };
 
-        function loadCloudDataOnce() {
-            db.ref('sky_data').once('value').then((snapshot) => {
+        function applyFontToBody() {
+            const fontObj = fontList[currentFontIndex];
+            document.documentElement.style.setProperty('--font-current', fontObj.family);
+            const fontIndicator = document.getElementById('currentFontName');
+            if (fontIndicator) fontIndicator.innerText = fontObj.name;
+        }
+
+        function listenToCloudData() {
+            db.ref('sky_data').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if (data.categories) categories = Object.values(data.categories);
+                    if (data.categories) {
+                        const fetchedCats = Object.values(data.categories);
+                        if (!fetchedCats.some(c => c.id === 'cat_wifi_networks')) {
+                            fetchedCats.unshift({ id: 'cat_wifi_networks', name: '   ' });
+                        }
+                        categories = fetchedCats;
+                    }
                     if (data.designs) designs = Object.values(data.designs);
                     if (data.links) globalLinks = data.links;
                     if (data.adminPass) currentAdminPass = data.adminPass;
-                    if (data.analytics) analytics = data.analytics;
+                    if (data.networks) networkCodes = Object.values(data.networks);
                 }
-                checkRoute();
-            }).catch(() => {
-                checkRoute();
+                checkViewState();
             });
         }
 
-        function trackActivity(type, extraDetails = {}) {
-            const timeStr = new Date().toLocaleString('ar-YE', { hour12: true });
-            
-            if (type === 'visit') {
-                if (hasLoggedVisit) return;
-                hasLoggedVisit = true;
-                db.ref('sky_data/analytics/views').transaction(count => (count || 0) + 1);
-                db.ref('sky_data/analytics/logs').push({
-                    type: 'زيارة',
-                    time: timeStr,
-                    design: currentDesignId || 'عام'
-                });
-            } else if (type === 'download' || type === 'share') {
-                db.ref('sky_data/analytics/downloads').transaction(count => (count || 0) + 1);
-                db.ref('sky_data/analytics/logs').push({
-                    type: type === 'download' ? 'تحميل' : 'مشاركة واتساب',
-                    time: timeStr,
-                    shop: extraDetails.shop || 'غير مسمى',
-                    phone: extraDetails.phone || 'بدون رقم',
-                    address: extraDetails.address || 'بدون عنوان',
-                    design: currentDesignId || 'عام'
-                });
-            }
-        }
-
-        function checkRoute() {
+        function checkViewState() {
             const container = document.getElementById('mainContainer');
-            const isAdminLoggedIn = sessionStorage.getItem('sky_admin_logged') === 'true';
-            const urlParams = new URLSearchParams(window.location.search);
-            const hasAdminParam = urlParams.has('admin');
+            const isAdminMode = sessionStorage.getItem('sky_in_admin_mode') === 'true';
+            const isAuth = sessionStorage.getItem('sky_admin_authenticated') === 'true';
 
-            if (isAdminLoggedIn) {
-                renderAdminPanel(container);
-            } else if (hasAdminParam) {
-                renderLoginBox(container);
+            if (isAdminMode) {
+                if (isAuth) {
+                    renderAdminPanel(container);
+                } else {
+                    renderLoginForm(container);
+                }
             } else {
                 renderClientPanel(container);
-                trackActivity('visit');
             }
         }
 
-        function renderLoginBox(container) {
+        function handleSecretLogoClick() {
+            logoClickCounter++;
+            clearTimeout(logoClickTimer);
+
+            if (logoClickCounter >= 5) {
+                logoClickCounter = 0;
+                sessionStorage.setItem('sky_in_admin_mode', 'true');
+                checkViewState();
+            } else {
+                logoClickTimer = setTimeout(() => {
+                    logoClickCounter = 0;
+                }, 1500);
+            }
+        }
+
+        function renderLoginForm(container) {
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>🔐 تسجيل دخول الإدارة</h2>
-                    <p>أدخل كلمة السر للوصول إلى لوحة التحكم</p>
+                    <h2>    </h2>
+                    <p>     </p>
                 </div>
                 <div class="form-group">
-                    <label>كلمة المرور:</label>
-                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة السر">
+                    <label> :</label>
+                    <input type="password" id="adminPassInput" placeholder="  ">
                 </div>
-                <button class="btn-main" onclick="verifyPassword()">دخول</button>
+                <button class="btn-main" onclick="verifyPassword()"> </button>
                 <div style="text-align: center; margin-top: 15px;">
-                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ العودة لواجهة العميل</a>
+                    <button onclick="exitAdminMode()" style="background:none; border:none; color:#00a8ff; cursor:pointer; font-size:13px; font-weight:bold;">   </button>
                 </div>
             `;
         }
 
         function verifyPassword() {
             const pass = document.getElementById('adminPassInput').value.trim();
-            if (pass === currentAdminPass || pass === "sky2026") {
-                sessionStorage.setItem('sky_admin_logged', 'true');
-                window.location.href = "?admin=sky";
-            } else { alert('كلمة السر غير صحيحة!'); }
+            if (pass === currentAdminPass) {
+                sessionStorage.setItem('sky_admin_authenticated', 'true');
+                checkViewState();
+            } else { 
+                alert('    !'); 
+            }
         }
 
-        function logoutAdmin() {
-            sessionStorage.removeItem('sky_admin_logged');
-            window.location.href = "?";
+        function exitAdminMode() {
+            sessionStorage.removeItem('sky_in_admin_mode');
+            sessionStorage.removeItem('sky_admin_authenticated');
+            checkViewState();
+        }
+
+        function renderClientPanel(container) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const designId = urlParams.get('id');
+
+            let currentDesign = null;
+            if (designId) {
+                currentDesign = designs.find(d => d.id == designId);
+                if (currentDesign && currentDesign.categoryId) activeCategory = currentDesign.categoryId;
+            } 
+            
+            if (!currentDesign) {
+                let filtered = getFilteredDesigns();
+                currentDesign = filtered[0] || designs[0] || { id: '', title: ' ', image: '' };
+            }
+
+            currentDesignId = currentDesign.id;
+
+            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" id="chip_all" onclick="filterByCategory('all')">  (${designs.length})</div>`;
+            categories.forEach(cat => {
+                const count = designs.filter(d => d.categoryId === cat.id).length;
+                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" id="chip_${cat.id}" onclick="filterByCategory('${cat.id}')">${cat.name} (${count})</div>`;
+            });
+
+            let networksOptionsHtml = `<option value="" data-name="">   </option>`;
+            networkCodes.forEach(net => {
+                networksOptionsHtml += `<option value="${net.code}" data-name="${net.name}">${net.name} - (: ${net.code})</option>`;
+            });
+
+            container.innerHTML = `
+                <header class="brand-header">
+                    <svg class="brand-logo" onclick="handleSecretLogoClick()" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M40 50 C 70 10, 130 10, 160 50" stroke="#00a8ff" stroke-width="12" stroke-linecap="round"/>
+                        <rect x="150" y="20" width="8" height="8" fill="#00a8ff"/>
+                        <rect x="162" y="20" width="8" height="8" fill="#00a8ff"/>
+                        <rect x="162" y="32" width="8" height="8" fill="#00a8ff"/>
+                        <text x="50%" y="90" text-anchor="middle" fill="#0c2461" font-size="38" font-weight="900" font-family="Arial">SKY</text>
+                        <text x="50%" y="115" text-anchor="middle" fill="#00a8ff" font-size="16" font-weight="bold" letter-spacing="3">MOBILE</text>
+                        <text x="50%" y="145" text-anchor="middle" fill="#0c2461" font-size="20" font-weight="bold"> </text>
+                    </svg>
+                    <h1>   </h1>
+                    <p style="color:#0c2461; font-weight:800; font-size:15px; margin-top:5px; background:rgba(0,168,255,0.15); display:inline-block; padding:4px 12px; border-radius:15px;">       </p>
+                </header>
+
+                <div class="top-action-bar">
+                    <button class="btn-custom-action btn-reset-default" onclick="resetDefaultData()">  </button>
+                    <button class="btn-custom-action btn-change-font" onclick="changeCustomFont()">  </button>
+                </div>
+                <div class="font-indicator"> : <span id="currentFontName">${fontList[currentFontIndex].name}</span></div>
+
+                <div class="categories-scroll">${categoriesHtml}</div>
+
+                <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
+
+                <div class="client-input-card">
+                    <label>   :</label>
+                    <select id="cNetSelect" onchange="applySelectedNetworkCode()" style="margin-bottom:8px;">
+                        ${networksOptionsHtml}
+                    </select>
+                    
+                    <label>      (    ):</label>
+                    <input type="text" id="cNetCode" placeholder=": 102" oninput="autoMatchNetworkCode()" style="margin-bottom:8px;">
+
+                    <label> :</label>
+                    <input type="text" id="cNetName" placeholder=":  " oninput="debouncedDraw()">
+                </div>
+
+                <div class="client-input-card">
+                    <label>     :</label>
+                    <input type="text" id="cShop" placeholder="     " oninput="debouncedDraw()">
+                </div>
+
+                <div class="client-input-card">
+                    <label>  :</label>
+                    <input type="text" id="cAddress" placeholder="  (:  - )" oninput="debouncedDraw()">
+                </div>
+
+                <div class="client-input-card">
+                    <label>   / :</label>
+                    <input type="text" id="cPhone" value="738328251" placeholder="  " oninput="debouncedDraw()">
+                </div>
+
+                <div class="preview-box">
+                    <div id="canvasContainer">
+                        <canvas id="previewCanvas"></canvas>
+                    </div>
+
+                    <div class="external-actions-section">
+                        <div class="action-links">
+                            <button class="link-btn download-img-btn" onclick="downloadImage()">    </button>
+                            <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">    </button>
+                            <button class="link-btn copy-link-btn" onclick="copyDirectLink()">    </button>
+                            
+                            <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">      </a>
+                            <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">    </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="client-credits-footer">
+                     :   ( ) � : 738328251
+                </div>
+            `;
+
+            renderClientThumbnails(currentDesignId);
+            if (currentDesign && currentDesign.image) loadSelectedDesign(currentDesign);
+        }
+
+        function autoMatchNetworkCode() {
+            const codeInput = document.getElementById('cNetCode');
+            const nameInput = document.getElementById('cNetName');
+            const selectEl = document.getElementById('cNetSelect');
+            if(!codeInput) return;
+
+            const typedCode = codeInput.value.trim();
+            if (typedCode) {
+                const matchedNet = networkCodes.find(n => n.code == typedCode);
+                if (matchedNet) {
+                    if (nameInput) nameInput.value = matchedNet.name;
+                    if (selectEl) selectEl.value = matchedNet.code;
+                }
+            }
+            debouncedDraw();
+        }
+
+        function applySelectedNetworkCode() {
+            const selectEl = document.getElementById('cNetSelect');
+            const codeInput = document.getElementById('cNetCode');
+            const nameInput = document.getElementById('cNetName');
+            
+            if (selectEl && selectEl.selectedIndex > 0) {
+                const selectedOpt = selectEl.options[selectEl.selectedIndex];
+                if (codeInput) codeInput.value = selectEl.value;
+                if (nameInput) nameInput.value = selectedOpt.getAttribute('data-name') || "";
+                debouncedDraw();
+            }
         }
 
         function filterByCategory(catId) {
             activeCategory = catId;
-            const chips = document.querySelectorAll('.cat-chip');
-            chips.forEach(chip => chip.classList.remove('active'));
-            
+            document.querySelectorAll('.cat-chip').forEach(chip => chip.classList.remove('active'));
             const targetChip = document.getElementById('chip_' + catId);
             if(targetChip) targetChip.classList.add('active');
 
@@ -300,7 +400,7 @@
                 loadSelectedDesign(filteredDesigns[0]);
             } else {
                 renderClientThumbnails(null);
-                window.loadedBaseImage = null;
+                loadedBaseImage = null;
                 const canvas = document.getElementById('previewCanvas');
                 if(canvas) {
                     const ctx = canvas.getContext('2d');
@@ -314,663 +414,477 @@
             return designs.filter(d => d.categoryId === activeCategory);
         }
 
-        function renderClientPanel(container) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const designId = urlParams.get('id');
+        function renderClientThumbnails(selectedId) {
+            const scrollBox = document.getElementById('templatesScrollContainer');
+            if(!scrollBox) return;
+            scrollBox.innerHTML = '';
 
-            let currentDesign = null;
-            if (designId) {
-                currentDesign = designs.find(d => d.id == designId);
-                if (currentDesign && currentDesign.categoryId) {
-                    activeCategory = currentDesign.categoryId;
-                }
-            } 
-            
-            if (!currentDesign) {
-                let filtered = getFilteredDesigns();
-                currentDesign = filtered[0] || designs[0] || { id: '', title: 'تصميم بطاقة', image: '', categoryId: '' };
-            }
+            let list = getFilteredDesigns();
 
-            currentDesignId = currentDesign.id;
-
-            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" id="chip_all" onclick="filterByCategory('all')">📂 الكل (${designs.length})</div>`;
-            categories.forEach(cat => {
-                const count = designs.filter(d => d.categoryId === cat.id).length;
-                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" id="chip_${cat.id}" onclick="filterByCategory('${cat.id}')">${cat.name} (${count})</div>`;
-            });
-
-            container.innerHTML = `
-                <header style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
-                    <h1 style="color: #007bff; font-size: 20px; margin-bottom: 3px;">🎨 مصمم البطاقات الفوري</h1>
-                    <p style="font-size: 12px; color: #666;">سكاي موبايل - Card Designer</p>
-                </header>
-
-                <div class="top-action-bar">
-                    <button class="btn-custom-action btn-reset-default" onclick="resetDefaultData()">↺ إرجاع الأصلي</button>
-                    <button class="btn-custom-action btn-change-font" onclick="changeCustomFont()">🔤 تغيير الخط</button>
-                </div>
-
-                <div class="categories-scroll">${categoriesHtml}</div>
-
-                <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
-
-                <div class="client-input-card">
-                    <label>🏪 اسم المحل أو اسم الشخص:</label>
-                    <input type="text" id="cShop" value="" placeholder="أدخل اسم المحل أو اسمك هنا" oninput="drawFinalImage()">
-                </div>
-
-                <div class="client-input-card">
-                    <label>📍 العنوان والتواجد:</label>
-                    <input type="text" id="cAddress" placeholder="أدخل العنوان (مثال: المهرة - الغيظة)" oninput="drawFinalImage()">
-                </div>
-
-                <div class="client-input-card">
-                    <label>📞 رقم التواصل / الهاتف:</label>
-                    <input type="text" id="cPhone" value="738328251" placeholder="رقم الهاتف للتواصل" oninput="drawFinalImage()">
-                </div>
-
-                <div class="preview-box">
-                    <div id="canvasContainer">
-                        <canvas id="previewCanvas"></canvas>
-                    </div>
-
-                    <div class="external-actions-section">
-                        <div class="action-links">
-                            <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم وحفظ الصورة</button>
-                            <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة الصورة في واتساب</button>
-                            <button class="link-btn copy-link-btn" onclick="copyDirectLink()">🔗 نسخ رابط التصميم المباشر</button>
-                            
-                            <a href="${globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn">🛒 تحميل تطبيق سكاي موبايل من المتجر</a>
-                            <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 الدخول إلى قناة الواتساب</a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="client-credits-footer">
-                    تصميم وبرمجة: عبدالحميد سلطان (سكاي موبايل) — تواصل: 738328251
-                </div>
-            `;
-
-            renderClientThumbnails(currentDesign.id);
-            if(currentDesign.image) loadSelectedDesign(currentDesign);
-        }
-
-        function loadSelectedDesign(des) {
-            currentDesignId = des.id;
-            
-            // تسريع الفتح بالتخزين الموقت اللحظي
-            if (imageCache[des.id]) {
-                window.loadedBaseImage = imageCache[des.id];
-                drawFinalImage();
-                return;
-            }
-
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = function() {
-                imageCache[des.id] = img;
-                window.loadedBaseImage = img;
-                drawFinalImage();
-            };
-            img.src = des.image;
-        }
-
-        function renderClientThumbnails(activeId) {
-            const scrollContainer = document.getElementById('templatesScrollContainer');
-            if (!scrollContainer) return;
-            scrollContainer.innerHTML = '';
-
-            let filteredList = getFilteredDesigns();
-
-            if (filteredList.length === 0) {
-                scrollContainer.innerHTML = '<p style="font-size:12px; color:#666; padding:10px;">لا توجد تصاميم في هذا القسم حالياً.</p>';
-                return;
-            }
-
-            filteredList.forEach(des => {
-                const isSelected = des.id == activeId ? 'selected' : '';
-                const card = document.createElement('div');
-                card.className = `thumb-card ${isSelected}`;
-                card.innerHTML = `<img src="${des.image}" alt="${des.title}">`;
-                card.onclick = () => {
-                    renderClientThumbnails(des.id);
-                    loadSelectedDesign(des);
-                    window.history.pushState({}, '', `?id=${des.id}`);
+            list.forEach(item => {
+                const isSelected = item.id == selectedId;
+                const div = document.createElement('div');
+                div.className = `thumb-card ${isSelected ? 'selected' : ''}`;
+                div.onclick = () => {
+                    currentDesignId = item.id;
+                    renderClientThumbnails(item.id);
+                    loadSelectedDesign(item);
                 };
-                scrollContainer.appendChild(card);
+                div.innerHTML = `<img src="${item.image}" alt="${item.title}" loading="lazy">`;
+                scrollBox.appendChild(div);
             });
         }
 
-        function changeCustomFont() {
-            const fonts = ["'Segoe UI', Tahoma, sans-serif", "Tahoma, Geneva, sans-serif", "Verdana, Geneva, sans-serif", "Arial, Helvetica, sans-serif"];
-            let currentIndex = fonts.indexOf(selectedFont);
-            selectedFont = fonts[(currentIndex + 1) % fonts.length];
-            localStorage.setItem('sky_selected_font', selectedFont);
-            drawFinalImage();
-        }
+        function loadSelectedDesign(designObj) {
+            if(!designObj || !designObj.image) return;
 
-        function resetDefaultData() {
-            if(confirm('إعادة تعيين بيانات الحقول؟')) {
-                document.getElementById('cShop').value = '';
-                document.getElementById('cAddress').value = '';
-                document.getElementById('cPhone').value = '738328251';
+            if (imageCache[designObj.image] && imageCache[designObj.image].complete) {
+                loadedBaseImage = imageCache[designObj.image];
                 drawFinalImage();
+            } else {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = function() {
+                    imageCache[designObj.image] = img;
+                    loadedBaseImage = img;
+                    drawFinalImage();
+                };
+                img.src = designObj.image;
             }
         }
 
-        function drawPillBadge(ctx, text, icon, xRight, yCenter, fontSize, isPrimary = false) {
-            if (!text) return 0;
-            ctx.font = `bold ${fontSize}px ${selectedFont}`;
-            const fullText = icon ? `${icon} ${text}` : text;
-            const textMetrics = ctx.measureText(fullText);
-            
-            const paddingX = Math.max(16, fontSize * 0.85);
-            const paddingY = isPrimary ? Math.max(16, fontSize * 0.95) : Math.max(8, fontSize * 0.55);
-            
-            const boxWidth = textMetrics.width + (paddingX * 2);
-            const boxHeight = fontSize + (paddingY * 2); 
-            
-            const boxX = xRight - boxWidth;
-            const boxY = yCenter - (boxHeight / 2);
-            const radius = boxHeight / 2;
-
-            ctx.save();
-            ctx.beginPath();
-            
-            if (ctx.roundRect) {
-                ctx.roundRect(boxX, boxY, boxWidth, boxHeight, radius);
-            } else {
-                ctx.moveTo(boxX + radius, boxY);
-                ctx.arcTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + boxHeight, radius);
-                ctx.arcTo(boxX + boxWidth, boxY + boxHeight, boxX, boxY + boxHeight, radius);
-                ctx.arcTo(boxX, boxY + boxHeight, boxX, boxY, radius);
-                ctx.arcTo(boxX, boxY, boxX + boxWidth, boxY, radius);
-                ctx.closePath();
-            }
-            
-            if (isPrimary) {
-                ctx.fillStyle = '#0056b3';
-                ctx.fill();
-                ctx.fillStyle = '#ffffff';
-
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                ctx.fillText(fullText, boxX + (boxWidth / 2), boxY + (paddingY * 0.65));
-            } else {
-                ctx.fillStyle = '#f0f7ff';
-                ctx.fill();
-                ctx.lineWidth = Math.max(1.8, Math.round(fontSize * 0.09));
-                ctx.strokeStyle = '#007bff';
-                ctx.stroke();
-                ctx.fillStyle = '#004085';
-
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(fullText, boxX + (boxWidth / 2), yCenter);
-            }
-
-            ctx.restore();
-
-            return boxWidth;
+        function debouncedDraw() {
+            clearTimeout(renderDebounceTimer);
+            renderDebounceTimer = setTimeout(drawFinalImage, 80);
         }
 
         function drawFinalImage() {
+            if (!loadedBaseImage) return;
             const canvas = document.getElementById('previewCanvas');
-            if (!canvas || !window.loadedBaseImage) return;
+            if(!canvas) return;
             const ctx = canvas.getContext('2d');
 
-            const img = window.loadedBaseImage;
-            const imgWidth = img.naturalWidth || 800;
-            const imgHeight = img.naturalHeight || 1000;
+            const shopName = document.getElementById('cShop')?.value.trim() || "";
+            const address = document.getElementById('cAddress')?.value.trim() || "";
+            const phone = document.getElementById('cPhone')?.value.trim() || "";
+            const netName = document.getElementById('cNetName')?.value.trim() || "";
+            const netCode = document.getElementById('cNetCode')?.value.trim() || "";
 
-            const topBarHeight = Math.round(imgHeight * 0.075);
-            const bottomBarHeight = Math.round(imgHeight * 0.23);
+            const hasFooterData = shopName || address || phone;
+            const footerHeight = hasFooterData ? Math.max(90, loadedBaseImage.height * 0.14) : 0;
 
-            canvas.width = imgWidth;
-            canvas.height = imgHeight + topBarHeight + bottomBarHeight;
+            canvas.width = loadedBaseImage.width;
+            canvas.height = loadedBaseImage.height + footerHeight;
 
-            // 1. الشريط العلوي
-            const topGradient = ctx.createLinearGradient(0, 0, 0, topBarHeight);
-            topGradient.addColorStop(0, '#002855');
-            topGradient.addColorStop(1, '#0056b3');
-            ctx.fillStyle = topGradient;
-            ctx.fillRect(0, 0, canvas.width, topBarHeight);
+            const selectedFontFamily = fontList[currentFontIndex].family;
 
-            ctx.strokeStyle = '#3b82f6';
-            ctx.lineWidth = Math.max(2, Math.round(canvas.width * 0.004));
-            ctx.beginPath();
-            ctx.moveTo(0, topBarHeight);
-            ctx.lineTo(canvas.width, topBarHeight);
-            ctx.stroke();
+            // 1.   
+            ctx.drawImage(loadedBaseImage, 0, 0, loadedBaseImage.width, loadedBaseImage.height);
 
-            const topFontSize = Math.max(14, Math.round(canvas.width * 0.038));
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${topFontSize}px ${selectedFont}`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('📌 نقطة بيع معتمد لتطبيق سكاي موبايل', canvas.width / 2, topBarHeight / 2);
-
-            // 2. خلفية القالب الأساسي
-            ctx.drawImage(img, 0, topBarHeight, imgWidth, imgHeight);
-
-            // 3. الشريط السفلي
-            const bottomBarY = topBarHeight + imgHeight;
+            // 2.   
+            const topBadgeHeight = loadedBaseImage.height * 0.06;
+            ctx.fillStyle = "rgba(12, 36, 97, 0.92)";
+            ctx.fillRect(0, 0, canvas.width, topBadgeHeight);
             
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, bottomBarY, canvas.width, bottomBarHeight);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `bold ${topBadgeHeight * 0.55}px ${selectedFontFamily}`;
+            ctx.fillText("       ", canvas.width / 2, topBadgeHeight / 2);
 
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = Math.max(2, Math.round(canvas.width * 0.003));
-            ctx.beginPath();
-            ctx.moveTo(0, bottomBarY);
-            ctx.lineTo(canvas.width, bottomBarY);
-            ctx.stroke();
+            // 3.  :          
+            if (netName || netCode) {
+                const netBadgeWidth = canvas.width; //      
+                const netBadgeHeight = loadedBaseImage.height * 0.095; //  
+                const netX = 0;
+                const netY = loadedBaseImage.height - netBadgeHeight - 10;
 
-            const shop = document.getElementById('cShop').value.trim();
-            const address = document.getElementById('cAddress').value.trim();
-            const phone = document.getElementById('cPhone').value.trim();
+                ctx.fillStyle = "rgba(12, 36, 97, 0.96)";
+                ctx.strokeStyle = "#00a8ff";
+                ctx.lineWidth = 3;
 
-            const titleFontSize = Math.max(15, Math.round(canvas.width * 0.040));
-            const detailsFontSize = Math.max(12, Math.round(canvas.width * 0.034));
+                //     
+                ctx.beginPath();
+                ctx.roundRect(netX, netY, netBadgeWidth, netBadgeHeight, netBadgeHeight / 2);
+                ctx.fill();
+                ctx.stroke();
 
-            const marginRight = canvas.width * 0.04;
-            const row1Y = bottomBarY + (bottomBarHeight * 0.33); 
-            const row2Y = bottomBarY + (bottomBarHeight * 0.80);
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
 
-            if (shop) {
-                drawPillBadge(ctx, shop, '🏪', canvas.width - marginRight, row1Y, titleFontSize, true);
+                let mainText = "";
+                if (netName && netCode) {
+                    mainText = ` : ${netName}  |   : (${netCode})`;
+                } else if (netName) {
+                    mainText = ` : ${netName}`;
+                } else if (netCode) {
+                    mainText = `   : (${netCode})`;
+                }
+
+                //     ( )
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `bold ${netBadgeHeight * 0.35}px ${selectedFontFamily}`;
+                ctx.fillText(mainText, canvas.width / 2, netY + (netBadgeHeight * 0.33));
+
+                //   (  )
+                ctx.fillStyle = "#00a8ff";
+                ctx.font = `bold ${netBadgeHeight * 0.32}px ${selectedFontFamily}`;
+                ctx.fillText("        ", canvas.width / 2, netY + (netBadgeHeight * 0.72));
             }
 
-            let currentXRight = canvas.width - marginRight;
+            // 4.       
+            if (hasFooterData) {
+                const footerY = loadedBaseImage.height;
 
-            if (address) {
-                const addressWidth = drawPillBadge(ctx, address, '📍', currentXRight, row2Y, detailsFontSize, false);
-                const gap = Math.max(10, canvas.width * 0.02);
-                currentXRight -= (addressWidth + gap);
-            }
+                const grad = ctx.createLinearGradient(0, footerY, canvas.width, canvas.height);
+                grad.addColorStop(0, '#0c2461');
+                grad.addColorStop(1, '#00a8ff');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, footerY, canvas.width, footerHeight);
 
-            if (phone) {
-                drawPillBadge(ctx, phone, '📞', currentXRight, row2Y, detailsFontSize, false);
+                ctx.fillStyle = '#f39c12';
+                ctx.fillRect(0, footerY, canvas.width, 4);
+
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                if (shopName) {
+                    const shopFontSize = footerHeight * 0.30;
+                    ctx.font = `bold ${shopFontSize}px ${selectedFontFamily}`;
+                    ctx.fillStyle = "#ffffff";
+                    
+                    const shopY = (address || phone) ? footerY + (footerHeight * 0.32) : footerY + (footerHeight * 0.50);
+                    ctx.fillText(shopName, canvas.width / 2, shopY);
+                }
+
+                const subDetails = [
+                    address ? " " + address : "",
+                    phone ? " " + phone : ""
+                ].filter(Boolean).join("  |  ");
+
+                if (subDetails) {
+                    const subFontSize = footerHeight * 0.22;
+                    ctx.font = `${subFontSize}px ${selectedFontFamily}`;
+                    ctx.fillStyle = "#f1c40f";
+
+                    const subY = shopName ? footerY + (footerHeight * 0.70) : footerY + (footerHeight * 0.50);
+                    ctx.fillText(subDetails, canvas.width / 2, subY);
+                }
             }
+        }
+
+        function changeCustomFont() {
+            currentFontIndex = (currentFontIndex + 1) % fontList.length;
+            localStorage.setItem('sky_font_idx', currentFontIndex.toString());
+            applyFontToBody();
+            
+            document.fonts.ready.then(() => {
+                drawFinalImage();
+            });
         }
 
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
-
-            const shop = document.getElementById('cShop').value.trim();
-            const phone = document.getElementById('cPhone').value.trim();
-            const address = document.getElementById('cAddress').value.trim();
-
-            trackActivity('download', { shop, phone, address });
-
-            try {
-                const dataUrl = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = 'sky-mobile-card.png';
-                link.href = dataUrl;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } catch(e) {
-                alert('يرجى الضغط مطولاً على صورة البطاقة بالأعلى واختيار "حفظ الصورة"');
-            }
+            const link = document.createElement('a');
+            link.download = `__${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
         function shareToWhatsApp() {
-            const canvas = document.getElementById('previewCanvas');
-            if (!canvas) return;
-
-            const shop = document.getElementById('cShop').value.trim();
-            const phone = document.getElementById('cPhone').value.trim();
-            const address = document.getElementById('cAddress').value.trim();
-
-            trackActivity('share', { shop, phone, address });
-
-            canvas.toBlob(blob => {
-                const file = new File([blob], 'sky-mobile-card.png', { type: 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    navigator.share({ files: [file], title: 'تصميم سكاي موبايل' }).catch(() => {});
-                } else { downloadImage(); }
-            }, 'image/png');
+            const text = encodeURIComponent(`      :\n${window.location.href}`);
+            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
         }
 
         function copyDirectLink() {
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                alert('تم نسخ رابط التصميم المباشر بنجاح!');
-            });
+            navigator.clipboard.writeText(window.location.href);
+            alert("    !");
         }
 
-        function switchAdminTab(tabName) {
-            activeAdminTab = tabName;
-            renderAdminPanel(document.getElementById('mainContainer'));
+        function resetDefaultData() {
+            if(confirm("      ")) {
+                document.getElementById('cShop').value = "";
+                document.getElementById('cAddress').value = "";
+                document.getElementById('cPhone').value = "738328251";
+                if(document.getElementById('cNetCode')) document.getElementById('cNetCode').value = "";
+                if(document.getElementById('cNetName')) document.getElementById('cNetName').value = "";
+                if(document.getElementById('cNetSelect')) document.getElementById('cNetSelect').value = "";
+                drawFinalImage();
+            }
         }
 
         function renderAdminPanel(container) {
-            let tabContentHtml = '';
-
-            if (activeAdminTab === 'templates') {
-                let categoryOptions = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-                let designsListHtml = '';
-                if (designs.length === 0) {
-                    designsListHtml = '<p style="font-size:13px; color:#666; text-align:center; padding:10px;">لا توجد تصاميم مضافة.</p>';
-                } else {
-                    designs.forEach((des, index) => {
-                        const cleanBaseUrl = window.location.href.split('?')[0].split('#')[0];
-                        const designLink = `${cleanBaseUrl}?id=${des.id}`;
-                        const catObj = categories.find(c => c.id === des.categoryId);
-                        const catName = catObj ? catObj.name : 'عام';
-
-                        designsListHtml += `
-                            <div class="sub-img-list">
-                                <div>
-                                    <b>${index + 1}.</b> ${des.title} 
-                                    <span style="font-size:10px; background:#007bff; color:#fff; padding:2px 6px; border-radius:10px; margin-right:5px;">${catName}</span>
-                                </div>
-                                <div style="display: flex; gap: 5px; margin-top: 5px;">
-                                    <button class="btn-copy" onclick="copySpecificLink('${designLink}')">🔗 نسخ الرابط</button>
-                                    <button class="btn-delete" onclick="deleteDesign('${des.id}')">حذف</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-
-                tabContentHtml = `
-                    <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:10px; color:#007bff;">📁 1. إضافة قالب رئيسي جديد</h3>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newCategoryName" placeholder="اسم القالب (مثال: 🌙 تصاميم رمضان)">
-                            <button class="btn-main" style="width: auto; white-space:nowrap; background:#28a745;" onclick="addNewCategory()">إضافة</button>
-                        </div>
+            let designsListHtml = designs.map(d => `
+                <div class="sub-img-list">
+                    <span><strong>${d.title}</strong> (${categories.find(c=>c.id===d.categoryId)?.name || ''})</span>
+                    <div>
+                        <button class="btn-copy" onclick="navigator.clipboard.writeText('${window.location.origin}${window.location.pathname}?id=${d.id}')">  </button>
+                        <button class="btn-delete" onclick="deleteDesign('${d.id}')"> </button>
                     </div>
+                </div>
+            `).join('');
 
-                    <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:10px; color:#007bff;">🖼️ 2. إضافة تصميم جديد داخل القالب</h3>
-                        <div class="form-group">
-                            <label>اختر القالب الرئيسي:</label>
-                            <select id="designCategorySelect">${categoryOptions}</select>
-                        </div>
+            let categoriesListHtml = categories.map(c => `
+                <div class="sub-img-list">
+                    <span>${c.name}</span>
+                    <button class="btn-delete" onclick="deleteCategory('${c.id}')">  </button>
+                </div>
+            `).join('');
 
-                        <div class="dropzone-box" id="dropzone" onclick="document.getElementById('newDesignFile').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)">
-                            <span style="font-size: 30px;">📁</span>
-                            <p style="font-weight: bold; color: #333; margin-top: 5px;">انقر لاختيار صورة أو اسحبها وأسقطها هنا</p>
-                            <input type="file" id="newDesignFile" accept="image/*" style="display: none;" onchange="handleFileSelect(this)">
-                        </div>
-                        <p id="selectedFileNameDisplay" style="font-size: 12px; color: #28a745; text-align: center; margin-bottom: 12px; font-weight: bold;"></p>
-
-                        <div style="text-align:center; font-weight:bold; color:#888; margin: 10px 0;">أو</div>
-
-                        <div class="form-group">
-                            <label>رابط الصورة المباشر (اختياري):</label>
-                            <input type="text" id="newDesignImageUrl" placeholder="https://example.com/image.jpg">
-                        </div>
-
-                        <button class="btn-main" onclick="addNewDesignToDatabase()">حفظ ونشر التصميم للزوار سحابياً</button>
-                    </div>
-
-                    <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:10px; color:#333;">🖼️ التصاميم الحالية (${designs.length})</h3>
-                        <div>${designsListHtml}</div>
-                    </div>
-                `;
-            } else {
-                let logsHtml = '';
-                if (analytics.logs) {
-                    const logsArray = Object.values(analytics.logs).reverse();
-                    logsArray.forEach(log => {
-                        const tagClass = (log.type === 'تحميل' || log.type === 'مشاركة واتساب') ? 'tag-download' : 'tag-visit';
-                        let detailsStr = '';
-                        if (log.shop || log.phone) {
-                            detailsStr = `<br><span style="color:#0056b3; font-weight:bold;">👤 ${log.shop || 'غير مسمى'}</span> | 📞 ${log.phone || '-'} | 📍 ${log.address || '-'}`;
-                        }
-
-                        logsHtml += `
-                            <div class="log-item">
-                                <div>
-                                    <span class="log-tag ${tagClass}">${log.type}</span>
-                                    ${detailsStr}
-                                </div>
-                                <div style="color:#888; font-size:10px; text-align:left;">${log.time}</div>
-                            </div>
-                        `;
-                    });
-                }
-
-                if (!logsHtml) {
-                    logsHtml = '<p style="font-size:12px; color:#888; text-align:center; padding:10px;">لا توجد سجلات بعد.</p>';
-                }
-
-                tabContentHtml = `
-                    <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:12px; color:#007bff;">📊 إحصائيات النظام والتفاعل</h3>
-                        
-                        <div class="stats-grid">
-                            <div class="stat-box">
-                                <h4>👀 إجمالي الزيارات</h4>
-                                <div class="num">${analytics.views || 0}</div>
-                            </div>
-                            <div class="stat-box">
-                                <h4>📥 إجمالي التحميلات</h4>
-                                <div class="num" style="color:#28a745;">${analytics.downloads || 0}</div>
-                            </div>
-                        </div>
-
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                            <h4 style="font-size:14px; color:#333;">📜 سجل حركة العملاء (من دخل ومن حمل):</h4>
-                            <button onclick="clearAnalyticsLogs()" style="background:#dc3545; color:#fff; border:none; padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer;">مسح السجل</button>
-                        </div>
-
-                        <div style="max-height:250px; overflow-y:auto; background:#f8f9fa; border:1px solid #e2e8f0; border-radius:8px;">
-                            ${logsHtml}
-                        </div>
-                    </div>
-
-                    <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:10px; color:#333;">🔗 روابط زر المتجر وقناة الواتساب</h3>
-                        <div class="form-group">
-                            <label>رابط تطبيق المتجر:</label>
-                            <input type="text" id="adminAppUrl" value="${globalLinks.appUrl}">
-                        </div>
-                        <div class="form-group">
-                            <label>رابط قناة الواتساب:</label>
-                            <input type="text" id="adminWhatsappUrl" value="${globalLinks.whatsappUrl}">
-                        </div>
-                        <button class="btn-main" onclick="saveGlobalLinksSetting()" style="background-color: #28a745;">حفظ الروابط</button>
-                    </div>
-
-                    <div class="admin-card">
-                        <h3 style="font-size:16px; margin-bottom:10px; color:#333;">🔑 تغيير كلمة سر لوحة التحكم</h3>
-                        <div class="form-group">
-                            <label>كلمة السر الجديدة:</label>
-                            <input type="password" id="newAdminPasswordInput" placeholder="أدخل كلمة السر الجديدة">
-                        </div>
-                        <button class="btn-main" onclick="updateAdminPassword()" style="background-color: #6c757d;">تحديث كلمة المرور</button>
-                    </div>
-                `;
-            }
+            let networksListHtml = networkCodes.map(n => `
+                <div class="sub-img-list">
+                    <span><strong>${n.name}</strong> - (: ${n.code})</span>
+                    <button class="btn-delete" onclick="deleteNetworkCode('${n.id}')"> </button>
+                </div>
+            `).join('');
 
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>⚙️ لوحة التحكم السحابية</h2>
-                    <p>إدارة القوالب، الإحصائيات والتسجيل — سكاي موبايل</p>
+                    <h2>    </h2>
+                    <p>  -   </p>
                 </div>
 
-                <div class="top-nav-buttons">
-                    <button class="btn-home" onclick="window.location.href='?'">🏠 الصفحة الرئيسية</button>
-                    <button class="btn-logout" onclick="logoutAdmin()">🚪 خروج</button>
+                <button class="btn-exit-admin" onclick="exitAdminMode()">    </button>
+
+                <div class="admin-card">
+                    <h3>    </h3>
+                    <br>
+                    <div class="form-group">
+                        <label>  :</label>
+                        <input type="password" id="newAdminPasswordInput" placeholder="     ">
+                    </div>
+                    <button class="btn-main" onclick="changeAdminPassword()" style="background:#e67e22;">     </button>
                 </div>
 
-                <div class="admin-tabs-bar">
-                    <button class="tab-btn ${activeAdminTab === 'templates' ? 'active' : ''}" onclick="switchAdminTab('templates')">🖼️ القوالب والتصاميم</button>
-                    <button class="tab-btn ${activeAdminTab === 'dashboard' ? 'active' : ''}" onclick="switchAdminTab('dashboard')">📊 الإحصائيات والروابط</button>
+                <div class="admin-card">
+                    <h3>     </h3>
+                    <br>
+                    <div class="form-group">
+                        <label> :</label>
+                        <input type="text" id="adminNetName" placeholder=":   ">
+                    </div>
+                    <div class="form-group">
+                        <label>     :</label>
+                        <input type="text" id="adminNetCode" placeholder=": 105">
+                    </div>
+                    <button class="btn-main" onclick="addNewNetworkCode()" style="background:#00a8ff; margin-bottom:15px;">    </button>
+                    
+                    <label>  :</label>
+                    ${networksListHtml || '<p style="color:#666; font-size:13px;">    .</p>'}
                 </div>
 
-                <div id="tabContentArea">${tabContentHtml}</div>
+                <div class="admin-card">
+                    <h3>     </h3>
+                    <br>
+                    <div class="form-group">
+                        <label> :</label>
+                        <input type="text" id="newDesignTitle" placeholder=":    500 ">
+                    </div>
+
+                    <div class="form-group">
+                        <label> (    ):</label>
+                        <select id="newDesignCat">
+                            ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>    :</label>
+                        <input type="file" id="designFileInput" accept="image/*">
+                    </div>
+
+                    <div class="form-group">
+                        <label>    :</label>
+                        <input type="text" id="designUrlInput" placeholder="https://example.com/image.png">
+                    </div>
+
+                    <button class="btn-main" id="uploadBtn" onclick="handleDesignUpload()">   </button>
+                    <p id="uploadStatus" style="text-align:center; font-weight:bold; margin-top:10px; font-size:13px; color:#00a8ff;"></p>
+                </div>
+
+                <div class="admin-card">
+                    <h3>  </h3>
+                    <br>
+                    <div class="form-group">
+                        <label>  :</label>
+                        <input type="text" id="newCatName" placeholder=":    ">
+                    </div>
+                    <button class="btn-main" onclick="addNewCategory()" style="background:#0a3d62; margin-bottom:15px;">   </button>
+                    
+                    <label> :</label>
+                    ${categoriesListHtml}
+                </div>
+
+                <div class="admin-card">
+                    <h3>     </h3>
+                    <br>
+                    <div class="form-group">
+                        <label>    (Google Play):</label>
+                        <input type="text" id="appUrlInput" value="${globalLinks.appUrl}">
+                    </div>
+                    <div class="form-group">
+                        <label>  :</label>
+                        <input type="text" id="whatsappUrlInput" value="${globalLinks.whatsappUrl}">
+                    </div>
+                    <button class="btn-main" onclick="saveGlobalLinks()" style="background:#27ae60;">   </button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>    (${designs.length})</h3>
+                    <br>
+                    ${designsListHtml || '<p style="color:#666; font-size:13px;">    .</p>'}
+                </div>
             `;
         }
 
-        function clearAnalyticsLogs() {
-            if (confirm('هل أنت متأكد من مسح جميع سجلات الحركة والزيارات؟')) {
-                db.ref('sky_data/analytics/logs').remove().then(() => {
-                    analytics.logs = {};
-                    alert('تم مسح السجلات بنجاح!');
-                    renderAdminPanel(document.getElementById('mainContainer'));
-                });
+        function addNewNetworkCode() {
+            const name = document.getElementById('adminNetName').value.trim();
+            const code = document.getElementById('adminNetCode').value.trim();
+
+            if (!name || !code) {
+                alert("    !");
+                return;
             }
-        }
 
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.currentTarget.classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-        }
-
-        function handleFileDrop(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('dragover');
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                processChosenFile(e.dataTransfer.files[0]);
-            }
-        }
-
-        function handleFileSelect(input) {
-            if (input.files && input.files[0]) {
-                processChosenFile(input.files[0]);
-            }
-        }
-
-        function processChosenFile(file) {
-            selectedFileToUpload = file;
-            const display = document.getElementById('selectedFileNameDisplay');
-            if(display) display.innerText = '✓ تم تحديد الملف: ' + file.name;
-        }
-
-        function addNewCategory() {
-            const catNameInput = document.getElementById('newCategoryName');
-            const name = catNameInput ? catNameInput.value.trim() : '';
-            if(!name) return alert('الرجاء كتابة اسم القالب الرئيسي!');
-            
-            const catId = 'cat_' + Date.now();
-            const newCat = { id: catId, name: name };
-            
-            db.ref('sky_data/categories/' + catId).set(newCat).then(() => {
-                categories.push(newCat);
-                alert('تمت إضافة القالب السحابي بنجاح!');
-                renderAdminPanel(document.getElementById('mainContainer'));
+            const netId = 'net_' + Date.now();
+            db.ref('sky_data/networks/' + netId).set({
+                id: netId,
+                name: name,
+                code: code
+            }).then(() => {
+                alert("        !");
+                checkViewState();
             });
         }
 
-        function addNewDesignToDatabase() {
-            const categoryId = document.getElementById('designCategorySelect').value;
-            const urlInput = document.getElementById('newDesignImageUrl');
-            const urlVal = urlInput ? urlInput.value.trim() : '';
-
-            const catObj = categories.find(c => c.id === categoryId);
-            const catName = catObj ? catObj.name : 'قالب';
-            const autoTitle = `${catName} - تصميم ${designs.length + 1}`;
-
-            if (selectedFileToUpload) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        const maxDim = 800;
-
-                        if (width > maxDim || height > maxDim) {
-                            if (width > height) {
-                                height = Math.round((height * maxDim) / width);
-                                width = maxDim;
-                            } else {
-                                width = Math.round((width * maxDim) / height);
-                                height = maxDim;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-
-                        const desId = 'des_' + Date.now();
-                        const newObj = {
-                            id: desId,
-                            categoryId: categoryId,
-                            title: autoTitle,
-                            image: compressedBase64
-                        };
-
-                        saveDesignsAndFinish(newObj);
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(selectedFileToUpload);
-            } else if (urlVal) {
-                const desId = 'des_' + Date.now();
-                const newObj = {
-                    id: desId,
-                    categoryId: categoryId,
-                    title: autoTitle,
-                    image: urlVal
-                };
-                saveDesignsAndFinish(newObj);
-            } else {
-                alert('الرجاء اختيار صورة أو وضع رابط الصورة المباشر.');
+        function deleteNetworkCode(netId) {
+            if (confirm("     ")) {
+                db.ref('sky_data/networks/' + netId).remove();
             }
         }
 
-        function saveDesignsAndFinish(newObj) {
-            db.ref('sky_data/designs/' + newObj.id).set(newObj).then(() => {
-                selectedFileToUpload = null;
-                designs.push(newObj);
-                alert('تم رفع ونشر التصميم سحابياً لجميع الزوار!');
-                renderAdminPanel(document.getElementById('mainContainer'));
-            }).catch(() => {
-                alert('حدث خطأ في الاتصال بقاعدة البيانات السحابية!');
+        function changeAdminPassword() {
+            const newPass = document.getElementById('newAdminPasswordInput').value.trim();
+            if (!newPass) {
+                alert("    !");
+                return;
+            }
+
+            db.ref('sky_data/adminPass').set(newPass)
+            .then(() => {
+                alert("        !");
+                document.getElementById('newAdminPasswordInput').value = "";
+            })
+            .catch((err) => {
+                alert("     : " + err.message);
+            });
+        }
+
+        function handleDesignUpload() {
+            const titleEl = document.getElementById('newDesignTitle');
+            const catEl = document.getElementById('newDesignCat');
+            const fileInput = document.getElementById('designFileInput');
+            const urlInputEl = document.getElementById('designUrlInput');
+            const status = document.getElementById('uploadStatus');
+
+            const title = titleEl ? titleEl.value.trim() : "";
+            const catId = catEl ? catEl.value : "";
+            const urlInput = urlInputEl ? urlInputEl.value.trim() : "";
+
+            if (!title) {
+                alert("    !");
+                return;
+            }
+
+            if (urlInput !== "") {
+                saveDesignToDatabase(title, catId, urlInput);
+                return;
+            }
+
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if(status) status.innerText = "     ...";
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveDesignToDatabase(title, catId, e.target.result);
+                };
+                reader.onerror = function() {
+                    alert("    !");
+                    if(status) status.innerText = "";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert("          !");
+            }
+        }
+
+        function saveDesignToDatabase(title, catId, imageUrl) {
+            const status = document.getElementById('uploadStatus');
+            const newId = 'design_' + Date.now();
+
+            const newDesign = {
+                id: newId,
+                title: title,
+                categoryId: catId,
+                image: imageUrl,
+                createdAt: new Date().toISOString()
+            };
+
+            db.ref('sky_data/designs/' + newId).set(newDesign)
+            .then(() => {
+                designs.push(newDesign);
+                alert("     !");
+                if(status) status.innerText = "";
+
+                if(document.getElementById('newDesignTitle')) document.getElementById('newDesignTitle').value = "";
+                if(document.getElementById('designFileInput')) document.getElementById('designFileInput').value = "";
+                if(document.getElementById('designUrlInput')) document.getElementById('designUrlInput').value = "";
+
+                checkViewState();
+            })
+            .catch((error) => {
+                alert("    : " + error.message);
+                if(status) status.innerText = "";
             });
         }
 
         function deleteDesign(id) {
-            if (confirm('هل أنت متأكد من حذف هذا التصميم سحابياً؟')) {
-                db.ref('sky_data/designs/' + id).remove().then(() => {
+            if(confirm("        ")) {
+                db.ref('sky_data/designs/' + id).remove()
+                .then(() => { 
                     designs = designs.filter(d => d.id !== id);
-                    renderAdminPanel(document.getElementById('mainContainer'));
+                    alert("  ."); 
+                    checkViewState();
                 });
             }
         }
 
-        function copySpecificLink(link) {
-            navigator.clipboard.writeText(link).then(() => alert('تم نسخ رابط التصميم بنجاح!'));
-        }
+        function addNewCategory() {
+            const name = document.getElementById('newCatName').value.trim();
+            if(!name) { alert("   !"); return; }
 
-        function saveGlobalLinksSetting() {
-            const links = {
-                appUrl: document.getElementById('adminAppUrl').value.trim(),
-                whatsappUrl: document.getElementById('adminWhatsappUrl').value.trim()
-            };
-            db.ref('sky_data/links').set(links).then(() => {
-                globalLinks = links;
-                alert('تم حفظ الروابط سحابياً بنجاح!');
+            const catId = 'cat_' + Date.now();
+            db.ref('sky_data/categories/' + catId).set({ id: catId, name: name })
+            .then(() => {
+                alert("    !");
+                checkViewState();
             });
         }
 
-        function updateAdminPassword() {
-            const newPass = document.getElementById('newAdminPasswordInput').value.trim();
-            if (!newPass) return alert('الرجاء إدخال كلمة سر جديدة.');
-            db.ref('sky_data/adminPass').set(newPass).then(() => {
-                currentAdminPass = newPass;
-                alert('تم تحديث كلمة المرور سحابياً بنجاح!');
-            });
+        function deleteCategory(catId) {
+            if(confirm("      ")) {
+                db.ref('sky_data/categories/' + catId).remove();
+            }
+        }
+
+        function saveGlobalLinks() {
+            const appUrl = document.getElementById('appUrlInput').value.trim();
+            const whatsappUrl = document.getElementById('whatsappUrlInput').value.trim();
+
+            db.ref('sky_data/links').set({ appUrl, whatsappUrl })
+            .then(() => { alert("    !"); });
         }
     </script>
 </body>
