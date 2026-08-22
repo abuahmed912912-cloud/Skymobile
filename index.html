@@ -76,7 +76,6 @@
             border-bottom: 2px dashed rgba(0, 168, 255, 0.3); 
         }
         
-        /* تنسيق الشعار الجديد المطابق للصورة */
         .brand-logo-wrapper {
             width: 100%;
             max-width: 280px;
@@ -203,6 +202,7 @@
         .telecom-providers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .provider-badge { background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 4px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: bold; color: #0c2461; }
 
+        /* عناصر لوحة التحكم */
         .admin-header { background: var(--sky-gradient); color: white; padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
         .admin-card { background: #fff; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; margin-bottom: 12px; }
         .form-group { margin-bottom: 10px; }
@@ -210,6 +210,9 @@
         input, select { width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 8px; font-size: 12px; }
         .btn-main { background: var(--sky-gradient); color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
         .btn-exit-admin { background-color: #e74c3c; color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 12px; }
+        .item-list-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+        .item-list-table th, .item-list-table td { border: 1px solid #dee2e6; padding: 6px; text-align: center; }
+        .btn-delete-item { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -315,8 +318,14 @@
                 if (!isInitialLoadDone) {
                     checkViewState();
                     isInitialLoadDone = true;
-                } else if (activeViewSection === 'view_designer') {
-                    debouncedDraw();
+                } else {
+                    const isAdminMode = sessionStorage.getItem('sky_in_admin_mode') === 'true';
+                    const isAuth = sessionStorage.getItem('sky_admin_authenticated') === 'true';
+                    if (isAdminMode && isAuth) {
+                        renderAdminPanel(document.getElementById('mainContainer'));
+                    } else if (activeViewSection === 'view_designer') {
+                        debouncedDraw();
+                    }
                 }
             });
         }
@@ -389,8 +398,7 @@
                 </div>
 
                 <header class="brand-header">
-                    <!-- الشعار الجديد المصمم بحسب الصورة تماماً -->
-                    <div class="brand-logo-wrapper" onclick="handleSecretLogoClick()" title="سكاي موبايل">
+                    <div class="brand-logo-wrapper" onclick="handleSecretLogoClick()" title="سكاي موبايل (5 نقرات للوحة التحكم)">
                         <svg class="brand-logo-svg" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <defs>
                                 <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -402,27 +410,15 @@
                                     <stop offset="100%" stop-color="#002966"/>
                                 </linearGradient>
                             </defs>
-
-                            <!-- القوس العلوي المتدرج -->
                             <path d="M 120,75 A 75,75 0 0,1 240,65" fill="none" stroke="url(#skyGrad)" stroke-width="12" stroke-linecap="round"/>
-
-                            <!-- المكعبات الرقمية بالجهة اليمين من القوس -->
                             <rect x="248" y="52" width="10" height="10" fill="#0080FF" rx="1"/>
                             <rect x="262" y="52" width="10" height="10" fill="#0080FF" rx="1"/>
                             <rect x="255" y="65" width="10" height="10" fill="#0080FF" rx="1"/>
-
-                            <!-- نص SKY الإنجليزي العريض -->
                             <text x="200" y="115" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="52" fill="url(#skyGrad)" letter-spacing="-1">SKY</text>
-
-                            <!-- كلمة MOBILE وحولها خطوط التحديد -->
                             <line x1="125" y1="130" x2="155" y2="130" stroke="#003399" stroke-width="2"/>
                             <text x="200" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="14" fill="#003399" letter-spacing="4">MOBILE</text>
                             <line x1="245" y1="130" x2="275" y2="130" stroke="#003399" stroke-width="2"/>
-
-                            <!-- النص العربي "سكاي موبايل" -->
                             <text x="200" y="172" text-anchor="middle" font-family="Cairo, sans-serif" font-weight="800" font-size="28" fill="#002966">سكاي موبايل</text>
-
-                            <!-- الشريط السفي الأزرق "لخدمات الرصيد والباقات" -->
                             <rect x="100" y="188" width="200" height="34" rx="17" fill="url(#pillGrad)"/>
                             <text x="200" y="210" text-anchor="middle" font-family="Cairo, sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">لخدمات الرصيد والباقات</text>
                         </svg>
@@ -433,7 +429,6 @@
                     🏠 العودة للقائمة الرئيسية
                 </button>
 
-                <!-- 1. الرئيسية الأيقونات -->
                 <div id="panel_grid_main" class="service-view-panel active">
                     <div class="services-grid">
                         <div class="service-icon-card" onclick="switchView('view_designer')">
@@ -441,19 +436,16 @@
                             <h3>مصمم الإعلانات</h3>
                             <p>تخصيص القوالب وتصميم بطاقة نقطتك</p>
                         </div>
-
                         <div class="service-icon-card" onclick="switchView('view_telecom')">
                             <div class="icon-wrapper">📱</div>
                             <h3>تسديد الباقات</h3>
                             <p>يمن موبايل، يو، سبأفون، يمن فورجي</p>
                         </div>
-
                         <div class="service-icon-card" onclick="switchView('view_wifi')">
                             <div class="icon-wrapper">📶</div>
                             <h3>كروت الواي فاي</h3>
                             <p>تسديد واستخراج كروت الشبكات</p>
                         </div>
-
                         <div class="service-icon-card" onclick="switchView('view_support')">
                             <div class="icon-wrapper">💬</div>
                             <h3>الدعم والروابط</h3>
@@ -462,7 +454,6 @@
                     </div>
                 </div>
 
-                <!-- 2. المصمم -->
                 <div id="panel_view_designer" class="service-view-panel">
                     <div class="top-action-bar">
                         <button class="btn-custom-action btn-reset-default" onclick="resetDefaultData()">↩ إرجاع الأصلي</button>
@@ -474,15 +465,10 @@
                     </div>
 
                     <div class="categories-scroll" id="catChipsContainer"></div>
-
-                    <!-- شريط عرض القوالب -->
                     <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
 
-                    <!-- شاشة معاينة التصميم -->
                     <div class="preview-box">
                         <div id="canvasContainer"><canvas id="previewCanvas"></canvas></div>
-                        
-                        <!-- إطار مصغر للألوان -->
                         <details class="color-compact-box">
                             <summary>🎨 اضغط هنا لتخصيص ألوان التصميم</summary>
                             <div class="colors-picker-grid">
@@ -535,7 +521,6 @@
                     </div>
                 </div>
 
-                <!-- 3. الاتصالات -->
                 <div id="panel_view_telecom" class="service-view-panel">
                     <div class="section-frame">
                         <div class="frame-title">📱 خدمات تسديد الباقات والرصيد</div>
@@ -551,7 +536,6 @@
                     </div>
                 </div>
 
-                <!-- 4. الواي فاي -->
                 <div id="panel_view_wifi" class="service-view-panel">
                     <div class="section-frame network-special">
                         <div class="frame-title">📶 إدارة وكروت شبكات الواي فاي</div>
@@ -562,7 +546,6 @@
                     </div>
                 </div>
 
-                <!-- 5. الدعم والروابط -->
                 <div id="panel_view_support" class="service-view-panel">
                     <div class="section-frame">
                         <div class="frame-title">💬 الدعم الفني والقنوات الرسمية</div>
@@ -873,17 +856,22 @@
             }
         }
 
-        /* لوحة التحكم والإدارة */
+        /* -------------------------------------------------------------
+           لوحة التحكم الإدارية الكاملة 
+           ------------------------------------------------------------- */
         function renderLoginForm(container) {
             container.innerHTML = `
                 <div class="admin-header">
                     <h2>🔐 تسجيل دخول لوحة الإدارة</h2>
                 </div>
-                <div class="form-group">
-                    <label>كلمة السر:</label>
-                    <input type="password" id="adminPassInput">
+                <div class="admin-card">
+                    <div class="form-group">
+                        <label>كلمة السر الإدارية:</label>
+                        <input type="password" id="adminPassInput" placeholder="أدخل كلمة السر">
+                    </div>
+                    <button class="btn-main" onclick="verifyPassword()">دخول</button>
+                    <button class="btn-exit-admin" style="margin-top:8px;" onclick="exitAdminMode()">إلغاء والعودة</button>
                 </div>
-                <button class="btn-main" onclick="verifyPassword()">دخول</button>
             `;
         }
 
@@ -892,7 +880,9 @@
             if (pass === currentAdminPass) {
                 sessionStorage.setItem('sky_admin_authenticated', 'true');
                 checkViewState();
-            } else { alert('⚠️ كلمة السر خاطئة!'); }
+            } else { 
+                alert('⚠️ كلمة السر خاطئة!'); 
+            }
         }
 
         function exitAdminMode() {
@@ -902,23 +892,233 @@
         }
 
         function renderAdminPanel(container) {
+            let catSelectOptions = '';
+            categories.forEach(c => {
+                catSelectOptions += `<option value="${c.id}">${c.name}</option>`;
+            });
+
+            let designsRows = '';
+            designs.forEach(d => {
+                if (!d.isGenerated) {
+                    designsRows += `
+                        <tr>
+                            <td><img src="${d.image}" style="width:30px; height:30px; object-fit:cover; border-radius:4px;"></td>
+                            <td>${d.title}</td>
+                            <td><button class="btn-delete-item" onclick="deleteDesign('${d.id}')">حذف</button></td>
+                        </tr>`;
+                }
+            });
+
+            let categoriesRows = '';
+            categories.forEach(c => {
+                if (c.id !== 'cat_wifi_networks') {
+                    categoriesRows += `
+                        <tr>
+                            <td>${c.name}</td>
+                            <td><button class="btn-delete-item" onclick="deleteCategory('${c.id}')">حذف</button></td>
+                        </tr>`;
+                }
+            });
+
+            let networksRows = '';
+            networkCodes.forEach(n => {
+                networksRows += `
+                    <tr>
+                        <td>${n.name}</td>
+                        <td>${n.code}</td>
+                        <td><button class="btn-delete-item" onclick="deleteNetwork('${n.id}')">حذف</button></td>
+                    </tr>`;
+            });
+
             container.innerHTML = `
                 <div class="admin-header">
-                    <h2>⚙️ لوحة الإدارة</h2>
+                    <h2>⚙️ لوحة إدارة سكاي موبايل</h2>
                 </div>
-                <button class="btn-exit-admin" onclick="exitAdminMode()">🚪 خروج</button>
+                
+                <button class="btn-exit-admin" onclick="exitAdminMode()">🚪 الخروج من لوحة التحكم</button>
+
+                <!-- 1. رفع قوالب جديدة -->
                 <div class="admin-card">
-                    <h3>🔑 كلمة سر الإدارة</h3>
-                    <input type="password" id="newAdminPasswordInput" placeholder="كلمة سر جديدة" style="margin:10px 0;">
-                    <button class="btn-main" onclick="changeAdminPassword()">حفظ</button>
+                    <h3>🖼️ إضافة قالب تصميم جديد</h3>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>عنوان القالب:</label>
+                        <input type="text" id="newDesignTitle" placeholder="مثال: إعلان عروض يمن فورجي">
+                    </div>
+                    <div class="form-group">
+                        <label>القسم:</label>
+                        <select id="newDesignCategory">${catSelectOptions}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>رابط الصورة (URL) أو ارفع ملف:</label>
+                        <input type="text" id="newDesignImageUrl" placeholder="https://..." style="margin-bottom:6px;">
+                        <input type="file" id="newDesignFileInput" accept="image/*" onchange="convertImageToBase64(this)">
+                    </div>
+                    <button class="btn-main" onclick="addNewDesign()">💾 حفظ القالب</button>
+
+                    <h4 style="margin-top:12px; font-size:12px;">القوالب المضافة:</h4>
+                    <table class="item-list-table">
+                        <thead><tr><th>صورة</th><th>العنوان</th><th>إجراء</th></tr></thead>
+                        <tbody>${designsRows || '<tr><td colspan="3">لا توجد قوالب مرفوعة</td></tr>'}</tbody>
+                    </table>
+                </div>
+
+                <!-- 2. إدارة الأقسام -->
+                <div class="admin-card">
+                    <h3>📁 إدارة الأقسام</h3>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>اسم القسم الجديد:</label>
+                        <input type="text" id="newCategoryName" placeholder="مثال: ⚡ عروض يمن فورجي">
+                    </div>
+                    <button class="btn-main" onclick="addNewCategory()">➕ إضافة القسم</button>
+
+                    <h4 style="margin-top:12px; font-size:12px;">الأقسام الحالية:</h4>
+                    <table class="item-list-table">
+                        <thead><tr><th>اسم القسم</th><th>إجراء</th></tr></thead>
+                        <tbody>${categoriesRows || '<tr><td colspan="2">لا توجد أقسام مخصصة</td></tr>'}</tbody>
+                    </table>
+                </div>
+
+                <!-- 3. إدارة دليل الشبكات -->
+                <div class="admin-card">
+                    <h3>📶 دليل رموز الشبكات المسجلة</h3>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>اسم الشبكة:</label>
+                        <input type="text" id="newNetName" placeholder="مثال: شبكة الفجر">
+                    </div>
+                    <div class="form-group">
+                        <label>رمز الشبكة بالتطبيق:</label>
+                        <input type="text" id="newNetCode" placeholder="مثال: 102">
+                    </div>
+                    <button class="btn-main" onclick="addNewNetwork()">➕ تسجيل الشبكة</button>
+
+                    <h4 style="margin-top:12px; font-size:12px;">الشبكات المسجلة:</h4>
+                    <table class="item-list-table">
+                        <thead><tr><th>الشبكة</th><th>الرمز</th><th>إجراء</th></tr></thead>
+                        <tbody>${networksRows || '<tr><td colspan="3">لا توجد شبكات مسجلة</td></tr>'}</tbody>
+                    </table>
+                </div>
+
+                <!-- 4. تعديل روابط التطبيق والواتساب -->
+                <div class="admin-card">
+                    <h3>🔗 تعديل الروابط العامة</h3>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>رابط التطبيق على المتجر:</label>
+                        <input type="text" id="linkAppUrl" value="${globalLinks.appUrl || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>رابط قناة الواتساب:</label>
+                        <input type="text" id="linkWhatsappUrl" value="${globalLinks.whatsappUrl || ''}">
+                    </div>
+                    <button class="btn-main" onclick="saveGlobalLinks()">💾 حفظ الروابط</button>
+                </div>
+
+                <!-- 5. حماية وتغيير كلمة السر -->
+                <div class="admin-card">
+                    <h3>🔑 تغيير كلمة سر الإدارة</h3>
+                    <div class="form-group" style="margin-top:8px;">
+                        <label>كلمة السر الجديدة:</label>
+                        <input type="password" id="newAdminPasswordInput" placeholder="أدخل كلمة سر جديدة">
+                    </div>
+                    <button class="btn-main" onclick="changeAdminPassword()">تحديث كلمة السر</button>
                 </div>
             `;
         }
 
+        /* دالة تحويل الصور المرفوعة من الجهاز إلى Base64 */
+        let uploadedBase64Temp = "";
+        function convertImageToBase64(fileInput) {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    uploadedBase64Temp = e.target.result;
+                    document.getElementById('newDesignImageUrl').value = "تم رفع الصورة من الجهاز ✓";
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function addNewDesign() {
+            const title = document.getElementById('newDesignTitle').value.trim();
+            const categoryId = document.getElementById('newDesignCategory').value;
+            let imageUrl = document.getElementById('newDesignImageUrl').value.trim();
+
+            if (uploadedBase64Temp && imageUrl.includes("تم رفع الصورة")) {
+                imageUrl = uploadedBase64Temp;
+            }
+
+            if (!title || !imageUrl) {
+                alert("يرجى إدخال عنوان القالب ورابط الصورة أو اختيار ملف!");
+                return;
+            }
+
+            const id = 'design_' + Date.now();
+            db.ref('sky_data/designs/' + id).set({
+                id: id,
+                title: title,
+                categoryId: categoryId,
+                image: imageUrl,
+                isGenerated: false
+            }).then(() => {
+                alert("✅ تم إضافة القالب بنجاح!");
+                uploadedBase64Temp = "";
+            });
+        }
+
+        function deleteDesign(id) {
+            if (confirm("هل أنت تأكد من حذف هذا القالب؟")) {
+                db.ref('sky_data/designs/' + id).remove();
+            }
+        }
+
+        function addNewCategory() {
+            const name = document.getElementById('newCategoryName').value.trim();
+            if (!name) { alert("أدخل اسم القسم!"); return; }
+            const id = 'cat_' + Date.now();
+            db.ref('sky_data/categories/' + id).set({ id: id, name: name }).then(() => {
+                alert("✅ تم إضافة القسم!");
+            });
+        }
+
+        function deleteCategory(id) {
+            if (confirm("هل أنت تأكد من حذف هذا القسم؟")) {
+                db.ref('sky_data/categories/' + id).remove();
+            }
+        }
+
+        function addNewNetwork() {
+            const name = document.getElementById('newNetName').value.trim();
+            const code = document.getElementById('newNetCode').value.trim();
+            if (!name || !code) { alert("أدخل اسم الشبكة ورمزها!"); return; }
+            const id = 'net_' + Date.now();
+            db.ref('sky_data/networks/' + id).set({ id: id, name: name, code: code }).then(() => {
+                alert("✅ تم تسجيل الشبكة!");
+            });
+        }
+
+        function deleteNetwork(id) {
+            if (confirm("هل تريد حذف هذه الشبكة؟")) {
+                db.ref('sky_data/networks/' + id).remove();
+            }
+        }
+
+        function saveGlobalLinks() {
+            const appUrl = document.getElementById('linkAppUrl').value.trim();
+            const whatsappUrl = document.getElementById('linkWhatsappUrl').value.trim();
+            db.ref('sky_data/links').set({ appUrl: appUrl, whatsappUrl: whatsappUrl }).then(() => {
+                alert("✅ تم تحديث الروابط الرسمية!");
+            });
+        }
+
         function changeAdminPassword() {
             const newPass = document.getElementById('newAdminPasswordInput').value.trim();
-            if(newPass) {
-                db.ref('sky_data/adminPass').set(newPass).then(() => alert("تم التحديث!"));
+            if (newPass) {
+                db.ref('sky_data/adminPass').set(newPass).then(() => {
+                    alert("✅ تم تحديث كلمة السر بنجاح!");
+                    currentAdminPass = newPass;
+                });
+            } else {
+                alert("أدخل كلمة سر صالحة!");
             }
         }
     </script>
