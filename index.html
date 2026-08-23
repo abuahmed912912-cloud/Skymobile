@@ -9,11 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- تحميل المحركات السريعة بشكل مؤجل حتى لا تعطل فتح الصفحة إطلاقاً -->
+    <!-- تحميل المحركات السريعة بشكل مؤجل -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 
     <style>
         :root {
@@ -61,7 +62,7 @@
         .search-filter-box input { width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 11px; outline: none; }
 
         .section-frame { background: #ffffff; border: 1px solid #e2e8f0; padding: 10px; border-radius: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); }
-        .section-frame.network-special { background: linear-gradient(135deg, #0c2461 0%, #0a3d62 100%); border: 1px solid #00a8ff; color: #ffffff; }
+        .section-frame.network-special { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: 1px solid #00a8ff; color: #ffffff; }
         
         .frame-title { font-size: 12px; font-weight: 800; color: #0c2461; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
 
@@ -87,8 +88,23 @@
         .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
 
         .preview-box { background: #fff; border: 1.5px dashed #00a8ff; padding: 8px; border-radius: 12px; margin-bottom: 10px; position: relative; }
-        #canvasContainer { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 8px; background: #f8fafc; }
+        #canvasContainer { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 8px; background: #f8fafc; position: relative; }
         #previewCanvas { width: 100%; height: auto; display: block; }
+
+        .network-info-box {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .network-name { font-size: 1.1rem; font-weight: 800; color: #38bdf8; margin-bottom: 4px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); }
+        .network-number { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8); }
+        .purchase-text { font-size: 0.88rem; font-weight: 700; color: #facc15; margin: 0; line-height: 1.4; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9); }
 
         .action-links { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
         .link-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 11px; border: none; cursor: pointer; color: white; text-decoration: none; }
@@ -130,7 +146,6 @@
         }
         @keyframes modalPop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* Admin Styles */
         .admin-header { background: var(--sky-gradient); color: white; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 12px; }
         .admin-header h2 { font-size: 14px; font-weight: 800; }
         .admin-card { background: #fff; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; margin-bottom: 10px; }
@@ -144,11 +159,9 @@
 </head>
 <body>
 
-    <div class="container" id="mainContainer">
-        <!-- يتم رسم الواجهة بالكامل من الكاش فوراً بكسر من الثانية -->
-    </div>
+    <div class="container" id="mainContainer"></div>
+    <div id="hiddenQrContainer" style="display:none;"></div>
 
-    <!-- النافذة المنبثقة للتخصيص الكامل لشبكة الواي فاي -->
     <div id="networkConfigModal" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
@@ -158,9 +171,7 @@
             
             <div class="client-input-card">
                 <label>اختر الشبكة المسجلة:</label>
-                <select id="cNetSelect" onchange="applySelectedNetworkCode()">
-                    <!-- يتم بناؤها ديناميكياً -->
-                </select>
+                <select id="cNetSelect" onchange="applySelectedNetworkCode()"></select>
             </div>
             <div class="client-input-card">
                 <label>رقم الشبكة بالتطبيق:</label>
@@ -175,7 +186,9 @@
                 <select id="cNetStyle" onchange="debouncedDraw()">
                     <option value="default">الافتراضي (شريط طولي خلفية داكنة)</option>
                     <option value="bubble">دائري معلقة (بالونة دائرية في الزاوية)</option>
+                    <option value="sticky_circle">خيار دائري ملتصق (خيار سكاي المميز)</option>
                     <option value="barcode">رمز شريطي (باركود احترافي)</option>
+                    <option value="qrcode">رمز استجابة سريع (QR Code تفاعلي)</option>
                 </select>
             </div>
 
@@ -184,7 +197,21 @@
     </div>
 
     <script>
-        // --- 1. CONFIG & STATE MANAGEMENT ---
+        if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii) {
+                if (typeof radii === 'number') radii = [radii, radii, radii, radii];
+                const r = radii[0] || 0;
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+                return this;
+            };
+        }
+
         const firebaseConfig = {
             apiKey: "AIzaSyDNwIUGqA2dm5Mrx5S06LIEGPJ_VgW3eFc",
             authDomain: "sky-mobile-8e245.firebaseapp.com",
@@ -195,10 +222,11 @@
         };
 
         let db = null;
+        let manualColorChange = false;
 
         const AppState = {
             currentAdminPass: "sky2026",
-            activeTab: 'designer', // 'designer', 'telecom', 'wifi', 'support'
+            activeTab: 'designer',
             globalLinks: {
                 appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
                 whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK',
@@ -211,35 +239,39 @@
                 isGenerated: true,
                 image: ''
             },
+            appBannerDesign: {
+                id: 'design_sky_app_banner',
+                title: '📱 قالب بنر التطبيق والكروت المباشرة',
+                categoryId: 'cat_wifi_networks',
+                isAppBannerMode: true,
+                isGenerated: false,
+                image: ''
+            },
             categories: [{ id: 'cat_wifi_networks', name: '📶 تصاميم كروت الشبكات' }],
             designs: [],
             networkCodes: [],
             imageCache: {},
             activeCategory: 'all',
-            currentDesignId: 'design_wifi_canvas_dynamic',
+            currentDesignId: 'design_sky_app_banner',
             loadedBaseImage: null,
-            isDynamicCanvasMode: true,
+            isDynamicCanvasMode: false,
+            isAppBannerMode: true,
             renderDebounceTimer: null,
             logoClickCounter: 0,
             logoClickTimer: null,
             searchQuery: ""
         };
 
-        AppState.designs = [AppState.defaultDesign];
+        AppState.designs = [AppState.appBannerDesign, AppState.defaultDesign];
 
-        // --- 2. INITIALIZATION & FAST LOAD ---
         window.onload = function() {
             checkUrlForSpecificDesign();
-            
-            // فتح فوراً في أجزاء من الثانية من الكاش المحفوظ
             const cachedData = localStorage.getItem('sky_mobile_data_cache');
             if (cachedData) {
                 try { processFetchedData(JSON.parse(cachedData)); } catch (e) { checkViewState(); }
             } else {
                 checkViewState();
             }
-
-            // الاتصال بـ Firebase في الخلفية
             initFirebaseAndSync();
         };
 
@@ -292,16 +324,14 @@
                 AppState.categories = fetchedCats;
             }
             if (data.designs) {
-                AppState.designs = [AppState.defaultDesign, ...Object.values(data.designs)];
+                AppState.designs = [AppState.appBannerDesign, AppState.defaultDesign, ...Object.values(data.designs)];
             }
             if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
             if (data.adminPass) AppState.currentAdminPass = data.adminPass;
             if (data.networks) AppState.networkCodes = Object.values(data.networks);
-            
             checkViewState();
         }
 
-        // --- 3. ROUTING & CONTROLLER ---
         function checkViewState() {
             const container = document.getElementById('mainContainer');
             const isAdminMode = sessionStorage.getItem('sky_in_admin_mode') === 'true';
@@ -333,7 +363,6 @@
             }
         }
 
-        // --- 4. RENDERERS (VIEW GENERATORS) ---
         function renderClientPanel(container) {
             let activeTabContent = '';
 
@@ -354,10 +383,10 @@
                         <details class="color-compact-box">
                             <summary>🎨 اضغط هنا لتخصيص ألوان التصميم</summary>
                             <div class="colors-picker-grid">
-                                <div class="color-item"><label>الهيدر:</label><input type="color" id="colBg" value="#0c2461" onchange="debouncedDraw()"></div>
-                                <div class="color-item"><label>الرئيسي:</label><input type="color" id="colText1" value="#ffffff" onchange="debouncedDraw()"></div>
+                                <div class="color-item"><label>الخلفية / الهيدر:</label><input type="color" id="colBg" value="#0c2461" onchange="manualColorChange=false; debouncedDraw()"></div>
+                                <div class="color-item"><label>الرئيسي:</label><input type="color" id="colText1" value="#ffffff" onchange="manualColorChange=true; debouncedDraw()"></div>
                                 <div class="color-item"><label>الفرعي:</label><input type="color" id="colText2" value="#00a8ff" onchange="debouncedDraw()"></div>
-                                <div class="color-item"><label>الإطار:</label><input type="color" id="colBorder" value="#00a8ff" onchange="debouncedDraw()"></div>
+                                <div class="color-item"><label>الإطار والخطوط:</label><input type="color" id="colBorder" value="#00a8ff" onchange="debouncedDraw()"></div>
                             </div>
                         </details>
                     </div>
@@ -366,7 +395,7 @@
                         <div class="frame-title">📝 بياناتك التجارية للتصميم</div>
                         <div class="client-input-card"><label>🏪 اسم المحل / النقطة:</label><input type="text" id="cShop" placeholder="أدخل اسمك أو المحل" oninput="debouncedDraw()"></div>
                         <div class="client-input-card"><label>📍 العنوان:</label><input type="text" id="cAddress" placeholder="العنوان" oninput="debouncedDraw()"></div>
-                        <div class="client-input-card"><label>📞 الهاتف:</label><input type="text" id="cPhone" value="${AppState.globalLinks.supportPhone}" oninput="debouncedDraw()"></div>
+                        <div class="client-input-card"><label>📞 الهاتف / الواتساب:</label><input type="text" id="cPhone" value="${AppState.globalLinks.supportPhone}" oninput="debouncedDraw()"></div>
                         <div class="action-links">
                             <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم</button>
                             <button class="link-btn copy-design-btn" onclick="copyDesignLink()">🔗 نسخ رابط التصميم الحالي</button>
@@ -384,11 +413,16 @@
                         <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn" style="margin-top:12px;">🛒 فتح التطبيق للتسديد المباشر</a>
                     </div>`;
             } else if (AppState.activeTab === 'wifi') {
-                let netsListHtml = AppState.networkCodes.map(n => `<div style="background:#ffffff; color:#0c2461; padding:6px 10px; border-radius:6px; font-size:10px; margin-bottom:5px; display:flex; justify-content:space-between; font-weight:bold; border:1px solid #00a8ff;"><span>🌐 ${n.name}</span><span>رقم التسديد: [ ${n.code} ]</span></div>`).join('');
+                let netsListHtml = AppState.networkCodes.map(n => `
+                    <div class="network-info-box" style="margin-bottom:8px; text-align:right; border-right: 4px solid #38bdf8;">
+                        <h3 class="network-name">اسم الشبكة: ${n.name}</h3>
+                        <div class="network-number">رقم التسديد بالتطبيق: [ ${n.code} ]</div>
+                        <p class="purchase-text">يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل</p>
+                    </div>`).join('');
                 activeTabContent = `
                     <div class="section-frame network-special"><div class="frame-title">📶 إدارة وتسديد كروت الواي فاي</div>
                         <p style="font-size:10px; color:#e2e8f0; margin-bottom:8px;">دليل الشبكات المضافة للتسديد المباشر عبر التطبيق:</p>
-                        <div style="max-height:180px; overflow-y:auto; margin-bottom:10px; border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:5px; background:rgba(0,0,0,0.2);">
+                        <div style="max-height:220px; overflow-y:auto; margin-bottom:10px; border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:8px; background:rgba(0,0,0,0.2);">
                             ${netsListHtml || '<p style="font-size:9px; text-align:center;">لا توجد شبكات مضافة حالياً</p>'}
                         </div>
                         <div class="client-input-card">
@@ -452,7 +486,6 @@
             }
         }
 
-        // --- 5. DESIGNER & CANVAS ENGINE ---
         function renderCategoryChips() {
             const container = document.getElementById('catChipsContainer');
             if (!container) return;
@@ -510,7 +543,9 @@
                     renderClientThumbnails(item.id);
                     loadSelectedDesign(item);
                 };
-                div.innerHTML = item.isGenerated ? `🌐<br>قالب آلي` : `<img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async">`;
+                let label = "قالب آلي";
+                if(item.id === 'design_sky_app_banner') label = "📲 بنر التطبيق";
+                div.innerHTML = item.isGenerated || item.isAppBannerMode ? `🌐<br>${label}` : `<img src="${item.image}" alt="${item.title}" loading="lazy" decoding="async">`;
                 scrollBox.appendChild(div);
             });
         }
@@ -523,6 +558,15 @@
                 miniFloatingBtn.style.display = (designObj.categoryId === 'cat_wifi_networks' || AppState.activeCategory === 'cat_wifi_networks') ? 'inline-flex' : 'none';
             }
 
+            if (designObj.id === 'design_sky_app_banner') {
+                AppState.isAppBannerMode = true;
+                AppState.isDynamicCanvasMode = false;
+                AppState.loadedBaseImage = null;
+                drawFinalImage();
+                return;
+            }
+
+            AppState.isAppBannerMode = false;
             if (designObj.isGenerated) {
                 AppState.isDynamicCanvasMode = true;
                 AppState.loadedBaseImage = null;
@@ -550,6 +594,332 @@
             AppState.renderDebounceTimer = setTimeout(() => requestAnimationFrame(drawFinalImage), 30);
         }
 
+        function getContrastColor(hexColor) {
+            let hex = hexColor.replace('#', '');
+            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+            let r = parseInt(hex.substring(0, 2), 16) || 0;
+            let g = parseInt(hex.substring(2, 4), 16) || 0;
+            let b = parseInt(hex.substring(4, 6), 16) || 0;
+            let brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#000000' : '#ffffff';
+        }
+
+        function getFittedFontSize(ctx, text, maxAllowedWidth, initialSize, minSize, fontStyle, fontFamily) {
+            let size = initialSize;
+            ctx.font = `${fontStyle} ${size}px ${fontFamily}`;
+            while (ctx.measureText(text).width > maxAllowedWidth && size > minSize) {
+                size -= 1;
+                ctx.font = `${fontStyle} ${size}px ${fontFamily}`;
+            }
+            return size;
+        }
+
+        /* دالة تتبع مسار الهاتف الذكي المتطور لتصميم البنر الجديد */
+        function drawMockupPhone(ctx, x, y, width, height) {
+            ctx.save();
+            ctx.shadowColor = "rgba(0,0,0,0.45)";
+            ctx.shadowBlur = 25;
+            ctx.shadowOffsetY = 15;
+
+            // جسم الهاتف
+            ctx.fillStyle = "#1e293b";
+            ctx.beginPath();
+            ctx.roundRect(x, y, width, height, 36);
+            ctx.fill();
+
+            // الإطار الخارجي الذهبي الفاخر
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // شاشة الهاتف الداخلية
+            const screenMargin = 10;
+            const screenX = x + screenMargin;
+            const screenY = y + screenMargin;
+            const screenW = width - (screenMargin * 2);
+            const screenH = height - (screenMargin * 2);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(screenX, screenY, screenW, screenH, 28);
+            ctx.clip();
+
+            // خلفية التطبيق
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(screenX, screenY, screenW, screenH);
+
+            // هيدر التطبيق العلوي
+            ctx.fillStyle = "#0c2461";
+            ctx.fillRect(screenX, screenY, screenW, 110);
+
+            // الكبسولة الديناميكية (Notch)
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            ctx.roundRect(screenX + (screenW / 2) - 35, screenY + 8, 70, 18, 9);
+            ctx.fill();
+
+            // تفاصيل الرصيد المتاح داخل الشاشة
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "800 15px 'Cairo', sans-serif";
+            ctx.fillText("الرصيد المتاح", screenX + (screenW / 2), screenY + 52);
+            ctx.font = "700 18px 'Cairo', sans-serif";
+            ctx.fillStyle = "#00a8ff";
+            ctx.fillText("***** YER", screenX + (screenW / 2), screenY + 80);
+
+            // شبكة خدمات التطبيق الأساسية (أيقونات واجهة التطبيق)
+            const services = [
+                { title: "تسديد رصيد", color: "#e0f2fe", icon: "📱" },
+                { title: "باقات الاتصال", color: "#fef3c7", icon: "🌐" },
+                { title: "معرض الألعاب", color: "#dcfce7", icon: "🎮" },
+                { title: "البرامج", color: "#f3e8ff", icon: "⚡" },
+                { title: "غذي حسابك", color: "#ffe4e6", icon: "💳" },
+                { title: "إدارة العملاء", color: "#e0e7ff", icon: "👥" },
+                { title: "تسديد كهرباء", color: "#fef9c3", icon: "💡" },
+                { title: "الدعم الفني", color: "#ccfbf1", icon: "🎧" }
+            ];
+
+            const gridMargin = 12;
+            const colCount = 4;
+            const boxW = (screenW - (gridMargin * (colCount + 1))) / colCount;
+            const boxH = 55;
+
+            services.forEach((s, i) => {
+                const col = i % colCount;
+                const row = Math.floor(i / colCount);
+                const bx = screenX + gridMargin + col * (boxW + gridMargin);
+                const by = screenY + 125 + row * (boxH + gridMargin);
+
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.roundRect(bx, by, boxW, boxH, 10);
+                ctx.fill();
+
+                ctx.textAlign = "center";
+                ctx.font = "16px 'Cairo', sans-serif";
+                ctx.fillText(s.icon, bx + (boxW / 2), by + 24);
+
+                ctx.fillStyle = "#1e293b";
+                ctx.font = "800 8px 'Cairo', sans-serif";
+                ctx.fillText(s.title, bx + (boxW / 2), by + 44);
+            });
+
+            ctx.restore();
+            ctx.restore();
+        }
+
+        /* دالة رسم قوالب خيارات الشبكات التفاعلية داخل التصميم */
+        function drawNetworkStyleOverlay(ctx, canvas, topBadgeHeight, netName, netCode, styleType, colBg, colText2, colBorder, selectedFontFamily) {
+            if (styleType === "bubble") {
+                const diameter = canvas.width * 0.25; 
+                const radius = diameter / 2;
+                const centerX = canvas.width - radius - (canvas.width * 0.035);
+                const centerY = topBadgeHeight + radius + (canvas.height * 0.025);
+
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.65)";
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetY = 4;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(12, 36, 97, 0.97)";
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = colBorder;
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius - 3, 0, Math.PI * 2);
+                ctx.clip();
+
+                const nameText = netName ? `📶 ${netName}` : "📶 الواي فاي";
+                const labelText = "رقم الشبكة";
+                const codeText = netCode ? `[ ${netCode} ]` : "[ -- ]";
+                const maxAllowedWidth = diameter * 0.82;
+
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                const nameFontSize = getFittedFontSize(ctx, nameText, maxAllowedWidth, radius * 0.23, 8, '800', selectedFontFamily);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(nameText, centerX, centerY - (radius * 0.44));
+
+                const labelFontSize = radius * 0.16;
+                ctx.font = `700 ${labelFontSize}px ${selectedFontFamily}`;
+                ctx.fillStyle = "#cbd5e1";
+                ctx.fillText(labelText, centerX, centerY - (radius * 0.04));
+
+                const codeFontSize = getFittedFontSize(ctx, codeText, maxAllowedWidth, radius * 0.23, 8, '800', selectedFontFamily);
+                ctx.fillStyle = colText2;
+                ctx.fillText(codeText, centerX, centerY + (radius * 0.40));
+
+                ctx.restore();
+
+            } else if (styleType === "sticky_circle") {
+                const diameter = canvas.width * 0.18; 
+                const radius = diameter / 2;
+                const centerX = radius + (canvas.width * 0.04);
+                const centerY = topBadgeHeight + radius + (canvas.height * 0.03);
+
+                ctx.save();
+                ctx.shadowColor = "rgba(59, 130, 246, 0.6)";
+                ctx.shadowBlur = 14;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                
+                const circleGrad = ctx.createLinearGradient(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+                circleGrad.addColorStop(0, '#06b6d4');
+                circleGrad.addColorStop(1, '#3b82f6');
+                ctx.fillStyle = circleGrad;
+                ctx.fill();
+
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#ffffff";
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `800 ${radius * 0.38}px ${selectedFontFamily}`;
+                ctx.fillText("خيار", centerX, centerY - (radius * 0.22));
+                ctx.fillText("سكاي", centerX, centerY + (radius * 0.28));
+
+                const cardX = centerX + radius + 15;
+                const cardY = centerY - radius;
+                const cardW = canvas.width - cardX - (canvas.width * 0.04);
+                const cardH = diameter;
+
+                ctx.save();
+                ctx.fillStyle = "rgba(15, 23, 42, 0.88)";
+                ctx.beginPath();
+                ctx.roundRect(cardX, cardY, cardW, cardH, 12);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.textAlign = "right";
+                ctx.textBaseline = "middle";
+
+                const strNetTitle = netName ? `اسم الشبكة: ${netName}` : "شبكة الواي فاي المعتمدة";
+                const fitTitleSize = getFittedFontSize(ctx, strNetTitle, cardW - 20, cardH * 0.28, 9, '800', selectedFontFamily);
+                ctx.fillStyle = "#38bdf8";
+                ctx.fillText(strNetTitle, cardX + cardW - 12, cardY + (cardH * 0.32));
+
+                const strNetCode = `رقم التواصل والتسديد: ${netCode || '--'}`;
+                const fitCodeSize = getFittedFontSize(ctx, strNetCode, cardW - 20, cardH * 0.24, 8, '700', selectedFontFamily);
+                ctx.fillStyle = "#f1f5f9";
+                ctx.fillText(strNetCode, cardX + cardW - 12, cardY + (cardH * 0.72));
+                ctx.restore();
+
+            } else if (styleType === "barcode") {
+                const cardW = canvas.width * 0.35;
+                const cardH = canvas.height * 0.13;
+                const posX = canvas.width - cardW - (canvas.width * 0.03);
+                const posY = topBadgeHeight + (canvas.height * 0.02);
+
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.5)";
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.roundRect(posX, posY, cardW, cardH, 10);
+                ctx.fill();
+                ctx.strokeStyle = colBorder;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = colBg;
+                
+                const strBcName = netName ? `📶 شبكة ${netName}` : "📶 كرت الشبكة";
+                const bcNameSize = getFittedFontSize(ctx, strBcName, cardW - 10, cardH * 0.17, 8, '800', selectedFontFamily);
+                ctx.fillText(strBcName, posX + (cardW / 2), posY + (cardH * 0.22));
+
+                if (netCode && typeof JsBarcode !== "undefined") {
+                    const tempCanvas = document.createElement("canvas");
+                    try {
+                        JsBarcode(tempCanvas, netCode, {
+                            format: "CODE128",
+                            displayValue: false,
+                            margin: 0,
+                            background: "#ffffff",
+                            lineColor: "#000000"
+                        });
+                        const bcW = cardW * 0.85;
+                        const bcH = cardH * 0.40;
+                        ctx.drawImage(tempCanvas, posX + ((cardW - bcW) / 2), posY + (cardH * 0.32), bcW, bcH);
+                    } catch(e) {}
+                }
+
+                ctx.fillStyle = "#0c2461";
+                const strBcCode = `كود التسديد: ${netCode || '--'}`;
+                const bcCodeSize = getFittedFontSize(ctx, strBcCode, cardW - 10, cardH * 0.18, 8, '800', selectedFontFamily);
+                ctx.fillText(strBcCode, posX + (cardW / 2), posY + (cardH * 0.88));
+
+            } else if (styleType === "qrcode") {
+                const size = canvas.width * 0.22;
+                const posX = canvas.width - size - (canvas.width * 0.04);
+                const posY = topBadgeHeight + (canvas.height * 0.03);
+
+                ctx.save();
+                ctx.shadowColor = "rgba(0,0,0,0.4)";
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.roundRect(posX, posY, size, size + 25, 12);
+                ctx.fill();
+                ctx.strokeStyle = colBorder;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                const hiddenBox = document.getElementById('hiddenQrContainer');
+                if (hiddenBox && typeof QRCode !== "undefined") {
+                    hiddenBox.innerHTML = "";
+                    const qrVal = netCode ? `https://skymobile.app?net=${netCode}` : AppState.globalLinks.appUrl;
+                    new QRCode(hiddenBox, { text: qrVal, width: 120, height: 120 });
+                    
+                    setTimeout(() => {
+                        const qrImg = hiddenBox.querySelector('img');
+                        if (qrImg) {
+                            ctx.drawImage(qrImg, posX + 8, posY + 8, size - 16, size - 16);
+                            ctx.textAlign = "center";
+                            ctx.fillStyle = "#0c2461";
+                            ctx.font = `800 ${size * 0.11}px ${selectedFontFamily}`;
+                            ctx.fillText(netName || "امسح للتسديد", posX + (size / 2), posY + size + 16);
+                        }
+                    }, 50);
+                }
+                ctx.restore();
+
+            } else {
+                const bannerHeight = Math.max(42, canvas.height * 0.062);
+                const bannerY = topBadgeHeight;
+
+                ctx.save();
+                ctx.fillStyle = "rgba(12, 36, 97, 0.94)";
+                ctx.fillRect(0, bannerY, canvas.width, bannerHeight);
+                ctx.fillStyle = colBorder;
+                ctx.fillRect(0, bannerY + bannerHeight - 3, canvas.width, 3);
+
+                ctx.textAlign = "center"; 
+                ctx.textBaseline = "middle";
+                
+                const netInfoText = `📶 شبكة: ${netName || 'عامة'}   |   رقم التسديد بالتطبيق: [ ${netCode || '--'} ]`;
+                const fitBannerText = getFittedFontSize(ctx, netInfoText, canvas.width * 0.94, bannerHeight * 0.42, 10, '800', selectedFontFamily);
+
+                ctx.fillStyle = colText2;
+                ctx.shadowColor = "rgba(0,0,0,0.8)";
+                ctx.shadowBlur = 4;
+                ctx.fillText(netInfoText, canvas.width / 2, bannerY + (bannerHeight / 2));
+                ctx.restore();
+            }
+        }
+
         function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
             if(!canvas) return;
@@ -562,11 +932,165 @@
             const styleType = document.getElementById('cNetStyle')?.value || "default";
 
             const colBg = document.getElementById('colBg')?.value || "#0c2461";
-            const colText1 = document.getElementById('colText1')?.value || "#ffffff";
+            
+            let colText1;
+            if (manualColorChange) {
+                colText1 = document.getElementById('colText1')?.value || "#ffffff";
+            } else {
+                colText1 = getContrastColor(colBg);
+                const colText1Input = document.getElementById('colText1');
+                if (colText1Input) colText1Input.value = colText1;
+            }
+
             const colText2 = document.getElementById('colText2')?.value || "#00a8ff";
             const colBorder = document.getElementById('colBorder')?.value || "#00a8ff";
             const selectedFontFamily = "'Cairo', sans-serif";
 
+            /* === النمط الجديد التفاعلي الخاص ببنر الإعلان وشراء الكروت مباشرة من التطبيق === */
+            if (AppState.isAppBannerMode) {
+                canvas.width = 1200;
+                canvas.height = 630;
+
+                // الخلفية مع التدرج الشبكي المعاصر
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, colBg);
+                grad.addColorStop(0.6, '#0a3d62');
+                grad.addColorStop(1, '#03192e');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // رسم خطوط هندسية جمالية بالخلفية
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+                ctx.lineWidth = 2;
+                for (let i = -canvas.height; i < canvas.width; i += 60) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i + canvas.height, canvas.height);
+                    ctx.stroke();
+                }
+
+                // شعار التطبيق العلوي جهة اليمين
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `900 32px ${selectedFontFamily}`;
+                ctx.fillText("SKY MOBILE", 450, 75);
+                ctx.font = `700 16px ${selectedFontFamily}`;
+                ctx.fillStyle = colText2;
+                ctx.fillText("تطبيق سكاي موبايل للخدمات المتكاملة", 450, 105);
+
+                // الإطار الأبيض المستطيل العلوي المخصص لاسم الشبكة
+                const nameBoxX = 70;
+                const nameBoxY = 130;
+                const nameBoxW = 540;
+                const nameBoxH = 75;
+
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "rgba(0,0,0,0.3)";
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.roundRect(nameBoxX, nameBoxY, nameBoxW, nameBoxH, 38);
+                ctx.fill();
+
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                const dispNetTitle = netName ? `شبكة: ${netName}` : (shopName || "اسم الشبكة أو المركز هنا");
+                const fitNetTitleSize = getFittedFontSize(ctx, dispNetTitle, nameBoxW - 40, 28, 14, '800', selectedFontFamily);
+                ctx.fillStyle = colBg;
+                ctx.font = `800 ${fitNetTitleSize}px ${selectedFontFamily}`;
+                ctx.fillText(dispNetTitle, nameBoxX + (nameBoxW / 2), nameBoxY + (nameBoxH / 2));
+                ctx.restore();
+
+                // النص العريض الرئيسي: "يمكنكم شراء كروت الشبكة من تطبيق سكاي موبايل"
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `900 36px ${selectedFontFamily}`;
+                ctx.fillText("يمكنكم شراء كروت الشبكة", 340, 260);
+                
+                ctx.fillStyle = "#facc15";
+                ctx.font = `900 38px ${selectedFontFamily}`;
+                ctx.fillText("من تطبيق ســكاي مـوبايـل", 340, 315);
+
+                // مربع كود التسديد المزدوج المخصص
+                const codeBoxX = 180;
+                const codeBoxY = 360;
+                const codeBoxW = 320;
+                const codeBoxH = 130;
+
+                ctx.save();
+                ctx.fillStyle = "rgba(12, 36, 97, 0.9)";
+                ctx.beginPath();
+                ctx.roundRect(codeBoxX, codeBoxY, codeBoxW, codeBoxH, 20);
+                ctx.fill();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // الهيدر الداخلي لمربع الرقم
+                ctx.fillStyle = colText2;
+                ctx.fillRect(codeBoxX, codeBoxY, codeBoxW, 42);
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `800 18px ${selectedFontFamily}`;
+                ctx.fillText("رقم الشبكة بالتطبيق :", codeBoxX + (codeBoxW / 2), codeBoxY + 26);
+
+                // الكود داخل المربع
+                const codeValStr = netCode ? netCode : "---";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `900 42px ${selectedFontFamily}`;
+                ctx.fillText(codeValStr, codeBoxX + (codeBoxW / 2), codeBoxY + 92);
+                ctx.restore();
+
+                // قسم خدمة العملاء والواتساب السفلي
+                const phoneValStr = phone || AppState.globalLinks.supportPhone;
+                ctx.save();
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.roundRect(70, 520, 240, 45, 22);
+                ctx.fill();
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = colBg;
+                ctx.font = `800 17px ${selectedFontFamily}`;
+                ctx.fillText(`📞 ${phoneValStr}`, 190, 547);
+
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `700 14px ${selectedFontFamily}`;
+                ctx.fillText("خدمة عملاء الشبكة والاتصال", 240, 502);
+                ctx.restore();
+
+                // زر "حمله الآن - Download Now"
+                ctx.save();
+                ctx.fillStyle = "#000000";
+                ctx.beginPath();
+                ctx.roundRect(360, 520, 180, 45, 10);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                ctx.stroke();
+
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `800 13px ${selectedFontFamily}`;
+                ctx.fillText("حمله الآن  ▶", 450, 540);
+                ctx.font = `700 10px ${selectedFontFamily}`;
+                ctx.fillStyle = colText2;
+                ctx.fillText("Google Play Store", 450, 555);
+                ctx.restore();
+
+                // رسم الهاتف التفاعلي الذي يعرض واجهة التطبيق جهة اليسار
+                drawMockupPhone(ctx, 680, 50, 450, 530);
+
+                // دمج وتطبيق خيارات قوالب الشبكات الفرعية عند التحديد
+                if (styleType !== "default") {
+                    drawNetworkStyleOverlay(ctx, canvas, 10, netName, netCode, styleType, colBg, colText2, colBorder, selectedFontFamily);
+                }
+
+                return;
+            }
+
+            /* === الأنماط والقوالب السابقة === */
             if (AppState.isDynamicCanvasMode || !AppState.loadedBaseImage) {
                 canvas.width = 1000; canvas.height = 1000;
                 
@@ -681,178 +1205,95 @@
                 ctx.textBaseline = "middle";
 
                 const dispShop = shopName || "مركز الخدمات والاتصالات المعتمد";
-                ctx.font = `800 26px ${selectedFontFamily}`;
+                const shopFontSize = getFittedFontSize(ctx, dispShop, canvas.width - 80, 26, 14, '800', selectedFontFamily);
+                ctx.font = `800 ${shopFontSize}px ${selectedFontFamily}`;
                 ctx.fillStyle = colText1;
                 ctx.fillText(dispShop, centerX, footerY + 40);
 
                 const subDetails = [address ? "📍 " + address : "📍 التغطية متوفرة في كافة الأرجاء", phone ? "📞 " + phone : "📞 " + AppState.globalLinks.supportPhone].filter(Boolean).join("  |  ");
-                ctx.font = `700 17px ${selectedFontFamily}`;
+                const subFontSize = getFittedFontSize(ctx, subDetails, canvas.width - 80, 17, 10, '700', selectedFontFamily);
+                ctx.font = `700 ${subFontSize}px ${selectedFontFamily}`;
                 ctx.fillStyle = colText2;
                 ctx.fillText(subDetails, centerX, footerY + 82);
 
             } else {
+                const baseW = AppState.loadedBaseImage.width;
+                const baseH = AppState.loadedBaseImage.height;
                 const hasFooterData = shopName || address || phone;
-                const footerHeight = hasFooterData ? Math.max(90, AppState.loadedBaseImage.height * 0.14) : 0;
-                canvas.width = AppState.loadedBaseImage.width; canvas.height = AppState.loadedBaseImage.height + footerHeight;
-                ctx.drawImage(AppState.loadedBaseImage, 0, 0, AppState.loadedBaseImage.width, AppState.loadedBaseImage.height);
+                
+                const footerHeight = hasFooterData ? Math.max(90, baseH * 0.14) : 0;
+                canvas.width = baseW;
+                canvas.height = baseH + footerHeight;
+
+                ctx.drawImage(AppState.loadedBaseImage, 0, 0, baseW, baseH);
 
                 if (hasFooterData) {
-                    const footerY = AppState.loadedBaseImage.height;
-                    ctx.fillStyle = colBg; ctx.fillRect(0, footerY, canvas.width, footerHeight);
-                    ctx.fillStyle = colBorder; ctx.fillRect(0, footerY, canvas.width, 4);
-                    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    const footerY = baseH;
+                    ctx.fillStyle = colBg; 
+                    ctx.fillRect(0, footerY, canvas.width, footerHeight);
+                    ctx.fillStyle = colBorder; 
+                    ctx.fillRect(0, footerY, canvas.width, 4);
+                    
+                    ctx.textAlign = "center"; 
+                    ctx.textBaseline = "middle";
 
                     if (shopName) {
-                        ctx.font = `800 ${footerHeight * 0.30}px ${selectedFontFamily}`;
+                        const targetSize = footerHeight * 0.32;
+                        const actualFontSize = getFittedFontSize(ctx, shopName, canvas.width * 0.9, targetSize, 12, '800', selectedFontFamily);
+                        ctx.font = `800 ${actualFontSize}px ${selectedFontFamily}`;
                         ctx.fillStyle = colText1;
                         ctx.fillText(shopName, canvas.width / 2, footerY + (footerHeight * 0.34));
                     }
                     const subDetails = [address ? "📍 " + address : "", phone ? "📞 " + phone : ""].filter(Boolean).join("  |  ");
                     if (subDetails) {
-                        ctx.font = `700 ${footerHeight * 0.22}px ${selectedFontFamily}`;
+                        const targetSubSize = footerHeight * 0.22;
+                        const actualSubFontSize = getFittedFontSize(ctx, subDetails, canvas.width * 0.9, targetSubSize, 10, '700', selectedFontFamily);
+                        ctx.font = `700 ${actualSubFontSize}px ${selectedFontFamily}`;
                         ctx.fillStyle = colText2;
                         ctx.fillText(subDetails, canvas.width / 2, footerY + (footerHeight * 0.74));
                     }
                 }
             }
 
-            const topBadgeHeight = canvas.height * 0.055;
-            ctx.fillStyle = colBg; ctx.fillRect(0, 0, canvas.width, topBadgeHeight);
-            ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = colText1;
+            const topBadgeHeight = Math.max(40, canvas.height * 0.055);
+            ctx.save();
+            ctx.fillStyle = colBg; 
+            ctx.fillRect(0, 0, canvas.width, topBadgeHeight);
+            ctx.fillStyle = colBorder;
+            ctx.fillRect(0, topBadgeHeight - 2, canvas.width, 2);
+
+            ctx.textAlign = "center"; 
+            ctx.textBaseline = "middle";
 
             const currentDesignObj = AppState.designs.find(d => d.id == AppState.currentDesignId);
             const isNetworkSection = (AppState.activeCategory === 'cat_wifi_networks') || (currentDesignObj && currentDesignObj.categoryId === 'cat_wifi_networks');
 
             if (isNetworkSection) {
-                ctx.font = `800 ${topBadgeHeight * 0.45}px ${selectedFontFamily}`;
-                ctx.fillStyle = "#ffffff";
-                ctx.fillText("يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل", canvas.width / 2, topBadgeHeight / 2);
+                const headerText = "يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل";
+                const fitHeaderSize = getFittedFontSize(ctx, headerText, canvas.width * 0.95, topBadgeHeight * 0.48, 12, '800', selectedFontFamily);
+                
+                ctx.font = `800 ${fitHeaderSize}px ${selectedFontFamily}`;
+                ctx.fillStyle = "#facc15";
+                ctx.shadowColor = "rgba(0,0,0,0.95)";
+                ctx.shadowBlur = 6;
+                ctx.fillText(headerText, canvas.width / 2, topBadgeHeight / 2);
             } else {
-                ctx.font = `800 ${topBadgeHeight * 0.43}px ${selectedFontFamily}`;
-                ctx.fillText("⭐ نقطة بيع معتمدة لتطبيق سكاي موبايل ⭐", canvas.width / 2, topBadgeHeight / 2);
+                const headerText = "⭐ نقطة بيع معتمدة لتطبيق سكاي موبايل ⭐";
+                const fitHeaderSize = getFittedFontSize(ctx, headerText, canvas.width * 0.95, topBadgeHeight * 0.45, 12, '800', selectedFontFamily);
+                
+                ctx.font = `800 ${fitHeaderSize}px ${selectedFontFamily}`;
+                ctx.fillStyle = colText1;
+                ctx.shadowColor = "rgba(0,0,0,0.9)";
+                ctx.shadowBlur = 5;
+                ctx.fillText(headerText, canvas.width / 2, topBadgeHeight / 2);
             }
+            ctx.restore();
 
             if (netName || netCode) {
-                if (styleType === "bubble") {
-                    const diameter = canvas.width * 0.25; 
-                    const radius = diameter / 2;
-                    const centerX = canvas.width - radius - (canvas.width * 0.035);
-                    const centerY = topBadgeHeight + radius + (canvas.height * 0.025);
-
-                    ctx.save();
-                    ctx.shadowColor = "rgba(0,0,0,0.55)";
-                    ctx.shadowBlur = 12;
-                    ctx.shadowOffsetY = 4;
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                    ctx.fillStyle = "rgba(12, 36, 97, 0.97)";
-                    ctx.fill();
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = colBorder;
-                    ctx.stroke();
-                    ctx.restore();
-
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, radius - 3, 0, Math.PI * 2);
-                    ctx.clip();
-
-                    const nameText = netName ? `📶 ${netName}` : "📶 الواي فاي";
-                    const labelText = "رقم الشبكة";
-                    const codeText = netCode ? `[ ${netCode} ]` : "[ -- ]";
-                    const maxAllowedWidth = diameter * 0.80;
-
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-
-                    let nameFontSize = radius * 0.22;
-                    ctx.font = `800 ${nameFontSize}px ${selectedFontFamily}`;
-                    while (ctx.measureText(nameText).width > maxAllowedWidth && nameFontSize > 8) {
-                        nameFontSize -= 1;
-                        ctx.font = `800 ${nameFontSize}px ${selectedFontFamily}`;
-                    }
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillText(nameText, centerX, centerY - (radius * 0.44));
-
-                    let labelFontSize = radius * 0.16;
-                    ctx.font = `700 ${labelFontSize}px ${selectedFontFamily}`;
-                    ctx.fillStyle = "#cbd5e1";
-                    ctx.fillText(labelText, centerX, centerY - (radius * 0.04));
-
-                    let codeFontSize = radius * 0.22;
-                    ctx.font = `800 ${codeFontSize}px ${selectedFontFamily}`;
-                    while (ctx.measureText(codeText).width > maxAllowedWidth && codeFontSize > 8) {
-                        codeFontSize -= 1;
-                        ctx.font = `800 ${codeFontSize}px ${selectedFontFamily}`;
-                    }
-                    ctx.fillStyle = colText2;
-                    ctx.fillText(codeText, centerX, centerY + (radius * 0.40));
-
-                    ctx.restore();
-
-                } else if (styleType === "barcode") {
-                    const cardW = canvas.width * 0.33;
-                    const cardH = canvas.height * 0.12;
-                    const posX = canvas.width - cardW - (canvas.width * 0.03);
-                    const posY = topBadgeHeight + (canvas.height * 0.02);
-
-                    ctx.save();
-                    ctx.shadowColor = "rgba(0,0,0,0.4)";
-                    ctx.shadowBlur = 8;
-                    ctx.fillStyle = "#ffffff";
-                    ctx.beginPath();
-                    ctx.roundRect(posX, posY, cardW, cardH, 10);
-                    ctx.fill();
-                    ctx.strokeStyle = colBorder;
-                    ctx.lineWidth = 2.5;
-                    ctx.stroke();
-                    ctx.restore();
-
-                    ctx.textAlign = "center";
-                    ctx.fillStyle = colBg;
-                    ctx.font = `800 ${cardH * 0.16}px ${selectedFontFamily}`;
-                    ctx.fillText(netName ? `📶 شبكة ${netName}` : "📶 كرت الشبكة", posX + (cardW / 2), posY + (cardH * 0.22));
-
-                    if (netCode && typeof JsBarcode !== "undefined") {
-                        const tempCanvas = document.createElement("canvas");
-                        try {
-                            JsBarcode(tempCanvas, netCode, {
-                                format: "CODE128",
-                                displayValue: false,
-                                margin: 0,
-                                background: "#ffffff",
-                                lineColor: "#000000"
-                            });
-                            const bcW = cardW * 0.85;
-                            const bcH = cardH * 0.40;
-                            ctx.drawImage(tempCanvas, posX + ((cardW - bcW) / 2), posY + (cardH * 0.32), bcW, bcH);
-                        } catch(e) {}
-                    }
-
-                    ctx.fillStyle = "#0c2461";
-                    ctx.font = `800 ${cardH * 0.18}px ${selectedFontFamily}`;
-                    ctx.fillText(`كود التسديد: ${netCode || '--'}`, posX + (cardW / 2), posY + (cardH * 0.88));
-
-                } else {
-                    const bannerHeight = canvas.height * 0.06;
-                    const bannerY = topBadgeHeight;
-
-                    ctx.fillStyle = "rgba(12, 36, 97, 0.92)";
-                    ctx.fillRect(0, bannerY, canvas.width, bannerHeight);
-                    ctx.fillStyle = colBorder;
-                    ctx.fillRect(0, bannerY + bannerHeight - 3, canvas.width, 3);
-
-                    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                    const netInfoText = `📶 شبكة: ${netName || 'عامة'}   |   رقم التسديد بالتطبيق: [ ${netCode || '--'} ]`;
-                    
-                    ctx.fillStyle = colText2;
-                    ctx.font = `800 ${bannerHeight * 0.40}px ${selectedFontFamily}`;
-                    ctx.fillText(netInfoText, canvas.width / 2, bannerY + (bannerHeight / 2));
-                }
+                drawNetworkStyleOverlay(ctx, canvas, topBadgeHeight, netName, netCode, styleType, colBg, colText2, colBorder, selectedFontFamily);
             }
         }
 
-        // --- 6. UTILITIES & MODAL ACTIONS ---
         function openNetworkModal() {
             const modalSelect = document.getElementById('cNetSelect');
             if (modalSelect) {
@@ -933,7 +1374,6 @@
 
         function copyDirectLink() { navigator.clipboard.writeText(window.location.href); alert("تم نسخ رابط البوابة!"); }
 
-        // --- 7. ADMIN PANEL ENGINE ---
         function renderLoginForm(container) {
             container.innerHTML = `
                 <div class="admin-header"><h2>🔐 تسجيل دخول لوحة الإدارة</h2></div>
@@ -960,7 +1400,7 @@
 
         function renderAdminPanel(container) {
             let catSelectOptions = AppState.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            let designsRows = AppState.designs.filter(d => !d.isGenerated).map(d => `
+            let designsRows = AppState.designs.filter(d => !d.isGenerated && !d.isAppBannerMode).map(d => `
                 <tr>
                     <td><img src="${d.image}" loading="lazy" style="width:26px; height:26px; object-fit:cover; border-radius:4px;"></td>
                     <td>${d.title}</td>
@@ -1021,7 +1461,6 @@
                 </div>`;
         }
 
-        // --- 8. ADMIN ACTIONS ---
         function saveGlobalLinks() {
             if (!db) return;
             const appUrl = document.getElementById('admAppUrl').value.trim();
