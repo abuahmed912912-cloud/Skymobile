@@ -118,10 +118,12 @@
         .telecom-providers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
         .provider-badge { background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 4px; border-radius: 8px; text-align: center; font-size: 11px; font-weight: bold; color: #0c2461; }
 
+        /* Admin Styles */
         .admin-header { background: var(--sky-gradient); color: white; padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
         .admin-card { background: #fff; border: 1px solid #e2e8f0; padding: 14px; border-radius: 12px; margin-bottom: 12px; }
+        .admin-card h3 { font-size: 13px; color: #0c2461; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
         .btn-main { background: var(--sky-gradient); color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
-        .btn-exit-admin { background-color: #e74c3c; color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: margin-bottom: 12px; }
+        .btn-exit-admin { background-color: #e74c3c; color: white; border: none; padding: 10px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 12px; }
         .item-list-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
         .item-list-table th, .item-list-table td { border: 1px solid #dee2e6; padding: 6px; text-align: center; }
         .btn-delete-item { background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px; }
@@ -154,11 +156,12 @@
             activeViewSection: 'grid_main',
             globalLinks: {
                 appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
-                whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK'
+                whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK',
+                supportPhone: '738328251'
             },
             defaultDesign: {
                 id: 'design_wifi_canvas_dynamic',
-                title: '🌐 قالب شبكي تفاعلي',
+                title: '🌐 قالب شبكي تفاعلي احترافي',
                 categoryId: 'cat_wifi_networks',
                 isGenerated: true,
                 image: ''
@@ -229,7 +232,7 @@
             if (data.designs) {
                 AppState.designs = [AppState.defaultDesign, ...Object.values(data.designs)];
             }
-            if (data.links) AppState.globalLinks = data.links;
+            if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
             if (data.adminPass) AppState.currentAdminPass = data.adminPass;
             if (data.networks) AppState.networkCodes = Object.values(data.networks);
             
@@ -320,22 +323,26 @@
                         <div class="frame-title">📝 بياناتك التجارية للتصميم</div>
                         <div class="client-input-card"><label>🏪 اسم المحل / النقطة:</label><input type="text" id="cShop" placeholder="أدخل اسمك أو المحل" oninput="debouncedDraw()"></div>
                         <div class="client-input-card"><label>📍 العنوان:</label><input type="text" id="cAddress" placeholder="العنوان" oninput="debouncedDraw()"></div>
-                        <div class="client-input-card"><label>📞 الهاتف:</label><input type="text" id="cPhone" value="738328251" oninput="debouncedDraw()"></div>
+                        <div class="client-input-card"><label>📞 الهاتف:</label><input type="text" id="cPhone" value="${AppState.globalLinks.supportPhone}" oninput="debouncedDraw()"></div>
                     </div>`;
             } else if (AppState.activeViewSection === 'view_telecom') {
                 dynamicBodyHtml = `
                     <div class="section-frame"><div class="frame-title">📱 خدمات تسديد الباقات والرصيد</div>
                         <div class="telecom-providers-grid">
                             <div class="provider-badge">🔴 يمن موبايل</div><div class="provider-badge">🟠 يو (YOU)</div><div class="provider-badge">🔵 سبأفون</div>
-                            <div class="provider-badge">⚡ يمن فورجي</div><div class="provider-badge">☎️ الهاتف 9</div><div class="provider-badge">🌐 النت الأرضي</div>
+                            <div class="provider-badge">⚡ يمن فورجي</div><div class="provider-badge">☎️ الهاتف الأرضي</div><div class="provider-badge">🌐 النت الأرضي</div>
                         </div>
                         <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn store-link-btn" style="margin-top:15px;">🛒 افتح التطبيق للتسديد</a>
                     </div>`;
             } else if (AppState.activeViewSection === 'view_wifi') {
+                let netsListHtml = AppState.networkCodes.map(n => `<div style="background:#f1f5f9; padding:6px 10px; border-radius:6px; font-size:11px; margin-bottom:4px; display:flex; justify-content:space-between;"><span>🌐 ${n.name}</span><strong>رقم الشبكة: ${n.code}</strong></div>`).join('');
                 dynamicBodyHtml = `
                     <div class="section-frame network-special"><div class="frame-title">📶 إدارة وكروت شبكات الواي فاي</div>
-                        <p style="font-size:11px; color:#e2e8f0; margin-bottom:10px;">يمكن للمشتركين تسديد كروت الشبكات بكتابة رقم الشبكة في التطبيق.</p>
-                        <input type="text" id="reqNetNameView" placeholder="اسم الشبكة" style="margin-bottom:6px; width: 100%; padding: 8px; border-radius: 8px;">
+                        <p style="font-size:11px; color:#e2e8f0; margin-bottom:10px;">يمكن للمشتركين تسديد كروت الشبكات بكتابة رقم الشبكة في التطبيق مباشرة.</p>
+                        <div style="max-height:180px; overflow-y:auto; margin-bottom:12px; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:6px; background:rgba(0,0,0,0.2);">
+                            ${netsListHtml || '<p style="font-size:10px; text-align:center;">لا توجد شبكات مضافة حالياً</p>'}
+                        </div>
+                        <input type="text" id="reqNetNameView" placeholder="أدخل اسم شبكتك لإضافتها" style="margin-bottom:6px; width: 100%; padding: 8px; border-radius: 8px;">
                         <button onclick="sendNetworkAddRequestFromView()" style="width:100%; background:#25d366; color:white; border:none; padding:8px; border-radius:8px; font-weight:bold; cursor:pointer;">📲 طلب إضافة شبكتك عبر الواتساب</button>
                     </div>`;
             } else if (AppState.activeViewSection === 'view_support') {
@@ -372,7 +379,7 @@
                 </header>
                 ${showBack ? `<button class="back-home-btn" onclick="switchView('grid_main')">🏠 العودة للقائمة الرئيسية</button>` : ''}
                 ${dynamicBodyHtml}
-                <div class="client-credits-footer">تصميم وبرمجة: عبدالحميد سلطان (سكاي موبايل) — 738328251</div>
+                <div class="client-credits-footer">تصميم وبرمجة: عبدالحميد سلطان (سكاي موبايل) — ${AppState.globalLinks.supportPhone}</div>
             `;
 
             if (AppState.activeViewSection === 'view_designer') {
@@ -485,17 +492,130 @@
             const colBorder = document.getElementById('colBorder')?.value || "#00a8ff";
             const selectedFontFamily = "'Cairo', sans-serif";
 
-            // 1. رسم الخلفية
+            // 1. رسم الخلفية والقالب
             if (AppState.isDynamicCanvasMode || !AppState.loadedBaseImage) {
-                canvas.width = 800; canvas.height = 800;
-                const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                grad.addColorStop(0, colBg); grad.addColorStop(1, '#051937');
-                ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                canvas.width = 1000; canvas.height = 1000;
                 
-                ctx.fillStyle = colBorder; ctx.font = `800 26px ${selectedFontFamily}`; ctx.textAlign = "center";
-                ctx.fillText("⚡ شبكة إنترنت عالية السرعة ⚡", canvas.width / 2, canvas.height * 0.40);
-                ctx.fillStyle = "#ffffff"; ctx.font = `900 42px ${selectedFontFamily}`;
-                ctx.fillText("تغطية قوية • ثبات فائق • كروت متوفرة", canvas.width / 2, canvas.height * 0.50);
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                bgGrad.addColorStop(0, colBg);
+                bgGrad.addColorStop(0.5, '#07183d');
+                bgGrad.addColorStop(1, '#030b1e');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.strokeStyle = "rgba(0, 168, 255, 0.05)";
+                ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += 40) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+                }
+
+                ctx.strokeStyle = colBorder;
+                ctx.lineWidth = 10;
+                ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
+
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height * 0.38;
+                
+                ctx.save();
+                ctx.strokeStyle = colText2;
+                ctx.lineWidth = 12;
+                ctx.lineCap = "round";
+                ctx.shadowColor = colText2;
+                ctx.shadowBlur = 18;
+
+                for (let r = 140; r >= 40; r -= 35) {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY + 30, r, Math.PI * 1.22, Math.PI * 1.78);
+                    ctx.stroke();
+                }
+                ctx.beginPath();
+                ctx.arc(centerX, centerY + 35, 14, 0, Math.PI * 2);
+                ctx.fillStyle = colText2;
+                ctx.fill();
+                ctx.restore();
+
+                ctx.textAlign = "center";
+                ctx.shadowColor = "rgba(0,0,0,0.6)";
+                ctx.shadowBlur = 8;
+
+                ctx.fillStyle = colText1;
+                ctx.font = `900 48px ${selectedFontFamily}`;
+                ctx.fillText("📶 خدمة إنترنت واي فاي فائقة السرعة", centerX, canvas.height * 0.53);
+
+                const speedBadgeW = 560; const speedBadgeH = 50;
+                ctx.fillStyle = "rgba(0, 168, 255, 0.2)";
+                ctx.beginPath();
+                ctx.roundRect(centerX - (speedBadgeW/2), canvas.height * 0.57, speedBadgeW, speedBadgeH, 25);
+                ctx.fill();
+                ctx.strokeStyle = colBorder;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = colText2;
+                ctx.font = `800 24px ${selectedFontFamily}`;
+                ctx.fillText("⚡ سرعة فائقة تصل إلى 100 ميجابايت/ثانية ⚡", centerX, canvas.height * 0.57 + 34);
+
+                const features = [
+                    { icon: "🚀", title: "تغطية ممتازة 5G" },
+                    { icon: "🎮", title: "ثبات عالي للألعاب" },
+                    { icon: "⚡", title: "تحميل غير محدود" },
+                    { icon: "💳", title: "كروت شحن متوفرة" }
+                ];
+
+                const cardW = 210; const cardH = 80; const gap = 16;
+                const startX = centerX - (cardW * 2 + gap * 1.5);
+                const startY = canvas.height * 0.65;
+
+                features.forEach((feat, index) => {
+                    const x = startX + (index % 2) * (cardW + gap * 2) + 12;
+                    const y = startY + Math.floor(index / 2) * (cardH + gap);
+
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, cardW, cardH, 12);
+                    ctx.fill();
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    ctx.textAlign = "right";
+                    ctx.font = `900 30px ${selectedFontFamily}`;
+                    ctx.fillText(feat.icon, x + cardW - 15, y + 50);
+
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = `800 17px ${selectedFontFamily}`;
+                    ctx.fillText(feat.title, x + (cardW / 2) - 10, y + 48);
+                });
+
+                const footerHeight = 135;
+                const footerY = canvas.height - footerHeight - 20;
+
+                ctx.fillStyle = "rgba(12, 36, 97, 0.95)";
+                ctx.fillRect(20, footerY, canvas.width - 40, footerHeight);
+                ctx.fillStyle = colBorder;
+                ctx.fillRect(20, footerY, canvas.width - 40, 5);
+
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                const dispShop = shopName || "مركز الخدمات والاتصالات المعتمد";
+                ctx.font = `900 34px ${selectedFontFamily}`;
+                ctx.fillStyle = colText1;
+                ctx.fillText(dispShop, centerX, footerY + 45);
+
+                const subDetails = [address ? "📍 " + address : "📍 التغطية متوفرة في كافة الأرجاء", phone ? "📞 " + phone : "📞 " + AppState.globalLinks.supportPhone].filter(Boolean).join("  |  ");
+                ctx.font = `800 22px ${selectedFontFamily}`;
+                ctx.fillStyle = colText2;
+                ctx.fillText(subDetails, centerX, footerY + 95);
+
             } else {
                 const hasFooterData = shopName || address || phone;
                 const footerHeight = hasFooterData ? Math.max(105, AppState.loadedBaseImage.height * 0.16) : 0;
@@ -526,73 +646,68 @@
             const topBadgeHeight = canvas.height * 0.065;
             ctx.fillStyle = colBg; ctx.fillRect(0, 0, canvas.width, topBadgeHeight);
             ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = colText1;
-            ctx.font = `900 ${topBadgeHeight * 0.58}px ${selectedFontFamily}`;
-            ctx.fillText("⭐ نقطة بيع معتمد لتطبيق سكاي موبايل ⭐", canvas.width / 2, topBadgeHeight / 2);
+            ctx.font = `900 ${topBadgeHeight * 0.52}px ${selectedFontFamily}`;
+            ctx.fillText("⭐ نقطة بيع معتمدة لتطبيق سكاي موبايل ⭐", canvas.width / 2, topBadgeHeight / 2);
 
-            // 3. بالونة الشبكة - دائرة مغلقة مع منع الخروج نهائياً
+            // 3. بالونة الواي فاي الدائرية المفتوحة التكيفية
             if (netName || netCode) {
-                const diameter = canvas.width * 0.26; // زيادة خفيفة لقطر البالونة
+                const diameter = canvas.width * 0.27; 
                 const radius = diameter / 2;
                 
-                const centerX = canvas.width - radius - (canvas.width * 0.03);
-                const centerY = topBadgeHeight + radius + (canvas.height * 0.02);
+                const centerX = canvas.width - radius - (canvas.width * 0.035);
+                const centerY = topBadgeHeight + radius + (canvas.height * 0.025);
 
-                // رسم الظل وتعبئة البالونة الدائرية
                 ctx.save();
-                ctx.shadowColor = "rgba(0,0,0,0.45)";
-                ctx.shadowBlur = 12;
-                ctx.shadowOffsetY = 5;
+                ctx.shadowColor = "rgba(0,0,0,0.55)";
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetY = 6;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                ctx.fillStyle = "rgba(12, 36, 97, 0.96)";
+                ctx.fillStyle = "rgba(12, 36, 97, 0.97)";
                 ctx.fill();
-                ctx.lineWidth = 4;
+                ctx.lineWidth = 5;
                 ctx.strokeStyle = colBorder;
                 ctx.stroke();
                 ctx.restore();
 
-                // قناع القص الدائري (تأكيد عدم خروج أي نص خارج محيط البالونة)
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius - 2, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, radius - 3, 0, Math.PI * 2);
                 ctx.clip();
 
                 const nameText = netName ? `📶 ${netName}` : "📶 الواي فاي";
                 const labelText = "رقم الشبكة";
                 const codeText = netCode ? `[ ${netCode} ]` : "[ -- ]";
 
-                const maxAllowedWidth = diameter * 0.82; // الحد الأقصى لمساحة النص الداخلية
+                const maxAllowedWidth = diameter * 0.80;
 
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
 
-                // 1. حساب حجم خط اسم الشبكة ديناميكياً ليناسب البالونة بالضبط
-                let nameFontSize = radius * 0.26;
+                let nameFontSize = radius * 0.25;
                 ctx.font = `900 ${nameFontSize}px ${selectedFontFamily}`;
-                while (ctx.measureText(nameText).width > maxAllowedWidth && nameFontSize > 9) {
+                while (ctx.measureText(nameText).width > maxAllowedWidth && nameFontSize > 8) {
                     nameFontSize -= 1;
                     ctx.font = `900 ${nameFontSize}px ${selectedFontFamily}`;
                 }
                 ctx.fillStyle = "#ffffff";
                 ctx.fillText(nameText, centerX, centerY - (radius * 0.44));
 
-                // 2. عبارة "رقم الشبكة"
-                let labelFontSize = radius * 0.19;
+                let labelFontSize = radius * 0.18;
                 ctx.font = `800 ${labelFontSize}px ${selectedFontFamily}`;
                 ctx.fillStyle = "#cbd5e1";
                 ctx.fillText(labelText, centerX, centerY - (radius * 0.04));
 
-                // 3. حساب حجم خط رقم الشبكة ليناسب البالونة
-                let codeFontSize = radius * 0.30;
+                let codeFontSize = radius * 0.31;
                 ctx.font = `900 ${codeFontSize}px ${selectedFontFamily}`;
-                while (ctx.measureText(codeText).width > maxAllowedWidth && codeFontSize > 10) {
+                while (ctx.measureText(codeText).width > maxAllowedWidth && codeFontSize > 9) {
                     codeFontSize -= 1;
                     ctx.font = `900 ${codeFontSize}px ${selectedFontFamily}`;
                 }
                 ctx.fillStyle = colText2;
                 ctx.fillText(codeText, centerX, centerY + (radius * 0.40));
 
-                ctx.restore(); // إنهاء قناع القص الدائري
+                ctx.restore();
             }
         }
 
@@ -656,12 +771,12 @@
         function sendNetworkAddRequestFromView() {
             const name = document.getElementById('reqNetNameView')?.value.trim();
             if(!name) { alert("أدخل اسم الشبكة!"); return; }
-            window.open(`https://api.whatsapp.com/send?phone=967738328251&text=${encodeURIComponent(`طلب إضافة شبكة:\nاسم الشبكة: ${name}`)}`, '_blank');
+            window.open(`https://api.whatsapp.com/send?phone=967${AppState.globalLinks.supportPhone}&text=${encodeURIComponent(`طلب إضافة شبكة:\nاسم الشبكة: ${name}`)}`, '_blank');
         }
 
         function copyDirectLink() { navigator.clipboard.writeText(window.location.href); alert("تم نسخ رابط البوابة!"); }
 
-        // --- 7. ADMIN PANEL ENGINE ---
+        // --- 7. ADMIN PANEL ENGINE (FULL CONTROL) ---
         function renderLoginForm(container) {
             container.innerHTML = `
                 <div class="admin-header"><h2>🔐 تسجيل دخول لوحة الإدارة</h2></div>
@@ -695,14 +810,53 @@
                     <td><button class="btn-delete-item" onclick="deleteDesign('${d.id}')">حذف</button></td>
                 </tr>`).join('');
 
+            let catRows = AppState.categories.filter(c => c.id !== 'cat_wifi_networks').map(c => `
+                <tr>
+                    <td>${c.name}</td>
+                    <td><button class="btn-delete-item" onclick="deleteCategory('${c.id}')">حذف</button></td>
+                </tr>`).join('');
+
+            let netRows = AppState.networkCodes.map(n => `
+                <tr>
+                    <td>${n.name}</td>
+                    <td>${n.code}</td>
+                    <td><button class="btn-delete-item" onclick="deleteNetwork('${n.code}')">حذف</button></td>
+                </tr>`).join('');
+
             container.innerHTML = `
-                <div class="admin-header"><h2>⚙️ لوحة إدارة سكاي موبايل</h2></div>
+                <div class="admin-header"><h2>⚙️ لوحة إدارة سكاي موبايل المتكاملة</h2></div>
                 <button class="btn-exit-admin" onclick="exitAdminMode()">🚪 الخروج من لوحة التحكم</button>
+
+                <!-- 1. التحكم بالروابط العامة -->
+                <div class="admin-card">
+                    <h3>🔗 إدارة الروابط والمعلومات العامة</h3>
+                    <div class="client-input-card"><label>رابط التطبيق (Google Play):</label><input type="text" id="admAppUrl" value="${AppState.globalLinks.appUrl}"></div>
+                    <div class="client-input-card"><label>رابط قناة الواتساب:</label><input type="text" id="admWaUrl" value="${AppState.globalLinks.whatsappUrl}"></div>
+                    <div class="client-input-card"><label>رقم هاتف الدعم (بدون 967):</label><input type="text" id="admPhone" value="${AppState.globalLinks.supportPhone}"></div>
+                    <button class="btn-main" onclick="saveGlobalLinks()">💾 حفظ الروابط</button>
+                </div>
+
+                <!-- 2. التحكم في الأقسام -->
+                <div class="admin-card">
+                    <h3>📁 إدارة أقسام التصاميم</h3>
+                    <div class="client-input-card"><label>اسم القسم الجديد:</label><input type="text" id="newCatName"></div>
+                    <button class="btn-main" onclick="addNewCategory()">➕ إضافة قسم جديد</button>
+                    <table class="item-list-table"><thead><tr><th>اسم القسم</th><th>إجراء</th></tr></thead><tbody>${catRows || '<tr><td colspan="2">لا توجد أقسام مخصصة</td></tr>'}</tbody></table>
+                </div>
+
+                <!-- 3. التحكم بالشبكات -->
+                <div class="admin-card">
+                    <h3>📶 إدارة شبكات الواي فاي المسجلة</h3>
+                    <div class="client-input-card"><label>اسم الشبكة:</label><input type="text" id="newNetName"></div>
+                    <div class="client-input-card"><label>رقم/كود الشبكة:</label><input type="text" id="newNetCode"></div>
+                    <button class="btn-main" onclick="addNewNetwork()">➕ إضافة شبكة</button>
+                    <table class="item-list-table"><thead><tr><th>الشبكة</th><th>الكود</th><th>إجراء</th></tr></thead><tbody>${netRows || '<tr><td colspan="3">لا توجد شبكات مضافة</td></tr>'}</tbody></table>
+                </div>
+
+                <!-- 4. رفع وتصميم القوالب -->
                 <div class="admin-card">
                     <h3>🖼️ إضافة قالب تصميم جديد</h3>
-                    <div class="client-input-card" style="margin-top:8px;">
-                        <label>عنوان القالب:</label><input type="text" id="newDesignTitle">
-                    </div>
+                    <div class="client-input-card"><label>عنوان القالب:</label><input type="text" id="newDesignTitle"></div>
                     <div class="client-input-card"><label>القسم:</label><select id="newDesignCategory">${catSelectOptions}</select></div>
                     <div class="client-input-card">
                         <label>رابط الصورة أو ارفع ملف:</label>
@@ -710,8 +864,70 @@
                         <input type="file" id="newDesignFileInput" accept="image/*" onchange="convertAndCompressImage(this)">
                     </div>
                     <button class="btn-main" onclick="addNewDesign()">💾 حفظ القالب</button>
-                    <table class="item-list-table"><thead><tr><th>صورة</th><th>العنوان</th><th>إجراء</th></tr></thead><tbody>${designsRows}</tbody></table>
+                    <table class="item-list-table"><thead><tr><th>صورة</th><th>العنوان</th><th>إجراء</th></tr></thead><tbody>${designsRows || '<tr><td colspan="3">لا توجد تصاميم مرفوعة</td></tr>'}</tbody></table>
                 </div>`;
+        }
+
+        // --- 8. ADMIN ACTIONS ---
+        function saveGlobalLinks() {
+            const appUrl = document.getElementById('admAppUrl').value.trim();
+            const whatsappUrl = document.getElementById('admWaUrl').value.trim();
+            const supportPhone = document.getElementById('admPhone').value.trim();
+            
+            db.ref('sky_data/links').set({ appUrl, whatsappUrl, supportPhone }).then(() => {
+                alert("✅ تم حفظ الروابط والمعلومات بنجاح!");
+                sessionStorage.removeItem('sky_mobile_data_cache');
+                fetchCloudDataOptimized();
+            });
+        }
+
+        function addNewCategory() {
+            const name = document.getElementById('newCatName').value.trim();
+            if (!name) return;
+            const id = 'cat_' + Date.now();
+            db.ref('sky_data/categories/' + id).set({ id, name }).then(() => {
+                alert("✅ تم إضافة القسم!");
+                sessionStorage.removeItem('sky_mobile_data_cache');
+                fetchCloudDataOptimized();
+            });
+        }
+
+        function deleteCategory(id) {
+            if (confirm("هل أنت تأكد من حذف هذا القسم؟")) {
+                db.ref('sky_data/categories/' + id).remove().then(() => {
+                    sessionStorage.removeItem('sky_mobile_data_cache');
+                    fetchCloudDataOptimized();
+                });
+            }
+        }
+
+        function addNewNetwork() {
+            const name = document.getElementById('newNetName').value.trim();
+            const code = document.getElementById('newNetCode').value.trim();
+            if (!name || !code) return;
+            const id = 'net_' + Date.now();
+            db.ref('sky_data/networks/' + id).set({ id, name, code }).then(() => {
+                alert("✅ تم إضافة الشبكة!");
+                sessionStorage.removeItem('sky_mobile_data_cache');
+                fetchCloudDataOptimized();
+            });
+        }
+
+        function deleteNetwork(code) {
+            if (confirm("تأكيد حذف الشبكة؟")) {
+                db.ref('sky_data/networks').once('value').then(snap => {
+                    const data = snap.val();
+                    for(let key in data) {
+                        if (data[key].code == code) {
+                            db.ref('sky_data/networks/' + key).remove().then(() => {
+                                sessionStorage.removeItem('sky_mobile_data_cache');
+                                fetchCloudDataOptimized();
+                            });
+                            break;
+                        }
+                    }
+                });
+            }
         }
 
         let uploadedBase64Temp = "";
