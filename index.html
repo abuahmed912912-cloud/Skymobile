@@ -192,14 +192,18 @@
         AppState.designs = [...AppState.defaultDesigns];
 
         window.addEventListener('DOMContentLoaded', () => {
-            document.fonts.ready.then(() => {
-                checkViewState();
-                const cachedData = sessionStorage.getItem('sky_mobile_data_cache');
-                if (cachedData) {
-                    try { processFetchedData(JSON.parse(cachedData)); } catch (e) {}
-                }
-                setTimeout(initFirebaseAsync, 50);
-            });
+            // التحقق الفوري من وجود رابط تصميم في الرابط (URL Query Parameter)
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('design')) {
+                AppState.activeViewSection = 'view_designer';
+            }
+            checkViewState();
+
+            const cachedData = sessionStorage.getItem('sky_mobile_data_cache');
+            if (cachedData) {
+                try { processFetchedData(JSON.parse(cachedData), true); } catch (e) {}
+            }
+            setTimeout(initFirebaseAsync, 50);
         });
 
         function initFirebaseAsync() {
@@ -207,24 +211,8 @@
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.database();
                 fetchFromFirebase();
-                checkUrlForSpecificDesign();
             } else {
                 setTimeout(initFirebaseAsync, 150);
-            }
-        }
-
-        function checkUrlForSpecificDesign() {
-            const params = new URLSearchParams(window.location.search);
-            const designParam = params.get('design');
-            if (designParam && db) {
-                AppState.activeViewSection = 'view_designer';
-                db.ref('sky_data/user_saved_designs/' + designParam).once('value').then(snap => {
-                    const savedData = snap.val();
-                    if (savedData) {
-                        if (savedData.baseDesignId) AppState.currentDesignId = savedData.baseDesignId;
-                        setTimeout(() => applySavedDesignState(savedData), 200);
-                    }
-                });
             }
         }
 
@@ -234,12 +222,12 @@
                 const data = snapshot.val();
                 if (data) {
                     try { sessionStorage.setItem('sky_mobile_data_cache', JSON.stringify(data)); } catch(e) {}
-                    processFetchedData(data);
+                    processFetchedData(data, false);
                 }
             });
         }
 
-        function processFetchedData(data) {
+        function processFetchedData(data, isFromCache) {
             if (data.categories) {
                 const fetchedCats = Object.values(data.categories);
                 if (!fetchedCats.some(c => c.id === 'cat_wifi_networks')) {
@@ -255,6 +243,27 @@
             if (data.networks) AppState.networkCodes = Object.values(data.networks);
             
             checkViewState();
+
+            // فحص الرابط لجلب التصميم المحفوظ وتطبيقه بعد اكتمال جلب البيانات
+            const params = new URLSearchParams(window.location.search);
+            const designParam = params.get('design');
+            if (designParam && db) {
+                db.ref('sky_data/user_saved_designs/' + designParam).once('value').then(snap => {
+                    const savedData = snap.val();
+                    if (savedData) {
+                        if (savedData.baseDesignId) AppState.currentDesignId = savedData.baseDesignId;
+                        setTimeout(() => {
+                            applySavedDesignState(savedData);
+                            // إعادة تحديث الواجهة للتأكد من اختيار التصميم الصحيح في القائمة
+                            if (AppState.activeViewSection === 'view_designer') {
+                                renderClientThumbnails(AppState.currentDesignId);
+                                const targetDesign = AppState.designs.find(d => d.id == AppState.currentDesignId);
+                                if (targetDesign) loadSelectedDesign(targetDesign);
+                            }
+                        }, 100);
+                    }
+                });
+            }
         }
 
         function checkViewState() {
@@ -524,7 +533,7 @@
                 document.fonts.ready.then(() => {
                     requestAnimationFrame(drawFinalImage);
                 });
-            }, 40);
+            }, 60);
         }
 
         function drawFinalImage() {
@@ -598,7 +607,6 @@
                     ctx.textAlign = "right";
                     ctx.fillStyle = colText1;
                     
-                    // تصحيح وتناسب حجم خط اسم المحل للبنر العرضي
                     let shopFontSize = 24;
                     ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
                     while (ctx.measureText("🏪 " + dispShop).width > (canvas.width - 120) && shopFontSize > 14) {
@@ -622,23 +630,14 @@
                 ctx.fillStyle = bgGrad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                ctx.strokeStyle = "rgba(0, 168, 255, 0.05)"; ctx.lineWidth = 1;
-                for (let x = 0; x < canvas.width; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
-                for (let y = 0; y < canvas.height; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-
                 ctx.strokeStyle = colBorder; ctx.lineWidth = 10;
                 ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"; ctx.lineWidth = 2;
-                ctx.strokeRect(32, 32, canvas.width - 64, canvas.height - 64);
 
                 const centerX = canvas.width / 2;
                 const centerY = canvas.height * 0.38;
                 
                 ctx.save();
                 ctx.strokeStyle = colText2; ctx.lineWidth = 12; ctx.lineCap = "round";
-                ctx.shadowColor = colText2; ctx.shadowBlur = 18;
-
                 for (let r = 140; r >= 40; r -= 35) {
                     ctx.beginPath(); ctx.arc(centerX, centerY + 30, r, Math.PI * 1.22, Math.PI * 1.78); ctx.stroke();
                 }
@@ -651,41 +650,6 @@
                 ctx.font = `900 48px ${fontCairo}`;
                 ctx.fillText("📶 خدمة إنترنت واي فاي فائقة السرعة", centerX, canvas.height * 0.53);
 
-                const speedBadgeW = 560; const speedBadgeH = 50;
-                ctx.fillStyle = "rgba(0, 168, 255, 0.2)";
-                ctx.beginPath(); ctx.roundRect(centerX - (speedBadgeW/2), canvas.height * 0.57, speedBadgeW, speedBadgeH, 25); ctx.fill();
-                ctx.strokeStyle = colBorder; ctx.lineWidth = 2; ctx.stroke();
-
-                ctx.fillStyle = colText2;
-                ctx.font = `800 24px ${fontCairo}`;
-                ctx.fillText("⚡ سرعة فائقة تصل إلى 100 ميجابايت/ثانية ⚡", centerX, canvas.height * 0.57 + 34);
-
-                const features = [
-                    { icon: "🚀", title: "تغطية ممتازة 5G" },
-                    { icon: "🎮", title: "ثبات عالي للألعاب" },
-                    { icon: "⚡", title: "تحميل غير محدود" },
-                    { icon: "💳", title: "كروت شحن متوفرة" }
-                ];
-
-                const cardW = 210; const cardH = 80; const gap = 16;
-                const startX = centerX - (cardW * 2 + gap * 1.5);
-                const startY = canvas.height * 0.65;
-
-                features.forEach((feat, index) => {
-                    const x = startX + (index % 2) * (cardW + gap * 2) + 12;
-                    const y = startY + Math.floor(index / 2) * (cardH + gap);
-
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
-                    ctx.beginPath(); ctx.roundRect(x, y, cardW, cardH, 12); ctx.fill();
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"; ctx.lineWidth = 1.5; ctx.stroke();
-
-                    ctx.textAlign = "right"; ctx.font = `900 30px ${fontCairo}`;
-                    ctx.fillText(feat.icon, x + cardW - 15, y + 50);
-
-                    ctx.textAlign = "center"; ctx.fillStyle = "#ffffff"; ctx.font = `800 17px ${fontCairo}`;
-                    ctx.fillText(feat.title, x + (cardW / 2) - 10, y + 48);
-                });
-
                 const footerHeight = 120;
                 const footerY = canvas.height - footerHeight - 20;
 
@@ -697,8 +661,6 @@
                 ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
                 const dispShop = shopName || "مركز الخدمات والاتصالات المعتمد";
-                
-                // تقليل حجم الخط ومنع التضخم
                 let shopFontSize = 26;
                 ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
                 while (ctx.measureText(dispShop).width > (canvas.width - 100) && shopFontSize > 15) {
@@ -708,7 +670,6 @@
                 ctx.fillText(dispShop, centerX, footerY + 40);
 
                 const subDetails = [address ? "📍 " + address : "📍 التغطية متوفرة في كافة الأرجاء", phone ? "📞 " + phone : "📞 " + AppState.globalLinks.supportPhone].filter(Boolean).join("  |  ");
-                
                 let subFontSize = 18;
                 ctx.font = `700 ${subFontSize}px ${fontCairo}`;
                 while (ctx.measureText(subDetails).width > (canvas.width - 100) && subFontSize > 12) {
@@ -718,7 +679,6 @@
                 ctx.fillText(subDetails, centerX, footerY + 85);
 
             } else {
-                // إصلاح فوتر الصور المرفوعة (تنسيق الحجم والتصغير)
                 const hasFooterData = shopName || address || phone;
                 const footerHeight = hasFooterData ? Math.max(90, AppState.loadedBaseImage.height * 0.13) : 0;
                 canvas.width = AppState.loadedBaseImage.width; canvas.height = AppState.loadedBaseImage.height + footerHeight;
@@ -731,7 +691,7 @@
                     ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
                     if (shopName) {
-                        let shopFontSize = Math.round(footerHeight * 0.28); // تصغير النسب لضمان الجمالية
+                        let shopFontSize = Math.round(footerHeight * 0.28);
                         ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
                         while (ctx.measureText(shopName).width > (canvas.width * 0.9) && shopFontSize > 12) {
                             shopFontSize -= 1; ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
@@ -766,7 +726,6 @@
                 const centerY = topBadgeHeight + radius + (canvas.height * 0.025);
 
                 ctx.save();
-                ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 15; ctx.shadowOffsetY = 6;
                 ctx.beginPath(); ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
                 ctx.fillStyle = "rgba(12, 36, 97, 0.97)"; ctx.fill();
                 ctx.lineWidth = 5; ctx.strokeStyle = colBorder; ctx.stroke();
@@ -807,12 +766,8 @@
             }
         }
 
-        // تحسين وحل مشكلة توليد روابط المشاركة وحفظ التعديلات
         function saveDesignToDatabase(callback) {
-            if(!db) { 
-                alert("⚠️ جاري الاتصال بقاعدة البيانات، يرجى المحاولة بعد لحظة..."); 
-                return; 
-            }
+            if(!db) { alert("⚠️ جاري الاتصال بقاعدة البيانات..."); return; }
             const designPayload = {
                 baseDesignId: AppState.currentDesignId,
                 shop: document.getElementById('cShop')?.value.trim() || "",
@@ -834,15 +789,11 @@
                 const generatedId = savedRef.key;
                 const baseUrl = window.location.href.split('?')[0];
                 const shareableUrl = `${baseUrl}?design=${generatedId}`;
-                
-                if (typeof callback === 'function') {
-                    callback(shareableUrl);
-                } else {
+                if (typeof callback === 'function') callback(shareableUrl);
+                else {
                     copyTextToClipboard(shareableUrl);
-                    alert("✅ تم حفظ تصميمك أونلاين بنجاح!\nتم نسخ رابط التصميم لتتمكن من مشاركته.");
+                    alert("✅ تم حفظ تصميمك أونلاين بنجاح!");
                 }
-            }).catch(err => {
-                alert("❌ حدث خطأ أثناء الحفظ، يرجى إعادة المحاولة.");
             });
         }
 
@@ -853,10 +804,8 @@
                 let textArea = document.createElement("textarea");
                 textArea.value = text;
                 textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
                 document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
+                textArea.focus(); textArea.select();
                 try { document.execCommand('copy'); } catch (error) {}
                 document.body.removeChild(textArea);
             }
@@ -868,7 +817,6 @@
             if (savedData.phone && document.getElementById('cPhone')) document.getElementById('cPhone').value = savedData.phone;
             if (savedData.netName && document.getElementById('cNetName')) document.getElementById('cNetName').value = savedData.netName;
             if (savedData.netCode && document.getElementById('cNetCode')) document.getElementById('cNetCode').value = savedData.netCode;
-            
             if (savedData.colors) {
                 if (savedData.colors.colBg && document.getElementById('colBg')) document.getElementById('colBg').value = savedData.colors.colBg;
                 if (savedData.colors.colText1 && document.getElementById('colText1')) document.getElementById('colText1').value = savedData.colors.colText1;
@@ -927,7 +875,7 @@
         function copyDesignLink() {
             saveDesignToDatabase((shareableUrl) => {
                 copyTextToClipboard(`🎨 تصميم مخصص من سكاي موبايل:\n${shareableUrl}`);
-                alert("✅ تم حفظ التعديلات ونسخ رابط التصميم المباشر بنجاح!");
+                alert("✅ تم نسخ رابط التصميم المباشر بنجاح!");
             });
         }
 
@@ -944,11 +892,7 @@
             window.open(`https://api.whatsapp.com/send?phone=967${AppState.globalLinks.supportPhone}&text=${encodeURIComponent(`طلب إضافة شبكة:\nاسم الشبكة: ${name}`)}`, '_blank');
         }
 
-        function copyDirectLink() { 
-            copyTextToClipboard(window.location.href); 
-            alert("تم نسخ رابط البوابة!"); 
-        }
-
+        function copyDirectLink() { copyTextToClipboard(window.location.href); alert("تم نسخ رابط البوابة!"); }
         function renderLoginForm(container) {
             container.innerHTML = `
                 <div class="admin-header"><h2>🔐 تسجيل دخول لوحة الإدارة</h2></div>
@@ -958,7 +902,6 @@
                     <button class="btn-exit-admin" style="margin-top:8px;" onclick="exitAdminMode()">إلغاء والعودة</button>
                 </div>`;
         }
-
         function verifyPassword() {
             const pass = document.getElementById('adminPassInput').value.trim();
             if (pass === AppState.currentAdminPass) {
@@ -966,7 +909,6 @@
                 checkViewState();
             } else { alert('⚠️ كلمة السر خاطئة!'); }
         }
-
         function exitAdminMode() {
             sessionStorage.removeItem('sky_in_admin_mode');
             sessionStorage.removeItem('sky_admin_authenticated');
@@ -1004,7 +946,7 @@
                     <div class="client-input-card"><label>رابط التطبيق (Google Play):</label><input type="text" id="admAppUrl" value="${AppState.globalLinks.appUrl}"></div>
                     <div class="client-input-card"><label>رابط قناة الواتساب:</label><input type="text" id="admWaUrl" value="${AppState.globalLinks.whatsappUrl}"></div>
                     <div class="client-input-card"><label>رقم هاتف الدعم (بدون 967):</label><input type="text" id="admPhone" value="${AppState.globalLinks.supportPhone}"></div>
-                    <div class="client-input-card"><label>نص الشريط الإعلاني المتحرك:</label><input type="text" id="admTickerText" value="${AppState.globalLinks.tickerText || '🔥 أهلاً بكم في تطبيق سكاي موبايل! اختر الخدمة المطلوبة بأحد الأيقونات أدناه 🚀'}"></div>
+                    <div class="client-input-card"><label>نص الشريط الإعلاني المتحرك:</label><input type="text" id="admTickerText" value="${AppState.globalLinks.tickerText || '🔥 أهلاً بكم في تطبيق سكاي موبايل!'}"></div>
                     <button class="btn-main" onclick="saveGlobalLinks()">💾 حفظ الروابط والشريط الإعلاني</button>
                 </div>
 
@@ -1045,7 +987,7 @@
             const tickerText = document.getElementById('admTickerText').value.trim();
             
             db.ref('sky_data/links').set({ appUrl, whatsappUrl, supportPhone, tickerText }).then(() => {
-                alert("✅ تم حفظ الروابط والمعلومات والشريط الإعلاني بنجاح!");
+                alert("✅ تم حفظ الروابط بنجاح!");
                 sessionStorage.removeItem('sky_mobile_data_cache');
                 fetchFromFirebase();
             });
@@ -1065,7 +1007,7 @@
 
         function deleteCategory(id) {
             if(!db) return;
-            if (confirm("هل أنت تأكد من حذف هذا القسم؟")) {
+            if (confirm("حذف هذا القسم؟")) {
                 db.ref('sky_data/categories/' + id).remove().then(() => {
                     sessionStorage.removeItem('sky_mobile_data_cache');
                     fetchFromFirebase();
@@ -1113,12 +1055,12 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; let width = img.width; let height = img.height;
+                        const MAX_WIDTH = 700; let width = img.width; let height = img.height;
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-                        uploadedBase64Temp = canvas.toDataURL('image/jpeg', 0.6);
-                        document.getElementById('newDesignImageUrl').value = "تم ضغط الصورة بنجاح ✓";
+                        uploadedBase64Temp = canvas.toDataURL('image/jpeg', 0.55);
+                        document.getElementById('newDesignImageUrl').value = "تم ضغط وضبط الصورة بنجاح ✓";
                     };
                     img.src = e.target.result;
                 };
@@ -1131,7 +1073,7 @@
             const title = document.getElementById('newDesignTitle').value.trim();
             const categoryId = document.getElementById('newDesignCategory').value;
             let imageUrl = document.getElementById('newDesignImageUrl').value.trim();
-            if (uploadedBase64Temp && imageUrl.includes("تم ضغط الصورة")) imageUrl = uploadedBase64Temp;
+            if (uploadedBase64Temp && imageUrl.includes("تم ضغط")) imageUrl = uploadedBase64Temp;
             if (!title || !imageUrl) return;
             const id = 'design_' + Date.now();
             db.ref('sky_data/designs/' + id).set({ id, title, categoryId, image: imageUrl, isGenerated: false }).then(() => {
