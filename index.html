@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سكاي موبايل - بوابة الخدمات والتصاميم</title>
     
+    <!-- استدعاء خط Cairo بكافة أوزانه -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- تحميل المكتبات بشكل مؤجل لا يعطل ظهور الواجهة -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
@@ -23,7 +24,14 @@
             --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Cairo', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
         body { 
             background: var(--sky-gradient);
@@ -184,12 +192,14 @@
         AppState.designs = [...AppState.defaultDesigns];
 
         window.addEventListener('DOMContentLoaded', () => {
-            checkViewState();
-            const cachedData = sessionStorage.getItem('sky_mobile_data_cache');
-            if (cachedData) {
-                try { processFetchedData(JSON.parse(cachedData)); } catch (e) {}
-            }
-            setTimeout(initFirebaseAsync, 50);
+            document.fonts.ready.then(() => {
+                checkViewState();
+                const cachedData = sessionStorage.getItem('sky_mobile_data_cache');
+                if (cachedData) {
+                    try { processFetchedData(JSON.parse(cachedData)); } catch (e) {}
+                }
+                setTimeout(initFirebaseAsync, 50);
+            });
         });
 
         function initFirebaseAsync() {
@@ -207,11 +217,13 @@
             const params = new URLSearchParams(window.location.search);
             const designParam = params.get('design');
             if (designParam && db) {
-                AppState.currentDesignId = designParam;
                 AppState.activeViewSection = 'view_designer';
                 db.ref('sky_data/user_saved_designs/' + designParam).once('value').then(snap => {
                     const savedData = snap.val();
-                    if (savedData) setTimeout(() => applySavedDesignState(savedData), 200);
+                    if (savedData) {
+                        if (savedData.baseDesignId) AppState.currentDesignId = savedData.baseDesignId;
+                        setTimeout(() => applySavedDesignState(savedData), 200);
+                    }
                 });
             }
         }
@@ -407,9 +419,9 @@
                             <line x1="125" y1="130" x2="155" y2="130" stroke="#003399" stroke-width="2"/>
                             <text x="200" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="14" fill="#003399" letter-spacing="4">MOBILE</text>
                             <line x1="245" y1="130" x2="275" y2="130" stroke="#003399" stroke-width="2"/>
-                            <text x="200" y="172" text-anchor="middle" font-family="Cairo, sans-serif" font-weight="800" font-size="28" fill="#002966">سكاي موبايل</text>
+                            <text x="200" y="172" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="800" font-size="28" fill="#002966">سكاي موبايل</text>
                             <rect x="100" y="188" width="200" height="34" rx="17" fill="url(#pillGrad)"/>
-                            <text x="200" y="210" text-anchor="middle" font-family="Cairo, sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">لخدمات الرصيد والباقات</text>
+                            <text x="200" y="210" text-anchor="middle" font-family="'Cairo', sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">لخدمات الرصيد والباقات</text>
                         </svg>
                     </div>
                 </header>
@@ -487,20 +499,20 @@
             if (designObj.isGenerated) {
                 AppState.isDynamicCanvasMode = true;
                 AppState.loadedBaseImage = null;
-                drawFinalImage();
+                debouncedDraw();
                 return;
             }
             AppState.isDynamicCanvasMode = false;
             if (AppState.imageCache[designObj.image] && AppState.imageCache[designObj.image].complete) {
                 AppState.loadedBaseImage = AppState.imageCache[designObj.image];
-                drawFinalImage();
+                debouncedDraw();
             } else {
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 img.onload = function() {
                     AppState.imageCache[designObj.image] = img;
                     AppState.loadedBaseImage = img;
-                    drawFinalImage();
+                    debouncedDraw();
                 };
                 img.src = designObj.image;
             }
@@ -508,7 +520,11 @@
 
         function debouncedDraw() {
             clearTimeout(AppState.renderDebounceTimer);
-            AppState.renderDebounceTimer = setTimeout(() => requestAnimationFrame(drawFinalImage), 40);
+            AppState.renderDebounceTimer = setTimeout(() => {
+                document.fonts.ready.then(() => {
+                    requestAnimationFrame(drawFinalImage);
+                });
+            }, 40);
         }
 
         function drawFinalImage() {
@@ -525,8 +541,8 @@
             const colText1 = document.getElementById('colText1')?.value || "#ffffff";
             const colText2 = document.getElementById('colText2')?.value || "#00a8ff";
             const colBorder = document.getElementById('colBorder')?.value || "#00a8ff";
-            const selectedFontFamily = "'Cairo', sans-serif";
-
+            
+            const fontCairo = "'Cairo', sans-serif";
             const activeDesignObj = AppState.designs.find(d => d.id === AppState.currentDesignId);
 
             if (AppState.isDynamicCanvasMode || !AppState.loadedBaseImage) {
@@ -544,11 +560,12 @@
 
                     ctx.fillStyle = colText1;
                     ctx.textAlign = "right";
-                    ctx.font = `900 46px ${selectedFontFamily}`;
+                    ctx.textBaseline = "alphabetic";
+                    ctx.font = `900 46px ${fontCairo}`;
                     ctx.fillText("📶 تسديد شحن كروت الواي فاي فوراً", canvas.width - 60, 110);
 
                     ctx.fillStyle = colText2;
-                    ctx.font = `800 28px ${selectedFontFamily}`;
+                    ctx.font = `800 28px ${fontCairo}`;
                     ctx.fillText("أسرع خدمة تسديد وباقات شبكات في اليمن ⚡", canvas.width - 60, 170);
 
                     const boxW = 460; const boxH = 340;
@@ -559,15 +576,15 @@
 
                     ctx.textAlign = "center";
                     ctx.fillStyle = colText1;
-                    ctx.font = `900 36px ${selectedFontFamily}`;
+                    ctx.font = `900 36px ${fontCairo}`;
                     ctx.fillText(netName ? `🌐 ${netName}` : "🌐 اسم شبكتك", boxX + (boxW/2), boxY + 80);
 
                     ctx.fillStyle = "#ffd700";
-                    ctx.font = `800 24px ${selectedFontFamily}`;
+                    ctx.font = `800 24px ${fontCairo}`;
                     ctx.fillText("رقم الشبكة في تطبيق سكاي موبايل:", boxX + (boxW/2), boxY + 160);
 
                     ctx.fillStyle = colText2;
-                    ctx.font = `900 60px ${selectedFontFamily}`;
+                    ctx.font = `900 60px ${fontCairo}`;
                     ctx.fillText(netCode ? `[ ${netCode} ]` : "[ ---- ]", boxX + (boxW/2), boxY + 250);
 
                     const dispShop = shopName || "مركز الخدمات والاتصالات المعتمد";
@@ -580,11 +597,17 @@
 
                     ctx.textAlign = "right";
                     ctx.fillStyle = colText1;
-                    ctx.font = `900 30px ${selectedFontFamily}`;
+                    
+                    // تصحيح وتناسب حجم خط اسم المحل للبنر العرضي
+                    let shopFontSize = 24;
+                    ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
+                    while (ctx.measureText("🏪 " + dispShop).width > (canvas.width - 120) && shopFontSize > 14) {
+                        shopFontSize -= 1; ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
+                    }
                     ctx.fillText("🏪 " + dispShop, canvas.width - 60, canvas.height - 75);
 
                     ctx.fillStyle = colText2;
-                    ctx.font = `800 20px ${selectedFontFamily}`;
+                    ctx.font = `700 18px ${fontCairo}`;
                     ctx.fillText(subDetails, canvas.width - 60, canvas.height - 32);
 
                     return;
@@ -623,8 +646,9 @@
                 ctx.restore();
 
                 ctx.textAlign = "center";
+                ctx.textBaseline = "alphabetic";
                 ctx.fillStyle = colText1;
-                ctx.font = `900 48px ${selectedFontFamily}`;
+                ctx.font = `900 48px ${fontCairo}`;
                 ctx.fillText("📶 خدمة إنترنت واي فاي فائقة السرعة", centerX, canvas.height * 0.53);
 
                 const speedBadgeW = 560; const speedBadgeH = 50;
@@ -633,7 +657,7 @@
                 ctx.strokeStyle = colBorder; ctx.lineWidth = 2; ctx.stroke();
 
                 ctx.fillStyle = colText2;
-                ctx.font = `800 24px ${selectedFontFamily}`;
+                ctx.font = `800 24px ${fontCairo}`;
                 ctx.fillText("⚡ سرعة فائقة تصل إلى 100 ميجابايت/ثانية ⚡", centerX, canvas.height * 0.57 + 34);
 
                 const features = [
@@ -655,14 +679,14 @@
                     ctx.beginPath(); ctx.roundRect(x, y, cardW, cardH, 12); ctx.fill();
                     ctx.strokeStyle = "rgba(255, 255, 255, 0.15)"; ctx.lineWidth = 1.5; ctx.stroke();
 
-                    ctx.textAlign = "right"; ctx.font = `900 30px ${selectedFontFamily}`;
+                    ctx.textAlign = "right"; ctx.font = `900 30px ${fontCairo}`;
                     ctx.fillText(feat.icon, x + cardW - 15, y + 50);
 
-                    ctx.textAlign = "center"; ctx.fillStyle = "#ffffff"; ctx.font = `800 17px ${selectedFontFamily}`;
+                    ctx.textAlign = "center"; ctx.fillStyle = "#ffffff"; ctx.font = `800 17px ${fontCairo}`;
                     ctx.fillText(feat.title, x + (cardW / 2) - 10, y + 48);
                 });
 
-                const footerHeight = 135;
+                const footerHeight = 120;
                 const footerY = canvas.height - footerHeight - 20;
 
                 ctx.fillStyle = "rgba(12, 36, 97, 0.95)";
@@ -673,45 +697,66 @@
                 ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
                 const dispShop = shopName || "مركز الخدمات والاتصالات المعتمد";
-                ctx.font = `900 34px ${selectedFontFamily}`;
+                
+                // تقليل حجم الخط ومنع التضخم
+                let shopFontSize = 26;
+                ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
+                while (ctx.measureText(dispShop).width > (canvas.width - 100) && shopFontSize > 15) {
+                    shopFontSize -= 1; ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
+                }
                 ctx.fillStyle = colText1;
-                ctx.fillText(dispShop, centerX, footerY + 45);
+                ctx.fillText(dispShop, centerX, footerY + 40);
 
                 const subDetails = [address ? "📍 " + address : "📍 التغطية متوفرة في كافة الأرجاء", phone ? "📞 " + phone : "📞 " + AppState.globalLinks.supportPhone].filter(Boolean).join("  |  ");
-                ctx.font = `800 22px ${selectedFontFamily}`;
+                
+                let subFontSize = 18;
+                ctx.font = `700 ${subFontSize}px ${fontCairo}`;
+                while (ctx.measureText(subDetails).width > (canvas.width - 100) && subFontSize > 12) {
+                    subFontSize -= 1; ctx.font = `700 ${subFontSize}px ${fontCairo}`;
+                }
                 ctx.fillStyle = colText2;
-                ctx.fillText(subDetails, centerX, footerY + 95);
+                ctx.fillText(subDetails, centerX, footerY + 85);
 
             } else {
+                // إصلاح فوتر الصور المرفوعة (تنسيق الحجم والتصغير)
                 const hasFooterData = shopName || address || phone;
-                const footerHeight = hasFooterData ? Math.max(105, AppState.loadedBaseImage.height * 0.16) : 0;
+                const footerHeight = hasFooterData ? Math.max(90, AppState.loadedBaseImage.height * 0.13) : 0;
                 canvas.width = AppState.loadedBaseImage.width; canvas.height = AppState.loadedBaseImage.height + footerHeight;
                 ctx.drawImage(AppState.loadedBaseImage, 0, 0, AppState.loadedBaseImage.width, AppState.loadedBaseImage.height);
 
                 if (hasFooterData) {
                     const footerY = AppState.loadedBaseImage.height;
                     ctx.fillStyle = colBg; ctx.fillRect(0, footerY, canvas.width, footerHeight);
-                    ctx.fillStyle = colBorder; ctx.fillRect(0, footerY, canvas.width, 5);
+                    ctx.fillStyle = colBorder; ctx.fillRect(0, footerY, canvas.width, 4);
                     ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
                     if (shopName) {
-                        ctx.font = `900 ${footerHeight * 0.36}px ${selectedFontFamily}`;
+                        let shopFontSize = Math.round(footerHeight * 0.28); // تصغير النسب لضمان الجمالية
+                        ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
+                        while (ctx.measureText(shopName).width > (canvas.width * 0.9) && shopFontSize > 12) {
+                            shopFontSize -= 1; ctx.font = `800 ${shopFontSize}px ${fontCairo}`;
+                        }
                         ctx.fillStyle = colText1;
-                        ctx.fillText(shopName, canvas.width / 2, footerY + (footerHeight * 0.34));
+                        ctx.fillText(shopName, canvas.width / 2, footerY + (footerHeight * 0.35));
                     }
+                    
                     const subDetails = [address ? "📍 " + address : "", phone ? "📞 " + phone : ""].filter(Boolean).join("  |  ");
                     if (subDetails) {
-                        ctx.font = `800 ${footerHeight * 0.26}px ${selectedFontFamily}`;
+                        let subFontSize = Math.round(footerHeight * 0.20);
+                        ctx.font = `700 ${subFontSize}px ${fontCairo}`;
+                        while (ctx.measureText(subDetails).width > (canvas.width * 0.9) && subFontSize > 10) {
+                            subFontSize -= 1; ctx.font = `700 ${subFontSize}px ${fontCairo}`;
+                        }
                         ctx.fillStyle = colText2;
-                        ctx.fillText(subDetails, canvas.width / 2, footerY + (footerHeight * 0.74));
+                        ctx.fillText(subDetails, canvas.width / 2, footerY + (footerHeight * 0.73));
                     }
                 }
             }
 
-            const topBadgeHeight = canvas.height * 0.065;
+            const topBadgeHeight = canvas.height * 0.06;
             ctx.fillStyle = colBg; ctx.fillRect(0, 0, canvas.width, topBadgeHeight);
             ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = colText1;
-            ctx.font = `900 ${topBadgeHeight * 0.52}px ${selectedFontFamily}`;
+            ctx.font = `800 ${topBadgeHeight * 0.45}px ${fontCairo}`;
             ctx.fillText("⭐ نقطة بيع معتمدة لتطبيق سكاي موبايل ⭐", canvas.width / 2, topBadgeHeight / 2);
 
             if ((netName || netCode) && activeDesignObj?.mode !== 'horizontal') {
@@ -738,22 +783,22 @@
                 ctx.textAlign = "center"; ctx.textBaseline = "middle";
 
                 let nameFontSize = radius * 0.25;
-                ctx.font = `900 ${nameFontSize}px ${selectedFontFamily}`;
+                ctx.font = `800 ${nameFontSize}px ${fontCairo}`;
                 while (ctx.measureText(nameText).width > maxAllowedWidth && nameFontSize > 8) {
-                    nameFontSize -= 1; ctx.font = `900 ${nameFontSize}px ${selectedFontFamily}`;
+                    nameFontSize -= 1; ctx.font = `800 ${nameFontSize}px ${fontCairo}`;
                 }
                 ctx.fillStyle = "#ffffff";
                 ctx.fillText(nameText, centerX, centerY - (radius * 0.44));
 
                 let labelFontSize = radius * 0.18;
-                ctx.font = `800 ${labelFontSize}px ${selectedFontFamily}`;
+                ctx.font = `700 ${labelFontSize}px ${fontCairo}`;
                 ctx.fillStyle = "#cbd5e1";
                 ctx.fillText(labelText, centerX, centerY - (radius * 0.04));
 
                 let codeFontSize = radius * 0.31;
-                ctx.font = `900 ${codeFontSize}px ${selectedFontFamily}`;
+                ctx.font = `800 ${codeFontSize}px ${fontCairo}`;
                 while (ctx.measureText(codeText).width > maxAllowedWidth && codeFontSize > 9) {
-                    codeFontSize -= 1; ctx.font = `900 ${codeFontSize}px ${selectedFontFamily}`;
+                    codeFontSize -= 1; ctx.font = `800 ${codeFontSize}px ${fontCairo}`;
                 }
                 ctx.fillStyle = colText2;
                 ctx.fillText(codeText, centerX, centerY + (radius * 0.40));
@@ -762,9 +807,10 @@
             }
         }
 
+        // تحسين وحل مشكلة توليد روابط المشاركة وحفظ التعديلات
         function saveDesignToDatabase(callback) {
             if(!db) { 
-                alert("⚠️ جاري الاتصال بقاعدة البيانات، يرجى المحاولة بعد ثانية..."); 
+                alert("⚠️ جاري الاتصال بقاعدة البيانات، يرجى المحاولة بعد لحظة..."); 
                 return; 
             }
             const designPayload = {
@@ -786,16 +832,34 @@
             const savedRef = db.ref('sky_data/user_saved_designs').push();
             savedRef.set(designPayload).then(() => {
                 const generatedId = savedRef.key;
-                const shareableUrl = `${window.location.origin}${window.location.pathname}?design=${generatedId}`;
+                const baseUrl = window.location.href.split('?')[0];
+                const shareableUrl = `${baseUrl}?design=${generatedId}`;
+                
                 if (typeof callback === 'function') {
                     callback(shareableUrl);
                 } else {
-                    navigator.clipboard.writeText(shareableUrl);
-                    alert("✅ تم حفظ تصميمك أونلاين بنجاح! تم نسخ الرابط المباشر لتصميمك.");
+                    copyTextToClipboard(shareableUrl);
+                    alert("✅ تم حفظ تصميمك أونلاين بنجاح!\nتم نسخ رابط التصميم لتتمكن من مشاركته.");
                 }
             }).catch(err => {
-                alert("❌ حدث خطأ أثناء الحفظ، يرجى المحاولة لاحقاً.");
+                alert("❌ حدث خطأ أثناء الحفظ، يرجى إعادة المحاولة.");
             });
+        }
+
+        function copyTextToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+            } else {
+                let textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try { document.execCommand('copy'); } catch (error) {}
+                document.body.removeChild(textArea);
+            }
         }
 
         function applySavedDesignState(savedData) {
@@ -860,18 +924,16 @@
             link.href = canvas.toDataURL('image/png'); link.click();
         }
 
-        // نسخ الرابط بعد الحفظ التلقائي بالتعديلات
         function copyDesignLink() {
             saveDesignToDatabase((shareableUrl) => {
-                navigator.clipboard.writeText(`🎨 تصميم مخصص من سكاي موبايل:\n${shareableUrl}`);
-                alert("✅ تم حفظ تعديلاتك ونسخ رابط التصميم المباشر بنجاح!");
+                copyTextToClipboard(`🎨 تصميم مخصص من سكاي موبايل:\n${shareableUrl}`);
+                alert("✅ تم حفظ التعديلات ونسخ رابط التصميم المباشر بنجاح!");
             });
         }
 
-        // مشاركة الواتساب بعد الحفظ التلقائي بالتعديلات
         function shareToWhatsApp() {
             saveDesignToDatabase((shareableUrl) => {
-                const msg = encodeURIComponent(`🎨 تصميم مخصص من سكاي موبايل:\n${shareableUrl}`);
+                const msg = encodeURIComponent(`🎨 شاهد تصميمي المخصص عبر سكاي موبايل:\n${shareableUrl}`);
                 window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank');
             });
         }
@@ -882,7 +944,10 @@
             window.open(`https://api.whatsapp.com/send?phone=967${AppState.globalLinks.supportPhone}&text=${encodeURIComponent(`طلب إضافة شبكة:\nاسم الشبكة: ${name}`)}`, '_blank');
         }
 
-        function copyDirectLink() { navigator.clipboard.writeText(window.location.href); alert("تم نسخ رابط البوابة!"); }
+        function copyDirectLink() { 
+            copyTextToClipboard(window.location.href); 
+            alert("تم نسخ رابط البوابة!"); 
+        }
 
         function renderLoginForm(container) {
             container.innerHTML = `
