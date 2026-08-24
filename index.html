@@ -226,7 +226,9 @@
 
         const AppState = {
             currentAdminPass: "sky2026",
+            tickerText: "🔥 أهلاً بكم في تطبيق سكاي موبايل! اختر الخدمات من التبويبات بالأسفل وقم بتصميم إعلانك فوراً 🚀",
             activeTab: 'designer',
+            targetUrlDesignId: null,
             globalLinks: {
                 appUrl: 'https://play.google.com/store/apps/details?id=com.skymobile.app',
                 whatsappUrl: 'https://whatsapp.com/channel/YOUR_CHANNEL_LINK',
@@ -299,6 +301,7 @@
             const params = new URLSearchParams(window.location.search);
             const designParam = params.get('design');
             if (designParam) {
+                AppState.targetUrlDesignId = designParam;
                 AppState.currentDesignId = designParam;
                 AppState.activeTab = 'designer';
             }
@@ -328,7 +331,17 @@
             }
             if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
             if (data.adminPass) AppState.currentAdminPass = data.adminPass;
+            if (data.tickerText) AppState.tickerText = data.tickerText;
             if (data.networks) AppState.networkCodes = Object.values(data.networks);
+
+            if (AppState.targetUrlDesignId) {
+                const exists = AppState.designs.some(d => d.id == AppState.targetUrlDesignId);
+                if (exists) {
+                    AppState.currentDesignId = AppState.targetUrlDesignId;
+                    AppState.activeTab = 'designer';
+                }
+            }
+
             checkViewState();
         }
 
@@ -443,7 +456,7 @@
             }
 
             container.innerHTML = `
-                <div class="ticker-wrap"><div class="ticker-move">🔥 أهلاً بكم في تطبيق سكاي موبايل! اختر الخدمات من التبويبات بالأسفل وقم بتصميم إعلانك فوراً 🚀</div></div>
+                <div class="ticker-wrap"><div class="ticker-move">${AppState.tickerText}</div></div>
                 <header class="brand-header">
                     <div class="brand-logo-wrapper" onclick="handleSecretLogoClick()" title="سكاي موبايل (5 نقرات للوحة التحكم)">
                         <svg class="brand-logo-svg" viewBox="0 0 400 240" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -614,25 +627,21 @@
             return size;
         }
 
-        /* دالة تتبع مسار الهاتف الذكي المتطور لتصميم البنر الجديد */
         function drawMockupPhone(ctx, x, y, width, height) {
             ctx.save();
             ctx.shadowColor = "rgba(0,0,0,0.45)";
             ctx.shadowBlur = 25;
             ctx.shadowOffsetY = 15;
 
-            // جسم الهاتف
             ctx.fillStyle = "#1e293b";
             ctx.beginPath();
             ctx.roundRect(x, y, width, height, 36);
             ctx.fill();
 
-            // الإطار الخارجي الذهبي الفاخر
             ctx.strokeStyle = "#e2e8f0";
             ctx.lineWidth = 4;
             ctx.stroke();
 
-            // شاشة الهاتف الداخلية
             const screenMargin = 10;
             const screenX = x + screenMargin;
             const screenY = y + screenMargin;
@@ -644,21 +653,17 @@
             ctx.roundRect(screenX, screenY, screenW, screenH, 28);
             ctx.clip();
 
-            // خلفية التطبيق
             ctx.fillStyle = "#f8fafc";
             ctx.fillRect(screenX, screenY, screenW, screenH);
 
-            // هيدر التطبيق العلوي
             ctx.fillStyle = "#0c2461";
             ctx.fillRect(screenX, screenY, screenW, 110);
 
-            // الكبسولة الديناميكية (Notch)
             ctx.fillStyle = "#000000";
             ctx.beginPath();
             ctx.roundRect(screenX + (screenW / 2) - 35, screenY + 8, 70, 18, 9);
             ctx.fill();
 
-            // تفاصيل الرصيد المتاح داخل الشاشة
             ctx.textAlign = "center";
             ctx.fillStyle = "#ffffff";
             ctx.font = "800 15px 'Cairo', sans-serif";
@@ -667,7 +672,6 @@
             ctx.fillStyle = "#00a8ff";
             ctx.fillText("***** YER", screenX + (screenW / 2), screenY + 80);
 
-            // شبكة خدمات التطبيق الأساسية (أيقونات واجهة التطبيق)
             const services = [
                 { title: "تسديد رصيد", color: "#e0f2fe", icon: "📱" },
                 { title: "باقات الاتصال", color: "#fef3c7", icon: "🌐" },
@@ -708,7 +712,6 @@
             ctx.restore();
         }
 
-        /* دالة رسم قوالب خيارات الشبكات التفاعلية داخل التصميم */
         function drawNetworkStyleOverlay(ctx, canvas, topBadgeHeight, netName, netCode, styleType, colBg, colText2, colBorder, selectedFontFamily) {
             if (styleType === "bubble") {
                 const diameter = canvas.width * 0.25; 
@@ -946,12 +949,10 @@
             const colBorder = document.getElementById('colBorder')?.value || "#00a8ff";
             const selectedFontFamily = "'Cairo', sans-serif";
 
-            /* === النمط الجديد التفاعلي الخاص ببنر الإعلان وشراء الكروت مباشرة من التطبيق === */
             if (AppState.isAppBannerMode) {
                 canvas.width = 1200;
                 canvas.height = 630;
 
-                // الخلفية مع التدرج الشبكي المعاصر
                 const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
                 grad.addColorStop(0, colBg);
                 grad.addColorStop(0.6, '#0a3d62');
@@ -959,7 +960,6 @@
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // رسم خطوط هندسية جمالية بالخلفية
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
                 ctx.lineWidth = 2;
                 for (let i = -canvas.height; i < canvas.width; i += 60) {
@@ -969,7 +969,6 @@
                     ctx.stroke();
                 }
 
-                // شعار التطبيق العلوي جهة اليمين
                 ctx.textAlign = "right";
                 ctx.fillStyle = "#ffffff";
                 ctx.font = `900 32px ${selectedFontFamily}`;
@@ -978,7 +977,6 @@
                 ctx.fillStyle = colText2;
                 ctx.fillText("تطبيق سكاي موبايل للخدمات المتكاملة", 450, 105);
 
-                // الإطار الأبيض المستطيل العلوي المخصص لاسم الشبكة
                 const nameBoxX = 70;
                 const nameBoxY = 130;
                 const nameBoxW = 540;
@@ -1001,7 +999,6 @@
                 ctx.fillText(dispNetTitle, nameBoxX + (nameBoxW / 2), nameBoxY + (nameBoxH / 2));
                 ctx.restore();
 
-                // النص العريض الرئيسي: "يمكنكم شراء كروت الشبكة من تطبيق سكاي موبايل"
                 ctx.textAlign = "center";
                 ctx.fillStyle = "#ffffff";
                 ctx.font = `900 36px ${selectedFontFamily}`;
@@ -1011,7 +1008,6 @@
                 ctx.font = `900 38px ${selectedFontFamily}`;
                 ctx.fillText("من تطبيق ســكاي مـوبايـل", 340, 315);
 
-                // مربع كود التسديد المزدوج المخصص
                 const codeBoxX = 180;
                 const codeBoxY = 360;
                 const codeBoxW = 320;
@@ -1026,7 +1022,6 @@
                 ctx.lineWidth = 3;
                 ctx.stroke();
 
-                // الهيدر الداخلي لمربع الرقم
                 ctx.fillStyle = colText2;
                 ctx.fillRect(codeBoxX, codeBoxY, codeBoxW, 42);
 
@@ -1035,14 +1030,12 @@
                 ctx.font = `800 18px ${selectedFontFamily}`;
                 ctx.fillText("رقم الشبكة بالتطبيق :", codeBoxX + (codeBoxW / 2), codeBoxY + 26);
 
-                // الكود داخل المربع
                 const codeValStr = netCode ? netCode : "---";
                 ctx.fillStyle = "#ffffff";
                 ctx.font = `900 42px ${selectedFontFamily}`;
                 ctx.fillText(codeValStr, codeBoxX + (codeBoxW / 2), codeBoxY + 92);
                 ctx.restore();
 
-                // قسم خدمة العملاء والواتساب السفلي
                 const phoneValStr = phone || AppState.globalLinks.supportPhone;
                 ctx.save();
                 ctx.fillStyle = "#ffffff";
@@ -1061,7 +1054,6 @@
                 ctx.fillText("خدمة عملاء الشبكة والاتصال", 240, 502);
                 ctx.restore();
 
-                // زر "حمله الآن - Download Now"
                 ctx.save();
                 ctx.fillStyle = "#000000";
                 ctx.beginPath();
@@ -1079,10 +1071,8 @@
                 ctx.fillText("Google Play Store", 450, 555);
                 ctx.restore();
 
-                // رسم الهاتف التفاعلي الذي يعرض واجهة التطبيق جهة اليسار
                 drawMockupPhone(ctx, 680, 50, 450, 530);
 
-                // دمج وتطبيق خيارات قوالب الشبكات الفرعية عند التحديد
                 if (styleType !== "default") {
                     drawNetworkStyleOverlay(ctx, canvas, 10, netName, netCode, styleType, colBg, colText2, colBorder, selectedFontFamily);
                 }
@@ -1090,7 +1080,6 @@
                 return;
             }
 
-            /* === الأنماط والقوالب السابقة === */
             if (AppState.isDynamicCanvasMode || !AppState.loadedBaseImage) {
                 canvas.width = 1000; canvas.height = 1000;
                 
@@ -1425,6 +1414,18 @@
                 <button class="btn-exit-admin" onclick="exitAdminMode()">🚪 الخروج من لوحة التحكم</button>
 
                 <div class="admin-card">
+                    <h3>🔐 تغيير كلمة السر الإدارية</h3>
+                    <div class="client-input-card"><label>كلمة السر الجديدة:</label><input type="password" id="admNewPass" placeholder="أدخل كلمة سر جديدة"></div>
+                    <button class="btn-main" onclick="changeAdminPassword()">🔒 تحديث كلمة السر</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>📢 إدارة الشريط المتحرك (الأخبار والإعلانات)</h3>
+                    <div class="client-input-card"><label>نص الشريط المتحرك:</label><input type="text" id="admTickerText" value="${AppState.tickerText}"></div>
+                    <button class="btn-main" onclick="saveTickerText()">💾 حفظ النص المتحرك</button>
+                </div>
+
+                <div class="admin-card">
                     <h3>🔗 إدارة الروابط والمعلومات العامة</h3>
                     <div class="client-input-card"><label>رابط التطبيق (Google Play):</label><input type="text" id="admAppUrl" value="${AppState.globalLinks.appUrl}"></div>
                     <div class="client-input-card"><label>رابط قناة الواتساب:</label><input type="text" id="admWaUrl" value="${AppState.globalLinks.whatsappUrl}"></div>
@@ -1459,6 +1460,30 @@
                     <button class="btn-main" onclick="addNewDesign()">💾 حفظ القالب</button>
                     <table class="item-list-table"><thead><tr><th>صورة</th><th>العنوان</th><th>إجراء</th></tr></thead><tbody>${designsRows || '<tr><td colspan="3">لا توجد تصاميم مرفوعة</td></tr>'}</tbody></table>
                 </div>`;
+        }
+
+        function changeAdminPassword() {
+            if (!db) return;
+            const newPass = document.getElementById('admNewPass').value.trim();
+            if (!newPass) { alert("⚠️ يرجي إدخال كلمة سر صالحة!"); return; }
+            db.ref('sky_data/adminPass').set(newPass).then(() => {
+                alert("✅ تم تغيير كلمة السر بنجاح!");
+                AppState.currentAdminPass = newPass;
+                localStorage.removeItem('sky_mobile_data_cache');
+                fetchFromFirebase();
+            });
+        }
+
+        function saveTickerText() {
+            if (!db) return;
+            const newText = document.getElementById('admTickerText').value.trim();
+            if (!newText) return;
+            db.ref('sky_data/tickerText').set(newText).then(() => {
+                alert("✅ تم حفظ الشريط المتحرك بنجاح!");
+                AppState.tickerText = newText;
+                localStorage.removeItem('sky_mobile_data_cache');
+                fetchFromFirebase();
+            });
         }
 
         function saveGlobalLinks() {
