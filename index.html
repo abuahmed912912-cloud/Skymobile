@@ -86,25 +86,8 @@
             { id: 'cat_net', name: '📶 الشبكات والخدمات' },
             { id: 'cat_pay', name: '💳 الدفع الإلكتروني' }
         ];
-        let wifiNetworks = [
-            { id: 'net1', name: 'شبكة أكسبريس فورجي', code: 'NW-101' },
-            { id: 'net2', name: 'شبكة الذهبي نت', code: 'NW-102' }
-        ];
-        
-        let designs = [
-            { 
-                id: 'default_1', 
-                title: 'تصميم سكاي الرسمي 1', 
-                categoryId: 'cat_net', 
-                image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1080&q=80' 
-            },
-            { 
-                id: 'default_2', 
-                title: 'تصميم سكاي الرسمي 2', 
-                categoryId: 'cat_pay', 
-                image: 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1080&q=80' 
-            }
-        ];
+        let wifiNetworks = [];
+        let designs = [];
         
         let selectedFont = "system-ui, -apple-system, sans-serif";
         let activeCategory = 'all'; 
@@ -112,9 +95,11 @@
         let loadedBaseImage = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            // جلب معرف التصميم الممرر عبر الرابط فور الفتح
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('design')) {
+            // دعم جلب المعرف المختصر 'd' أو الكلاسيكي 'design'
+            if (urlParams.has('d')) {
+                currentDesignId = urlParams.get('d');
+            } else if (urlParams.has('design')) {
                 currentDesignId = urlParams.get('design');
             }
             
@@ -145,9 +130,7 @@
                 const data = snapshot.val();
                 if (data) {
                     if (data.categories) categories = Object.values(data.categories);
-                    if (data.designs && Array.isArray(Object.values(data.designs)) && Object.values(data.designs).length > 0) {
-                        designs = Object.values(data.designs);
-                    }
+                    if (data.designs) designs = Object.values(data.designs);
                     if (data.links) globalLinks = { ...globalLinks, ...data.links };
                     if (data.adminPass) currentAdminPass = data.adminPass;
                     if (data.wifiNetworks) wifiNetworks = Object.values(data.wifiNetworks);
@@ -178,9 +161,8 @@
             const urlParams = new URLSearchParams(window.location.search);
 
             if (!isAdminLoggedIn && !urlParams.has('admin')) {
-                // التأكد من العثور على التصميم الممرر عبر الرابط أولاً
                 let targetDesign = designs.find(d => d.id == currentDesignId);
-                if (!targetDesign) {
+                if (!targetDesign && designs.length > 0) {
                     let filtered = getFilteredDesigns();
                     targetDesign = filtered[0] || designs[0];
                 }
@@ -191,6 +173,8 @@
                     if (!loadedBaseImage || loadedBaseImage.src !== targetDesign.image) {
                         loadSelectedDesign(targetDesign);
                     }
+                } else {
+                    renderClientThumbnails(null);
                 }
             }
         }
@@ -229,12 +213,13 @@
 
         function renderClientPanel(container) {
             const urlParams = new URLSearchParams(window.location.search);
-            const shopFromUrl = urlParams.get('shop') || '';
-            const addrFromUrl = urlParams.get('address') || 'متوفر لدينا كافة الخدمات';
-            const phoneFromUrl = urlParams.get('phone') || '738328251';
+            // قراءة المعاملات بالأسماء المختصرة مع دعم الأسماء القديمة
+            const shopFromUrl = urlParams.get('s') || urlParams.get('shop') || '';
+            const addrFromUrl = urlParams.get('a') || urlParams.get('address') || 'متوفر لدينا كافة الخدمات';
+            const phoneFromUrl = urlParams.get('p') || urlParams.get('phone') || '738328251';
 
             let targetDesign = designs.find(d => d.id == currentDesignId);
-            if (!targetDesign) {
+            if (!targetDesign && designs.length > 0) {
                 let filtered = getFilteredDesigns();
                 targetDesign = filtered[0] || designs[0];
             }
@@ -333,7 +318,7 @@
 
             let displayDesigns = getFilteredDesigns();
             if (displayDesigns.length === 0) {
-                scrollBox.innerHTML = '<p style="font-size: 12px; color: #888; padding: 10px;">لا توجد تصاميم في هذا القسم</p>';
+                scrollBox.innerHTML = '<p style="font-size: 13px; color: #777; padding: 10px; width:100%; text-align:center;">لا توجد قوالب مضافة حالياً. يرجى إضافة قوالب من لوحة الأدمن.</p>';
                 return;
             }
 
@@ -517,20 +502,28 @@
             alert('يرجى تحميل الصورة أولاً ثم إرسالها عبر تطبيق الواتساب.');
         }
 
-        // إصلاح دالة نسخ الرابط لتضمين معرف التصميم الحالي والمُدخلات بدقة
+        // توليد رابط مختصر برامترات ذات حرف واحد
         function copyDesignLink() {
-            const shop = encodeURIComponent(document.getElementById('cShop')?.value.trim() || '');
-            const address = encodeURIComponent(document.getElementById('cAddress')?.value.trim() || '');
-            const phone = encodeURIComponent(document.getElementById('cPhone')?.value.trim() || '');
-            const design = currentDesignId || '';
+            const s = encodeURIComponent(document.getElementById('cShop')?.value.trim() || '');
+            const a = encodeURIComponent(document.getElementById('cAddress')?.value.trim() || '');
+            const p = encodeURIComponent(document.getElementById('cPhone')?.value.trim() || '');
+            const d = currentDesignId || '';
 
             const baseUrl = window.location.origin + window.location.pathname;
-            const fullShareUrl = `${baseUrl}?design=${design}&shop=${shop}&address=${address}&phone=${phone}`;
+            
+            // بناء الرابط المختصر
+            let queryParts = [];
+            if (d) queryParts.push(`d=${d}`);
+            if (s) queryParts.push(`s=${s}`);
+            if (a) queryParts.push(`a=${a}`);
+            if (p) queryParts.push(`p=${p}`);
+
+            const fullShareUrl = queryParts.length > 0 ? `${baseUrl}?${queryParts.join('&')}` : baseUrl;
 
             navigator.clipboard.writeText(fullShareUrl).then(() => {
-                alert('تم نسخ رابط التصميم الحالي المباشر بنجاح!');
+                alert('تم نسخ رابط التصميم المختصر بنجاح!');
             }).catch(() => {
-                alert('عذراً، تعذر نسخ الرابط تلقائياً، يمكنك نسخه يدويًا:\n' + fullShareUrl);
+                alert('يمكنك نسخ الرابط يدويًا:\n' + fullShareUrl);
             });
         }
 
