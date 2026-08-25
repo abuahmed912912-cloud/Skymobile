@@ -342,19 +342,14 @@
             };
         }
 
-        // دالة لرسم بالون حوار منفصل ومستقل يلتصق بالجدار تماماً
-        function drawStandaloneBubble(ctx, x, y, w, h, radius, fillColor, strokeColor) {
+        function drawEdgeBanner(ctx, x, y, w, h, fillColor, strokeColor) {
             ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(x, y, w, h, radius);
-            } else {
-                ctx.rect(x, y, w, h);
-            }
+            ctx.rect(x, y, w, h);
             ctx.fillStyle = fillColor;
             ctx.fill();
             if (strokeColor) {
                 ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 3;
                 ctx.stroke();
             }
         }
@@ -385,15 +380,13 @@
                     ctx.font = `bold ${fontSize}px ${selectedFont}`;
                     const boxWidth = canvas.width; 
                     const boxHeight = fontSize * 2.2;
-                    const topY = 0; 
-
-                    ctx.fillStyle = 'rgba(0, 40, 85, 0.95)';
-                    ctx.fillRect(0, topY, boxWidth, boxHeight);
+                    
+                    drawEdgeBanner(ctx, 0, 0, boxWidth, boxHeight, 'rgba(0, 30, 60, 0.95)', '#facc15');
 
                     ctx.fillStyle = '#facc15';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(wifiText, canvas.width / 2, topY + (boxHeight / 2));
+                    ctx.fillText(wifiText, canvas.width / 2, boxHeight / 2);
                 }
 
                 const appBuyText = '💳 يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل';
@@ -403,8 +396,7 @@
                 const appBoxHeight = appFontSize * 2.2;
                 const appBoxY = canvas.height - appBoxHeight; 
 
-                ctx.fillStyle = 'rgba(0, 40, 85, 0.95)';
-                ctx.fillRect(0, appBoxY, appBoxWidth, appBoxHeight);
+                drawEdgeBanner(ctx, 0, appBoxY, appBoxWidth, appBoxHeight, 'rgba(0, 30, 60, 0.95)', '#007bff');
 
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
@@ -412,77 +404,66 @@
                 ctx.fillText(appBuyText, canvas.width / 2, appBoxY + (appBoxHeight / 2));
 
             } else {
-                // اسم المحل في الأعلى (بالون منفصل يلتصق بالجدار العلوي والجانبي)
                 if (shopText) {
-                    const shopFontSize = Math.round(canvas.width * 0.045);
+                    const shopFontSize = Math.round(canvas.width * 0.05);
                     ctx.font = `bold ${shopFontSize}px ${selectedFont}`;
-                    const shopMetrics = ctx.measureText(shopText);
-                    
-                    const sPadX = 24, sPadY = 12;
-                    const shopBoxW = shopMetrics.width + (sPadX * 2);
-                    const shopBoxH = shopFontSize + (sPadY * 2);
-                    const shopBoxX = (canvas.width - shopBoxW) / 2; // في المنتصف أفقياً من الأعلى
-                    const shopBoxY = canvas.height * 0.025; // التصاق خفيف بالجدار العلوي
+                    const shopBoxW = canvas.width;
+                    const shopBoxH = shopFontSize * 2.2;
+                    const shopBoxX = 0;
+                    const shopBoxY = 0;
 
-                    drawStandaloneBubble(ctx, shopBoxX, shopBoxY, shopBoxW, shopBoxH, 14, 'rgba(0, 30, 60, 0.85)', '#007bff');
+                    drawEdgeBanner(ctx, shopBoxX, shopBoxY, shopBoxW, shopBoxH, 'rgba(0, 20, 40, 0.92)', '#007bff');
 
                     ctx.fillStyle = '#ffffff';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(shopText, shopBoxX + (shopBoxW / 2), shopBoxY + (shopBoxH / 2));
+                    ctx.fillText(shopText, canvas.width / 2, shopBoxY + (shopBoxH / 2));
                 }
 
-                // مسافة هامشية من أسفل الصورة للبالونات السفلية الملتصقة بالجدار السفلي
-                const wallMarginBottom = canvas.height * 0.025; 
-
-                // 1️⃣ الجهة اليسار: العنوان (بالون منفصل يلتصق بالجدار الأيسر والسفلي)
-                const addressString = '📍 ' + addressText;
-                const addressFontSize = Math.round(canvas.width * 0.03);
-                ctx.font = `bold ${addressFontSize}px ${selectedFont}`;
-                const addrMetrics = ctx.measureText(addressString);
+                // 1. مكان العنوان السابق (أصبح لعبارة "نقطة بيع معتمد") - ملتصق باليسار والأسفل تماماً
+                const badgeText = '✔ نقطة بيع معتمد لتطبيق سكاي موبايل';
+                const badgeFontSize = Math.round(canvas.width * 0.029); 
+                ctx.font = `bold ${badgeFontSize}px ${selectedFont}`;
+                const badgeMetrics = ctx.measureText(badgeText);
                 
-                const padX = 18, padY = 10;
-                const addrBoxW = addrMetrics.width + (padX * 2);
-                const addrBoxH = addressFontSize + (padY * 2);
-                const addrBoxX = canvas.width * 0.03; // التتصاق بالجدار الأيسر
-                const addrBoxY = canvas.height - addrBoxH - wallMarginBottom; // التصاق بالجدار السفلي
+                const padX = 24, padY = 14;
+                const badgeBoxW = badgeMetrics.width + (padX * 2);
+                const badgeBoxH = badgeFontSize + (padY * 2);
+                const badgeBoxX = 0; 
+                const badgeBoxY = canvas.height - badgeBoxH; 
 
-                drawStandaloneBubble(ctx, addrBoxX, addrBoxY, addrBoxW, addrBoxH, 12, 'rgba(0, 30, 60, 0.85)', 'rgba(255, 255, 255, 0.4)');
+                drawEdgeBanner(ctx, badgeBoxX, badgeBoxY, badgeBoxW, badgeBoxH, 'rgba(0, 20, 40, 0.92)', '#facc15');
                 
                 ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(addressString, addrBoxX + padX, addrBoxY + (addrBoxH / 2));
+                ctx.fillText(badgeText, badgeBoxX + padX, badgeBoxY + (badgeBoxH / 2));
 
-                // 2️⃣ الجهة اليمين: نقطة بيع معتمد (أعلى) ورقم الهاتف (أسفل) في بالونات مستقلة تلتصق بالجدار الأيمن والسفلي
-                const badgeText = '✔ نقطة بيع معتمد لتطبيق سكاي موبايل';
-                const badgeFontSize = Math.round(canvas.width * 0.026); // تم تكبيره بشيء بسيط كما طلبت
-                ctx.font = `bold ${badgeFontSize}px ${selectedFont}`;
-                const badgeMetrics = ctx.measureText(badgeText);
+                // 2. مكان شارة نقاط البيع السابق (أصبح للعنوان ورقم الهاتف) - ملتصقة باليمين والأسفل تماماً
+                const addressString = '📍 ' + addressText;
+                const addressFontSize = Math.round(canvas.width * 0.032);
+                ctx.font = `bold ${addressFontSize}px ${selectedFont}`;
+                const addrMetrics = ctx.measureText(addressString);
 
-                const bPadX = 14, bPadY = 8;
-                const badgeBoxW = badgeMetrics.width + (bPadX * 2);
-                const badgeBoxH = badgeFontSize + (bPadY * 2);
+                const aPadX = 18, aPadY = 10;
+                const addrBoxW = addrMetrics.width + (aPadX * 2);
+                const addrBoxH = addressFontSize + (aPadY * 2);
 
-                const rightWallX = canvas.width - (canvas.width * 0.03); // الحد الأيمن
-                const badgeBoxX = rightWallX - badgeBoxW;
-
-                // حساب إحداثيات بالون رقم الهاتف أولاً لنعرف أين نضع بالون نقطة البيع فوقه
-                let phoneBoxW = 0, phoneBoxH = 0, phoneBoxX = rightWallX, phoneBoxY = 0;
+                let phoneBoxW = 0, phoneBoxH = 0, phoneBoxY = 0;
                 if (phoneText) {
-                    const phoneFontSize = Math.round(canvas.width * 0.028);
+                    const phoneFontSize = Math.round(canvas.width * 0.03);
                     ctx.font = `bold ${phoneFontSize}px ${selectedFont}`;
                     const phoneString = '📞 ' + phoneText;
                     const phoneMetrics = ctx.measureText(phoneString);
 
-                    const pPadX = 16, pPadY = 8;
+                    const pPadX = 20, pPadY = 10;
                     phoneBoxW = phoneMetrics.width + (pPadX * 2);
                     phoneBoxH = phoneFontSize + (pPadY * 2);
-                    phoneBoxX = rightWallX - phoneBoxW;
-                    phoneBoxY = canvas.height - phoneBoxH - wallMarginBottom; // يلتصق بالجدار السفلي تماماً
+                    
+                    const phoneBoxX = canvas.width - phoneBoxW; 
+                    phoneBoxY = canvas.height - phoneBoxH;
 
-                    // رسم بالون رقم الهاتف
-                    drawStandaloneBubble(ctx, phoneBoxX, phoneBoxY, phoneBoxW, phoneBoxH, 10, 'rgba(0, 30, 60, 0.85)', '#facc15');
+                    drawEdgeBanner(ctx, phoneBoxX, phoneBoxY, phoneBoxW, phoneBoxH, 'rgba(0, 20, 40, 0.92)', '#facc15');
 
                     ctx.fillStyle = '#ffffff';
                     ctx.textAlign = 'center';
@@ -490,16 +471,15 @@
                     ctx.fillText(phoneString, phoneBoxX + (phoneBoxW / 2), phoneBoxY + (phoneBoxH / 2));
                 }
 
-                // رسم بالون نقطة البيع فوق بالون الهاتف مباشرة وملتصق باليمين
-                const gapBetweenBubbles = 8;
-                const badgeBoxY = phoneText ? (phoneBoxY - badgeBoxH - gapBetweenBubbles) : (canvas.height - badgeBoxH - wallMarginBottom);
+                const addrBoxX = canvas.width - addrBoxW;
+                const addrBoxY = phoneText ? (phoneBoxY - addrBoxH) : (canvas.height - addrBoxH);
 
-                drawStandaloneBubble(ctx, badgeBoxX, badgeBoxY, badgeBoxW, badgeBoxH, 10, 'rgba(0, 30, 60, 0.85)', '#facc15');
+                drawEdgeBanner(ctx, addrBoxX, addrBoxY, addrBoxW, addrBoxH, 'rgba(0, 20, 40, 0.92)', 'rgba(255, 255, 255, 0.3)');
 
-                ctx.fillStyle = '#facc15';
+                ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(badgeText, badgeBoxX + (badgeBoxW / 2), badgeBoxY + (badgeBoxH / 2));
+                ctx.fillText(addressString, addrBoxX + (addrBoxW / 2), addrBoxY + (addrBoxH / 2));
             }
         }
 
@@ -530,7 +510,7 @@
             designs.forEach(d => {
                 designsListHtml += `
                     <div class="sub-img-list">
-                        <span><b>${d.title}</b></span>
+                        <span><b>${d.title}</b> (${d.categoryId})</span>
                         <button class="btn-delete" onclick="deleteDesign('${d.id}')">حذف</button>
                     </div>
                 `;
@@ -575,7 +555,7 @@
                 </div>
 
                 <div class="admin-card">
-                    <h3>إضافة تصميم جديد</h3>
+                    <h3>إضافة تصميم (قالب) جديد</h3>
                     <div class="form-group" style="margin-top:10px;">
                         <label>عنوان التصميم:</label>
                         <input type="text" id="newDesignTitle" placeholder="عنوان التصميم">
@@ -590,7 +570,12 @@
                             ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                         </select>
                     </div>
-                    <button class="btn-main" onclick="addNewDesign()">➕ إضافة التصميم للسحابة</button>
+                    <button class="btn-main" onclick="addNewDesign()">➕ إضافة وحفظ القالب بالسحابة</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>إدارة القوالب الحالية وتنسيقها (${designs.length})</h3>
+                    ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم مسجلة</p>'}
                 </div>
 
                 <div class="admin-card">
@@ -613,11 +598,6 @@
                         <input type="password" id="newAdminPass" placeholder="أدخل كلمة مرور جديدة قوية">
                     </div>
                     <button class="btn-main" onclick="saveAdminPassword()">تغيير كلمة السر</button>
-                </div>
-
-                <div class="admin-card">
-                    <h3>التصاميم المتاحة حالياً (${designs.length})</h3>
-                    ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم</p>'}
                 </div>
             `;
         }
@@ -652,22 +632,22 @@
             const title = document.getElementById('newDesignTitle').value.trim();
             const image = document.getElementById('newDesignImg').value.trim();
             const categoryId = document.getElementById('newDesignCat').value;
-            if (!title || !image) return alert('يرجى كتابة العنوان ورابط الصورة!');
+            if (!title || !image) return alert('يرجى كتابة العنوان ورابط الصورة المباشر!');
 
             const newId = 'ds_' + Date.now();
             designs.push({ id: newId, title: title, image: image, categoryId: categoryId });
             db.ref('sky_data/designs').set(designs).then(() => {
-                alert('تمت إضافة التصميم بنجاح!');
+                alert('تمت إضافة القالب وتحديث السحابة بنجاح!');
                 renderAdminPanel(document.getElementById('mainContainer'));
             });
         }
 
         function deleteDesign(id) {
             if (!db) return;
-            if (confirm('هل أنت متأكد من حذف هذا التصميم؟')) {
+            if (confirm('هل أنت متأكد من حذف هذا القالب نهائياً؟')) {
                 designs = designs.filter(d => d.id !== id);
                 db.ref('sky_data/designs').set(designs).then(() => {
-                    alert('تم الحذف!');
+                    alert('تم حذف القالب وتحديث السحابة بنجاح!');
                     renderAdminPanel(document.getElementById('mainContainer'));
                 });
             }
