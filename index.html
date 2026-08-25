@@ -112,6 +112,12 @@
         let loadedBaseImage = null;
 
         document.addEventListener('DOMContentLoaded', () => {
+            // جلب معرف التصميم الممرر عبر الرابط فور الفتح
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('design')) {
+                currentDesignId = urlParams.get('design');
+            }
+            
             checkRoute(); 
             initFirebaseFast();
         });
@@ -172,11 +178,19 @@
             const urlParams = new URLSearchParams(window.location.search);
 
             if (!isAdminLoggedIn && !urlParams.has('admin')) {
-                let filtered = getFilteredDesigns();
-                let currentDesign = designs.find(d => d.id == currentDesignId) || filtered[0] || designs[0];
-                renderClientThumbnails(currentDesign ? currentDesign.id : null);
-                if (currentDesign && (!loadedBaseImage || loadedBaseImage.src !== currentDesign.image)) {
-                    loadSelectedDesign(currentDesign);
+                // التأكد من العثور على التصميم الممرر عبر الرابط أولاً
+                let targetDesign = designs.find(d => d.id == currentDesignId);
+                if (!targetDesign) {
+                    let filtered = getFilteredDesigns();
+                    targetDesign = filtered[0] || designs[0];
+                }
+
+                if (targetDesign) {
+                    currentDesignId = targetDesign.id;
+                    renderClientThumbnails(targetDesign.id);
+                    if (!loadedBaseImage || loadedBaseImage.src !== targetDesign.image) {
+                        loadSelectedDesign(targetDesign);
+                    }
                 }
             }
         }
@@ -214,8 +228,17 @@
         }
 
         function renderClientPanel(container) {
-            let filtered = getFilteredDesigns();
-            let currentDesign = designs.find(d => d.id == currentDesignId) || filtered[0] || designs[0];
+            const urlParams = new URLSearchParams(window.location.search);
+            const shopFromUrl = urlParams.get('shop') || '';
+            const addrFromUrl = urlParams.get('address') || 'متوفر لدينا كافة الخدمات';
+            const phoneFromUrl = urlParams.get('phone') || '738328251';
+
+            let targetDesign = designs.find(d => d.id == currentDesignId);
+            if (!targetDesign) {
+                let filtered = getFilteredDesigns();
+                targetDesign = filtered[0] || designs[0];
+            }
+            if (targetDesign) currentDesignId = targetDesign.id;
 
             let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" onclick="filterByCategory('all')">📂 الكل (${designs.length})</div>`;
             categories.forEach(cat => {
@@ -244,18 +267,18 @@
                 <div id="normalClientFields">
                     <div class="client-input-card">
                         <label>🏪 اسم المحل / العميل:</label>
-                        <input type="text" id="cShop" placeholder="أدخل الاسم هنا" oninput="drawFinalImage()">
+                        <input type="text" id="cShop" value="${shopFromUrl}" placeholder="أدخل الاسم هنا" oninput="drawFinalImage()">
                     </div>
 
                     <div class="client-input-card">
                         <label>📍 العنوان:</label>
-                        <input type="text" id="cAddress" value="متوفر لدينا كافة الخدمات" oninput="drawFinalImage()">
+                        <input type="text" id="cAddress" value="${addrFromUrl}" oninput="drawFinalImage()">
                     </div>
                 </div>
 
                 <div class="client-input-card">
                     <label>📞 رقم الهاتف للتواصل:</label>
-                    <input type="text" id="cPhone" value="738328251" oninput="drawFinalImage()">
+                    <input type="text" id="cPhone" value="${phoneFromUrl}" oninput="drawFinalImage()">
                 </div>
 
                 <div class="preview-box">
@@ -279,8 +302,8 @@
                 </div>
             `;
 
-            renderClientThumbnails(currentDesign ? currentDesign.id : null);
-            if (currentDesign) loadSelectedDesign(currentDesign);
+            renderClientThumbnails(currentDesignId);
+            if (targetDesign) loadSelectedDesign(targetDesign);
         }
 
         function toggleInputMode() {
@@ -420,7 +443,6 @@
                     ctx.fillText(shopText, canvas.width / 2, shopBoxY + (shopBoxH / 2));
                 }
 
-                // 1. مكان العنوان السابق (أصبح لعبارة "نقطة بيع معتمد") - ملتصق باليسار والأسفل تماماً
                 const badgeText = '✔ نقطة بيع معتمد لتطبيق سكاي موبايل';
                 const badgeFontSize = Math.round(canvas.width * 0.029); 
                 ctx.font = `bold ${badgeFontSize}px ${selectedFont}`;
@@ -439,7 +461,6 @@
                 ctx.textBaseline = 'middle';
                 ctx.fillText(badgeText, badgeBoxX + padX, badgeBoxY + (badgeBoxH / 2));
 
-                // 2. مكان شارة نقاط البيع السابق (أصبح للعنوان ورقم الهاتف) - ملتصقة باليمين والأسفل تماماً
                 const addressString = '📍 ' + addressText;
                 const addressFontSize = Math.round(canvas.width * 0.032);
                 ctx.font = `bold ${addressFontSize}px ${selectedFont}`;
@@ -496,12 +517,20 @@
             alert('يرجى تحميل الصورة أولاً ثم إرسالها عبر تطبيق الواتساب.');
         }
 
+        // إصلاح دالة نسخ الرابط لتضمين معرف التصميم الحالي والمُدخلات بدقة
         function copyDesignLink() {
-            const currentUrl = window.location.href.split('?')[0] + (currentDesignId ? `?design=${currentDesignId}` : '');
-            navigator.clipboard.writeText(currentUrl).then(() => {
-                alert('تم نسخ رابط التصميم الحالي بنجاح!');
+            const shop = encodeURIComponent(document.getElementById('cShop')?.value.trim() || '');
+            const address = encodeURIComponent(document.getElementById('cAddress')?.value.trim() || '');
+            const phone = encodeURIComponent(document.getElementById('cPhone')?.value.trim() || '');
+            const design = currentDesignId || '';
+
+            const baseUrl = window.location.origin + window.location.pathname;
+            const fullShareUrl = `${baseUrl}?design=${design}&shop=${shop}&address=${address}&phone=${phone}`;
+
+            navigator.clipboard.writeText(fullShareUrl).then(() => {
+                alert('تم نسخ رابط التصميم الحالي المباشر بنجاح!');
             }).catch(() => {
-                alert('عذراً، تعذر نسخ الرابط تلقائياً.');
+                alert('عذراً، تعذر نسخ الرابط تلقائياً، يمكنك نسخه يدويًا:\n' + fullShareUrl);
             });
         }
 
