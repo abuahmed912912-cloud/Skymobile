@@ -24,7 +24,7 @@
         .ticker-move { display: inline-block; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        .brand-header { text-align: center; margin-bottom: 15px; cursor: pointer; }
+        .brand-header { text-align: center; margin-bottom: 15px; cursor: pointer; user-select: none; }
         .brand-logo-svg { max-width: 280px; width: 100%; height: auto; }
 
         .nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
@@ -118,10 +118,13 @@
                 { id: 'cat_pay', name: '💳 التسديد والدفع الإلكتروني' }
             ],
             networkCodes: [],
-            designs: [],
+            designs: [
+                { id: 'ds_1', title: 'قالب كروت الواي فاي 1', image: 'https://via.placeholder.com/800x500/0c2461/ffffff?text=WiFi+Card+Template+1', categoryId: 'cat_net' },
+                { id: 'ds_2', title: 'إعلان تسديد الرصيد 1', image: 'https://via.placeholder.com/800x500/10ac84/ffffff?text=Payment+Promo+1', categoryId: 'cat_pay' }
+            ],
             activeCategory: 'all',
             searchQuery: '',
-            currentDesignId: null,
+            currentDesignId: 'ds_1',
             imageCache: {},
             loadedBaseImage: null,
             userUploadedLogo: null,
@@ -697,20 +700,24 @@
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
 
-            const tempCanvas = document.createElement('canvas');
-            const targetWidth = canvas.width < 2000 ? canvas.width * 2 : canvas.width;
-            const scale = targetWidth / canvas.width;
-            tempCanvas.width = canvas.width * scale;
-            tempCanvas.height = canvas.height * scale;
-            
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.scale(scale, scale);
-            tempCtx.drawImage(canvas, 0, 0);
+            try {
+                const tempCanvas = document.createElement('canvas');
+                const targetWidth = canvas.width < 2000 ? canvas.width * 2 : canvas.width;
+                const scale = targetWidth / canvas.width;
+                tempCanvas.width = canvas.width * scale;
+                tempCanvas.height = canvas.height * scale;
+                
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.scale(scale, scale);
+                tempCtx.drawImage(canvas, 0, 0);
 
-            const link = document.createElement('a');
-            link.download = `sky_design_${AppState.currentDesignId}_hd.png`;
-            link.href = tempCanvas.toDataURL('image/png', 1.0);
-            link.click();
+                const link = document.createElement('a');
+                link.download = `sky_design_${AppState.currentDesignId}_hd.png`;
+                link.href = tempCanvas.toDataURL('image/png', 1.0);
+                link.click();
+            } catch (err) {
+                alert('حدث خطأ في استخراج الصورة بسبب إعدادات حماية الصور الخارجي، يرجى إعادة المحاولة.');
+            }
         }
 
         function shareToWhatsApp() {
