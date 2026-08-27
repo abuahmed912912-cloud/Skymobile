@@ -126,11 +126,11 @@
             currentDesignId: 'tpl_1787201890667',
             imageCache: {},
             loadedBaseImage: null,
+            userUploadedLogo: null,
             isDynamicCanvasMode: true,
             renderDebounceTimer: null
         };
 
-        // فحص معاملات الرابط فوراً قبل أي عملية أخرى
         (function preDetectUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
             const tplId = urlParams.get('id') || urlParams.get('tpl') || urlParams.get('design');
@@ -144,9 +144,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             AppState.designs = [...AppState.defaultDesigns];
-            // عرض الواجهة فوراً دون إبطاء
             checkViewState();
-            // بدء الاتصال بـ Firebase بالموازاة في الخلفية
             initFirebaseConnection();
         });
 
@@ -167,7 +165,6 @@
         function syncCloudDataOnce() {
             if (!db) return;
             
-            // في حال وجود معرف تصميم محفوظ في الرابط يتم جلبه وتطبيقه دون التنقل بين الشاشات
             if (AppState.currentDesignId) {
                 db.ref(`sky_data/user_saved_designs/${AppState.currentDesignId}`).once('value').then(snap => {
                     const saved = snap.val();
@@ -189,7 +186,6 @@
                     if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
                     if (data.adminPass) AppState.currentAdminPass = data.adminPass;
 
-                    // تحديث العناصر والقوائم بعد اكتمال التحميل دون إعادة رسم كامل الواجهة المسببة للقطع Visual Flickering
                     if (AppState.activeViewSection === 'view_designer') {
                         renderCategoriesChips();
                         renderClientThumbnails(AppState.currentDesignId);
@@ -271,6 +267,10 @@
                     
                     <div class="section-frame">
                         <div class="frame-title"><span>📝 بيانات العميل والعبارة الترويجية</span></div>
+                        <div class="client-input-card">
+                            <label>إضافة شعار المركز / المحل (اختياري):</label>
+                            <input type="file" id="logoFileInput" accept="image/*" onchange="handleLogoUpload(this)">
+                        </div>
                         <div class="client-input-card">
                             <label>اسم المحل / الصفحة / المركز:</label>
                             <input type="text" id="clientShopInput" placeholder="مثال: مركز البركة للخدمات الإلكترونية" oninput="debouncedDraw()">
@@ -423,6 +423,21 @@
             }
         }
 
+        function handleLogoUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = () => {
+                        AppState.userUploadedLogo = img;
+                        debouncedDraw();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function handleNetCodeAutoLookup(val) {
             const codeClean = val.trim();
             const foundNet = AppState.networkCodes.find(n => n.code.toString().trim() === codeClean);
@@ -569,21 +584,24 @@
                 canvas.width = 1000;
                 canvas.height = isSquare ? 1000 : 600;
 
-                // الخلفية
                 ctx.fillStyle = colBg;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // الإطار
                 ctx.strokeStyle = colText2;
                 ctx.lineWidth = 12;
                 ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36);
+
+                if (AppState.userUploadedLogo) {
+                    const logoW = 120;
+                    const logoH = (AppState.userUploadedLogo.height / AppState.userUploadedLogo.width) * logoW;
+                    ctx.drawImage(AppState.userUploadedLogo, 40, 40, logoW, logoH);
+                }
 
                 if (AppState.activeViewSection === 'view_wifi') {
                     const netName = document.getElementById('netNameInput')?.value || 'شبكة الواي فاي';
                     const netCode = document.getElementById('netCodeInput')?.value || '';
                     const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.globalLinks.supportPhone;
 
-                    // رسم شريط أفقـي أنيق بالمنتصف الأعلى لاسم الشبكة والكود
                     const badgeWidth = 720;
                     const badgeHeight = 90;
                     const badgeX = (canvas.width - badgeWidth) / 2;
@@ -591,20 +609,19 @@
 
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
                     ctx.beginPath();
-                    ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 16);
+                    if (ctx.roundRect) ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 16);
+                    else ctx.rect(badgeX, badgeY, badgeWidth, badgeHeight);
                     ctx.fill();
                     ctx.strokeStyle = colText2;
                     ctx.lineWidth = 2;
                     ctx.stroke();
 
-                    // نص اسم الشبكة مع رقمها في شريط أنيق موحد
                     ctx.textAlign = 'center';
                     ctx.fillStyle = colText1;
                     ctx.font = 'bold 38px Cairo';
                     const fullNetTitle = netCode ? `${netName}  |  رقم الشبكة: ${netCode}` : netName;
                     ctx.fillText(fullNetTitle, canvas.width / 2, badgeY + 58);
 
-                    // أسفل التصميم: معلومات التواصل والتطبيق
                     ctx.fillStyle = colText2;
                     ctx.font = 'bold 32px Cairo';
                     ctx.fillText(`للتواصل والتزويد: ${phoneVal}`, canvas.width / 2, canvas.height - 110);
@@ -642,12 +659,17 @@
                 }
 
             } else {
-                // رسم القوالب المرفوعة كصورة من لوحة التحكم
                 const img = AppState.loadedBaseImage;
                 canvas.width = img.naturalWidth || 1000;
                 canvas.height = img.naturalHeight || 600;
 
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                if (AppState.userUploadedLogo) {
+                    const logoW = canvas.width * 0.12;
+                    const logoH = (AppState.userUploadedLogo.height / AppState.userUploadedLogo.width) * logoW;
+                    ctx.drawImage(AppState.userUploadedLogo, 30, 30, logoW, logoH);
+                }
 
                 if (AppState.activeViewSection === 'view_wifi') {
                     const netName = document.getElementById('netNameInput')?.value || 'شبكة الواي فاي';
@@ -699,9 +721,20 @@
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
+
+            const tempCanvas = document.createElement('canvas');
+            const targetWidth = canvas.width < 2000 ? canvas.width * 2 : canvas.width;
+            const scale = targetWidth / canvas.width;
+            tempCanvas.width = canvas.width * scale;
+            tempCanvas.height = canvas.height * scale;
+            
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.scale(scale, scale);
+            tempCtx.drawImage(canvas, 0, 0);
+
             const link = document.createElement('a');
-            link.download = `sky_design_${AppState.currentDesignId}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.download = `sky_design_${AppState.currentDesignId}_hd.png`;
+            link.href = tempCanvas.toDataURL('image/png', 1.0);
             link.click();
         }
 
