@@ -130,6 +130,7 @@
             renderDebounceTimer: null
         };
 
+        // فحص معاملات الرابط فوراً قبل أي عملية أخرى
         (function preDetectUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
             const tplId = urlParams.get('id') || urlParams.get('tpl') || urlParams.get('design');
@@ -143,7 +144,9 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             AppState.designs = [...AppState.defaultDesigns];
+            // عرض الواجهة فوراً دون إبطاء
             checkViewState();
+            // بدء الاتصال بـ Firebase بالموازاة في الخلفية
             initFirebaseConnection();
         });
 
@@ -164,6 +167,7 @@
         function syncCloudDataOnce() {
             if (!db) return;
             
+            // في حال وجود معرف تصميم محفوظ في الرابط يتم جلبه وتطبيقه دون التنقل بين الشاشات
             if (AppState.currentDesignId) {
                 db.ref(`sky_data/user_saved_designs/${AppState.currentDesignId}`).once('value').then(snap => {
                     const saved = snap.val();
@@ -184,8 +188,15 @@
                     if (data.networks) AppState.networkCodes = Object.values(data.networks);
                     if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
                     if (data.adminPass) AppState.currentAdminPass = data.adminPass;
+
+                    // تحديث العناصر والقوائم بعد اكتمال التحميل دون إعادة رسم كامل الواجهة المسببة للقطع Visual Flickering
+                    if (AppState.activeViewSection === 'view_designer') {
+                        renderCategoriesChips();
+                        renderClientThumbnails(AppState.currentDesignId);
+                    } else if (AppState.activeViewSection === 'view_wifi') {
+                        renderWifiThumbnails(AppState.currentDesignId);
+                    }
                 }
-                checkViewState();
             }).catch(() => {});
         }
 
@@ -727,25 +738,23 @@
         }
 
         function applySavedDesignState(savedData) {
-            setTimeout(() => {
-                if (savedData.baseDesignId) AppState.currentDesignId = savedData.baseDesignId;
-                
-                const shopIn = document.getElementById('clientShopInput');
-                const promoIn = document.getElementById('clientPromoText');
-                const subIn = document.getElementById('clientSubText');
-                const nameIn = document.getElementById('netNameInput');
-                const codeIn = document.getElementById('netCodeInput');
-                const phoneIn = document.getElementById('clientPhoneInput');
+            if (savedData.baseDesignId) AppState.currentDesignId = savedData.baseDesignId;
+            
+            const shopIn = document.getElementById('clientShopInput');
+            const promoIn = document.getElementById('clientPromoText');
+            const subIn = document.getElementById('clientSubText');
+            const nameIn = document.getElementById('netNameInput');
+            const codeIn = document.getElementById('netCodeInput');
+            const phoneIn = document.getElementById('clientPhoneInput');
 
-                if (shopIn && savedData.clientShop) shopIn.value = savedData.clientShop;
-                if (promoIn && savedData.clientPromo) promoIn.value = savedData.clientPromo;
-                if (subIn && savedData.clientSub) subIn.value = savedData.clientSub;
-                if (nameIn && savedData.netName) nameIn.value = savedData.netName;
-                if (codeIn && savedData.netCode) codeIn.value = savedData.netCode;
-                if (phoneIn && savedData.clientPhone) phoneIn.value = savedData.clientPhone;
-                
-                debouncedDraw();
-            }, 100);
+            if (shopIn && savedData.clientShop) shopIn.value = savedData.clientShop;
+            if (promoIn && savedData.clientPromo) promoIn.value = savedData.clientPromo;
+            if (subIn && savedData.clientSub) subIn.value = savedData.clientSub;
+            if (nameIn && savedData.netName) nameIn.value = savedData.netName;
+            if (codeIn && savedData.netCode) codeIn.value = savedData.netCode;
+            if (phoneIn && savedData.clientPhone) phoneIn.value = savedData.clientPhone;
+            
+            debouncedDraw();
         }
 
         function renderLoginForm(container) {
