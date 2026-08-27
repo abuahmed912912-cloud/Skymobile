@@ -63,7 +63,7 @@
         .whatsapp-channel-btn { background: #128c7e; }
         .download-app-btn { background: #7209b7; }
         .copy-design-btn { background: #4cc9f0; color: #0b132b; }
-        .save-db-btn { background: #3a506b; }
+        .edit-btn { background: #f72585; color: #fff; }
 
         .faq-accordion { display: flex; flex-direction: column; gap: 8px; }
         .faq-item { background: #1c2541; border: 1px solid #3a506b; border-radius: 8px; padding: 10px; font-size: 12px; }
@@ -121,14 +121,15 @@
             imageCache: {},
             loadedBaseImage: null,
             userUploadedLogo: null,
-            renderDebounceTimer: null
+            renderDebounceTimer: null,
+            savedDataCache: null
         };
 
         (function preDetectUrlParams() {
             const urlParams = new URLSearchParams(window.location.search);
             const tplId = urlParams.get('id') || urlParams.get('tpl') || urlParams.get('design');
             if (tplId) {
-                AppState.activeViewSection = 'view_designer';
+                AppState.activeViewSection = 'single_preview';
                 AppState.currentDesignId = tplId;
             } else if (urlParams.has('view')) {
                 AppState.activeViewSection = urlParams.get('view');
@@ -161,6 +162,7 @@
                 db.ref(`sky_data/user_saved_designs/${AppState.currentDesignId}`).once('value').then(snap => {
                     const saved = snap.val();
                     if (saved) {
+                        AppState.savedDataCache = saved;
                         applySavedDesignState(saved);
                     }
                 });
@@ -175,23 +177,20 @@
                         if (!AppState.currentDesignId && AppState.designs.length > 0) {
                             AppState.currentDesignId = AppState.designs[0].id;
                         }
-                    } else {
-                        AppState.designs = [];
                     }
-                    if (data.networks) {
-                        AppState.networkCodes = Object.values(data.networks);
-                    } else {
-                        AppState.networkCodes = [];
-                    }
+                    if (data.networks) AppState.networkCodes = Object.values(data.networks);
                     if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
                     if (data.adminPass) AppState.currentAdminPass = data.adminPass;
 
-                    if (AppState.activeViewSection === 'view_designer') {
+                    if (AppState.activeViewSection === 'view_designer' || AppState.activeViewSection === 'single_preview') {
                         renderCategoriesChips();
                         renderClientThumbnails(AppState.currentDesignId);
                     } else if (AppState.activeViewSection === 'view_wifi') {
                         renderWifiThumbnails(AppState.currentDesignId);
                     }
+
+                    const targetDesign = AppState.designs.find(d => d.id == (AppState.savedDataCache?.baseDesignId || AppState.currentDesignId));
+                    if (targetDesign) loadSelectedDesign(targetDesign);
                 }
             }).catch(() => {});
         }
@@ -237,7 +236,22 @@
             let networksOptionsHtml = `<option value="">-- اختر الشبكة من القائمة --</option>` + 
                 AppState.networkCodes.map(n => `<option value="${n.code}" data-name="${n.name}">${n.name} (كود: ${n.code})</option>`).join('');
 
-            if (AppState.activeViewSection === 'grid_main') {
+            if (AppState.activeViewSection === 'single_preview') {
+                dynamicBodyHtml = `
+                    <div class="section-frame" style="text-align:center;">
+                        <div class="frame-title" style="justify-content:center;"><span>🖼️ معاينة التصميم المباشر</span></div>
+                        <div class="preview-box">
+                            <div id="canvasContainer"><canvas id="previewCanvas"></canvas></div>
+                            <div class="action-links">
+                                <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم بحودة عالية</button>
+                                <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل تطبيق سكاي موبايل</a>
+                                <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 انضمام لقناة الواتساب الرسمية</a>
+                                <button class="link-btn edit-btn" onclick="switchView('view_designer')">✏️ تعديل هذا التصميم في المحرر</button>
+                                <button class="link-btn copy-design-btn" onclick="switchView('grid_main')">🏠 الانتقال للرئيسية</button>
+                            </div>
+                        </div>
+                    </div>`;
+            } else if (AppState.activeViewSection === 'grid_main') {
                 dynamicBodyHtml = `
                     <div class="nav-grid">
                         <div class="nav-card" onclick="switchView('view_designer')">
@@ -317,7 +331,6 @@
                             <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل تطبيق سكاي موبايل</a>
                             <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 انضمام لقناة الواتساب الرسمية</a>
                             <button class="link-btn copy-design-btn" onclick="copyDesignLink()">📋 نسخ رابط القالب المباشر</button>
-                            <button class="link-btn save-db-btn" onclick="saveDesignToCloud()">☁️ حفظ التصميم بالسحابة</button>
                         </div>
                     </div>`;
             } else if (AppState.activeViewSection === 'view_wifi') {
@@ -432,6 +445,10 @@
                 renderWifiThumbnails(AppState.currentDesignId);
                 const targetDesign = AppState.designs.find(d => d.id == AppState.currentDesignId);
                 if (targetDesign) loadSelectedDesign(targetDesign);
+            }
+
+            if (AppState.savedDataCache) {
+                applySavedDesignState(AppState.savedDataCache);
             }
         }
 
@@ -579,9 +596,9 @@
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            const colBg = document.getElementById('colBg')?.value || '#0c2461';
-            const colText1 = document.getElementById('colText1')?.value || '#ffffff';
-            const colText2 = document.getElementById('colText2')?.value || '#00a8ff';
+            const colBg = document.getElementById('colBg')?.value || AppState.savedDataCache?.colBg || '#0c2461';
+            const colText1 = document.getElementById('colText1')?.value || AppState.savedDataCache?.colText1 || '#ffffff';
+            const colText2 = document.getElementById('colText2')?.value || AppState.savedDataCache?.colText2 || '#00a8ff';
 
             if (AppState.userUploadedLogo) {
                 const logoW = canvas.width * 0.12;
@@ -590,12 +607,11 @@
             }
 
             if (AppState.activeViewSection === 'view_wifi') {
-                const netName = document.getElementById('netNameInput')?.value || 'شبكة الواي فاي';
-                const netCode = document.getElementById('netCodeInput')?.value || '';
-                const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.globalLinks.supportPhone;
+                const netName = document.getElementById('netNameInput')?.value || AppState.savedDataCache?.netName || 'شبكة الواي فاي';
+                const netCode = document.getElementById('netCodeInput')?.value || AppState.savedDataCache?.netCode || '';
+                const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.savedDataCache?.clientPhone || AppState.globalLinks.supportPhone;
 
-                // تصغير حجم الإطار ليكون مدمجاً ومناسباً للتصميم
-                const bannerHeight = 70;
+                const bannerHeight = 75;
                 ctx.fillStyle = colBg;
                 ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
 
@@ -606,20 +622,18 @@
                 ctx.fillStyle = colText1;
                 ctx.font = 'bold 20px Cairo';
                 const fullLabel = netCode ? `${netName} (كود: ${netCode})` : netName;
-                ctx.fillText(fullLabel, canvas.width / 2, canvas.height - 40);
+                ctx.fillText(fullLabel, canvas.width / 2, canvas.height - 42);
 
-                // العبارة الثابتة لكروت الشبكة
                 ctx.fillStyle = colText2;
                 ctx.font = 'bold 15px Cairo';
                 ctx.fillText(`يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل | للتواصل: ${phoneVal}`, canvas.width / 2, canvas.height - 15);
 
             } else {
-                const shopName = document.getElementById('clientShopInput')?.value || '';
-                const promoText = document.getElementById('clientPromoText')?.value || '';
-                const subText = document.getElementById('clientSubText')?.value || '';
-                const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.globalLinks.supportPhone;
+                const shopName = document.getElementById('clientShopInput')?.value || AppState.savedDataCache?.clientShop || '';
+                const promoText = document.getElementById('clientPromoText')?.value || AppState.savedDataCache?.clientPromo || '';
+                const subText = document.getElementById('clientSubText')?.value || AppState.savedDataCache?.clientSub || '';
+                const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.savedDataCache?.clientPhone || AppState.globalLinks.supportPhone;
 
-                // تم تصغير ارتفاع الإطار الإجمالي إلى 75 بكسل فقط
                 const bannerHeight = 75;
                 ctx.fillStyle = colBg;
                 ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
@@ -629,7 +643,6 @@
 
                 ctx.textAlign = 'center';
                 
-                // السطر الأول: اسم المحل + رقم الهاتف (أو العبارة الترويجية إن وُجدت)
                 let mainTitle = shopName ? `${shopName} | للتواصل: ${phoneVal}` : `للتواصل: ${phoneVal}`;
                 if (promoText) mainTitle = `${promoText} | ${mainTitle}`;
 
@@ -637,7 +650,6 @@
                 ctx.font = 'bold 20px Cairo';
                 ctx.fillText(mainTitle, canvas.width / 2, canvas.height - 42);
 
-                // السطر الثاني: عبارة تثبيت ثابتة لا تقبل التعديل ولا الحذف
                 let fixedText = 'نقطة بيع معتمد لتطبيق سكاي موبايل';
                 if (subText) fixedText += ` - ${subText}`;
 
@@ -668,35 +680,61 @@
         }
 
         function shareToWhatsApp() {
-            const text = encodeURIComponent(`شاهد هذا التصميم من منصة سكاي موبايل:\n${window.location.origin}${window.location.pathname}?id=${AppState.currentDesignId}`);
-            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+            if (db) {
+                const designRef = db.ref('sky_data/user_saved_designs').push();
+                const payload = {
+                    baseDesignId: AppState.currentDesignId,
+                    clientShop: document.getElementById('clientShopInput')?.value || '',
+                    clientPromo: document.getElementById('clientPromoText')?.value || '',
+                    clientSub: document.getElementById('clientSubText')?.value || '',
+                    netName: document.getElementById('netNameInput')?.value || '',
+                    netCode: document.getElementById('netCodeInput')?.value || '',
+                    clientPhone: document.getElementById('clientPhoneInput')?.value || '',
+                    colBg: document.getElementById('colBg')?.value || '#0c2461',
+                    colText1: document.getElementById('colText1')?.value || '#ffffff',
+                    colText2: document.getElementById('colText2')?.value || '#00a8ff',
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+                designRef.set(payload).then(() => {
+                    const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${designRef.key}`;
+                    const text = encodeURIComponent(`شاهد هذا التصميم المخصص من منصة سكاي موبايل:\n${shareableUrl}`);
+                    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+                });
+            } else {
+                const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${AppState.currentDesignId}`;
+                const text = encodeURIComponent(`شاهد هذا التصميم من منصة سكاي موبايل:\n${shareableUrl}`);
+                window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+            }
         }
 
         function copyDesignLink() {
-            const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${AppState.currentDesignId}`;
-            navigator.clipboard.writeText(shareableUrl).then(() => {
-                alert('تم نسخ رابط القالب المباشر بنجاح!');
-            });
-        }
-
-        function saveDesignToCloud() {
-            if (!db) return alert('جارٍ الاتصال بالسحابة... يرجى الانتظار');
-            const designRef = db.ref('sky_data/user_saved_designs').push();
-            const payload = {
-                baseDesignId: AppState.currentDesignId,
-                clientShop: document.getElementById('clientShopInput')?.value || '',
-                clientPromo: document.getElementById('clientPromoText')?.value || '',
-                clientSub: document.getElementById('clientSubText')?.value || '',
-                netName: document.getElementById('netNameInput')?.value || '',
-                netCode: document.getElementById('netCodeInput')?.value || '',
-                clientPhone: document.getElementById('clientPhoneInput')?.value || '',
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            };
-            designRef.set(payload).then(() => {
-                const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${designRef.key}`;
-                navigator.clipboard.writeText(shareableUrl);
-                alert(`تم حفظ التصميم بالسحابة بنجاح!\nتم نسخ الرابط المباشر:\n${shareableUrl}`);
-            });
+            if (db) {
+                const designRef = db.ref('sky_data/user_saved_designs').push();
+                const payload = {
+                    baseDesignId: AppState.currentDesignId,
+                    clientShop: document.getElementById('clientShopInput')?.value || '',
+                    clientPromo: document.getElementById('clientPromoText')?.value || '',
+                    clientSub: document.getElementById('clientSubText')?.value || '',
+                    netName: document.getElementById('netNameInput')?.value || '',
+                    netCode: document.getElementById('netCodeInput')?.value || '',
+                    clientPhone: document.getElementById('clientPhoneInput')?.value || '',
+                    colBg: document.getElementById('colBg')?.value || '#0c2461',
+                    colText1: document.getElementById('colText1')?.value || '#ffffff',
+                    colText2: document.getElementById('colText2')?.value || '#00a8ff',
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+                designRef.set(payload).then(() => {
+                    const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${designRef.key}`;
+                    navigator.clipboard.writeText(shareableUrl).then(() => {
+                        alert('تم نسخ رابط التصميم المباشر المعدّل بنجاح!');
+                    });
+                });
+            } else {
+                const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${AppState.currentDesignId}`;
+                navigator.clipboard.writeText(shareableUrl).then(() => {
+                    alert('تم نسخ رابط القالب المباشر بنجاح!');
+                });
+            }
         }
 
         function applySavedDesignState(savedData) {
@@ -708,6 +746,9 @@
             const nameIn = document.getElementById('netNameInput');
             const codeIn = document.getElementById('netCodeInput');
             const phoneIn = document.getElementById('clientPhoneInput');
+            const bgIn = document.getElementById('colBg');
+            const text1In = document.getElementById('colText1');
+            const text2In = document.getElementById('colText2');
 
             if (shopIn && savedData.clientShop) shopIn.value = savedData.clientShop;
             if (promoIn && savedData.clientPromo) promoIn.value = savedData.clientPromo;
@@ -715,7 +756,10 @@
             if (nameIn && savedData.netName) nameIn.value = savedData.netName;
             if (codeIn && savedData.netCode) codeIn.value = savedData.netCode;
             if (phoneIn && savedData.clientPhone) phoneIn.value = savedData.clientPhone;
-            
+            if (bgIn && savedData.colBg) bgIn.value = savedData.colBg;
+            if (text1In && savedData.colText1) text1In.value = savedData.colText1;
+            if (text2In && savedData.colText2) text2In.value = savedData.colText2;
+
             debouncedDraw();
         }
 
