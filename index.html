@@ -52,9 +52,13 @@
         .thumb-card.selected { border-color: #4cc9f0; box-shadow: 0 0 8px rgba(76, 201, 240, 0.6); }
         .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
 
-        .preview-box { background: #0b132b; border: 1px solid #3a506b; padding: 12px; border-radius: 14px; text-align: center; }
-        #canvasContainer { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 12px; background: #000; }
+        .preview-box { background: #0b132b; border: 1px solid #3a506b; padding: 12px; border-radius: 14px; text-align: center; position: relative; }
+        #canvasContainer { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 12px; background: #111827; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
         #previewCanvas { width: 100%; height: auto; display: block; }
+
+        .canvas-loader { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 19, 43, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; border-radius: 10px; }
+        .spinner { width: 35px; height: 35px; border: 4px solid #3a506b; border-top: 4px solid #4cc9f0; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .action-links { display: flex; flex-direction: column; gap: 8px; }
         .link-btn { width: 100%; padding: 11px; border-radius: 10px; font-weight: bold; font-size: 13px; text-align: center; color: #fff; border: none; cursor: pointer; text-decoration: none; display: block; }
@@ -122,7 +126,8 @@
             loadedBaseImage: null,
             userUploadedLogo: null,
             renderDebounceTimer: null,
-            savedDataCache: null
+            savedDataCache: null,
+            isImageLoading: false
         };
 
         (function preDetectUrlParams() {
@@ -155,6 +160,17 @@
             }, 50);
         }
 
+        function preloadAllImages(designsList) {
+            designsList.forEach(item => {
+                if (item.image && !AppState.imageCache[item.image]) {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.src = item.image;
+                    img.onload = () => { AppState.imageCache[item.image] = img; };
+                }
+            });
+        }
+
         function syncCloudDataOnce() {
             if (!db) return;
             
@@ -177,6 +193,7 @@
                         if (!AppState.currentDesignId && AppState.designs.length > 0) {
                             AppState.currentDesignId = AppState.designs[0].id;
                         }
+                        preloadAllImages(AppState.designs);
                     }
                     if (data.networks) AppState.networkCodes = Object.values(data.networks);
                     if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
@@ -236,14 +253,16 @@
             let networksOptionsHtml = `<option value="">-- اختر الشبكة من القائمة --</option>` + 
                 AppState.networkCodes.map(n => `<option value="${n.code}" data-name="${n.name}">${n.name} (كود: ${n.code})</option>`).join('');
 
+            const loaderHtml = `<div class="canvas-loader" id="canvasLoader" style="display:none;"><div class="spinner"></div><span style="font-size:12px; font-weight:bold; color:#4cc9f0;">جاري تحميل التصميم...</span></div>`;
+
             if (AppState.activeViewSection === 'single_preview') {
                 dynamicBodyHtml = `
                     <div class="section-frame" style="text-align:center;">
                         <div class="frame-title" style="justify-content:center;"><span>🖼️ معاينة التصميم المباشر</span></div>
                         <div class="preview-box">
-                            <div id="canvasContainer"><canvas id="previewCanvas"></canvas></div>
+                            <div id="canvasContainer">${loaderHtml}<canvas id="previewCanvas"></canvas></div>
                             <div class="action-links">
-                                <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم بحودة عالية</button>
+                                <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم بجودة عالية</button>
                                 <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل تطبيق سكاي موبايل</a>
                                 <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 انضمام لقناة الواتساب الرسمية</a>
                                 <button class="link-btn edit-btn" onclick="switchView('view_designer')">✏️ تعديل هذا التصميم في المحرر</button>
@@ -324,7 +343,7 @@
                     </div>
 
                     <div class="preview-box">
-                        <div id="canvasContainer"><canvas id="previewCanvas"></canvas></div>
+                        <div id="canvasContainer">${loaderHtml}<canvas id="previewCanvas"></canvas></div>
                         <div class="action-links">
                             <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم</button>
                             <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة التصميم عبر الواتساب</button>
@@ -379,7 +398,7 @@
                     </div>
 
                     <div class="preview-box">
-                        <div id="canvasContainer"><canvas id="previewCanvas"></canvas></div>
+                        <div id="canvasContainer">${loaderHtml}<canvas id="previewCanvas"></canvas></div>
                         <div class="action-links">
                             <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل إعلان الشبكة</button>
                             <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة عبر الواتساب</button>
@@ -548,19 +567,31 @@
             });
         }
 
+        function toggleCanvasLoader(show) {
+            const loader = document.getElementById('canvasLoader');
+            if (loader) loader.style.display = show ? 'flex' : 'none';
+        }
+
         function loadSelectedDesign(designObj) {
             if (!designObj) return;
+
             if (AppState.imageCache[designObj.image]) {
                 AppState.loadedBaseImage = AppState.imageCache[designObj.image];
+                toggleCanvasLoader(false);
                 debouncedDraw();
             } else {
+                toggleCanvasLoader(true);
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 img.src = designObj.image;
                 img.onload = () => {
                     AppState.imageCache[designObj.image] = img;
                     AppState.loadedBaseImage = img;
+                    toggleCanvasLoader(false);
                     debouncedDraw();
+                };
+                img.onerror = () => {
+                    toggleCanvasLoader(false);
                 };
             }
         }
@@ -580,7 +611,7 @@
 
         function debouncedDraw() {
             clearTimeout(AppState.renderDebounceTimer);
-            AppState.renderDebounceTimer = setTimeout(drawCanvas, 30);
+            AppState.renderDebounceTimer = setTimeout(drawCanvas, 15);
         }
 
         function drawCanvas() {
@@ -588,13 +619,16 @@
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
-            if (!AppState.loadedBaseImage) return;
-
             const img = AppState.loadedBaseImage;
-            canvas.width = img.naturalWidth || 1000;
-            canvas.height = img.naturalHeight || 600;
+            canvas.width = img ? (img.naturalWidth || 1000) : 1000;
+            canvas.height = img ? (img.naturalHeight || 600) : 600;
 
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            if (img) {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = "#111827";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
 
             const colBg = document.getElementById('colBg')?.value || AppState.savedDataCache?.colBg || '#0c2461';
             const colText1 = document.getElementById('colText1')?.value || AppState.savedDataCache?.colText1 || '#ffffff';
@@ -923,6 +957,7 @@
             const newObj = { id: `ds_${Date.now()}`, title, image, categoryId };
             AppState.designs.push(newObj);
             if (db) db.ref('sky_data/designs').set(AppState.designs);
+            preloadAllImages(AppState.designs);
             renderAdminPanel(document.getElementById('mainContainer'));
         }
 
