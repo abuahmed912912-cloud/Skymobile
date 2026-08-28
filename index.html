@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سكاي موبايل - منصة التصاميم والخدمات الفورية</title>
+    <title>سكاي موبايل - مصمم البطاقات الفوري</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://sky-mobile-8e245-default-rtdb.firebaseio.com" crossorigin>
 
@@ -15,80 +12,58 @@
     <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', system-ui, -apple-system, sans-serif; }
-        body { background-color: #0b132b; color: #e0e6ed; min-height: 100vh; padding: 12px; display: flex; justify-content: center; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: #f0f2f5; color: #333; padding: 10px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
-        .app-container { width: 100%; max-width: 520px; background: #1c2541; border-radius: 20px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #2a385b; position: relative; }
-        
-        .ticker-wrap { background: #0b132b; border-radius: 10px; padding: 6px 12px; margin-bottom: 12px; overflow: hidden; border: 1px solid #3a506b; font-size: 12px; color: #4cc9f0; text-align: center; font-weight: bold; white-space: nowrap; }
-        .ticker-move { display: inline-block; animation: marquee 15s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        .admin-header { background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .admin-header h2 { font-size: 22px; margin-bottom: 5px; }
+        .admin-header p { font-size: 13px; opacity: 0.9; }
 
-        .brand-header { text-align: center; margin-bottom: 15px; cursor: pointer; user-select: none; }
-        .brand-logo-svg { max-width: 280px; width: 100%; height: auto; }
+        .top-nav-buttons { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-home { flex: 1; background-color: #007bff; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
+        .btn-logout { flex: 1; background-color: #ff4d4d; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; }
 
-        .nav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        .nav-card { background: #2a385b; border: 1px solid #3a506b; border-radius: 14px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s ease; }
-        .nav-card:hover { background: #3a506b; transform: translateY(-2px); }
-        .nav-card .icon { font-size: 26px; margin-bottom: 6px; display: block; }
-        .nav-card .title { font-size: 13px; font-weight: 700; color: #ffffff; }
+        .client-input-card { background: #f8f9fa; border: 1px solid #e2e8f0; padding: 12px 15px; border-radius: 12px; margin-bottom: 12px; }
+        .client-input-card label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 13px; color: #0056b3; }
+        .client-input-card input, .client-input-card select { width: 100%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #fff; outline: none; }
 
-        .back-home-btn { width: 100%; background: #3a506b; color: #fff; border: none; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; margin-bottom: 12px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #495057; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 10px; font-size: 14px; background: #fff; }
+        .btn-main { background-color: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; }
 
-        .section-frame { background: #111827; border: 1px solid #1f2937; padding: 14px; border-radius: 14px; margin-bottom: 14px; }
-        .frame-title { font-size: 13px; font-weight: bold; color: #4cc9f0; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-        
-        .client-input-card { margin-bottom: 10px; }
-        .client-input-card label { display: block; font-size: 11px; font-weight: 700; color: #a0aec0; margin-bottom: 4px; }
-        .client-input-card input, .client-input-card select, .client-input-card textarea { width: 100%; padding: 10px 12px; background: #1c2541; border: 1px solid #3a506b; border-radius: 8px; color: #fff; font-size: 13px; outline: none; }
-        .client-input-card input:focus, .client-input-card select:focus, .client-input-card textarea:focus { border-color: #4cc9f0; }
+        .categories-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; }
+        .cat-chip { background: #fff; border: 1px solid #ced4da; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: #495057; }
+        .cat-chip.active { background: #007bff; color: #fff; border-color: #007bff; }
 
-        .categories-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; scrollbar-width: none; }
-        .cat-chip { background: #2a385b; color: #a0aec0; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; cursor: pointer; border: 1px solid transparent; }
-        .cat-chip.active { background: #4361ee; color: #fff; border-color: #4cc9f0; }
-
-        .templates-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; min-height: 85px; }
-        .thumb-card { flex: 0 0 65px; height: 85px; border-radius: 8px; overflow: hidden; border: 2px solid #3a506b; cursor: pointer; background: #0b132b; display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: #fff; padding: 2px; }
-        .thumb-card.selected { border-color: #4cc9f0; box-shadow: 0 0 8px rgba(76, 201, 240, 0.6); }
+        .templates-preview-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; min-height: 100px; }
+        .thumb-card { flex: 0 0 75px; height: 95px; border-radius: 8px; overflow: hidden; border: 2px solid #ced4da; cursor: pointer; background: #eee; }
+        .thumb-card.selected { border-color: #007bff; box-shadow: 0 0 8px rgba(0,123,255,0.5); transform: scale(1.05); }
         .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
 
-        .preview-box { background: #0b132b; border: 1px solid #3a506b; padding: 12px; border-radius: 14px; text-align: center; position: relative; }
-        #canvasContainer { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 12px; background: #111827; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+        .preview-box { background: #fff; border: 2px dashed #007bff; padding: 15px; border-radius: 14px; margin-top: 15px; }
+        #canvasContainer { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 15px; background: #222; text-align: center; }
         #previewCanvas { width: 100%; height: auto; display: block; }
 
-        .canvas-loader { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(11, 19, 43, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; border-radius: 10px; }
-        .spinner { width: 35px; height: 35px; border: 4px solid #3a506b; border-top: 4px solid #4cc9f0; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .external-actions-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #e9ecef; }
+        .action-links { display: flex; flex-direction: column; gap: 10px; }
+        .link-btn { display: block; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 15px; text-align: center; color: white; border: none; cursor: pointer; }
+        .download-img-btn { background-color: #007bff; }
+        .whatsapp-share-btn { background-color: #25d366; }
+        .copy-link-btn { background-color: #6c757d; }
+        .app-download-btn { background-color: #17a2b8; }
+        .whatsapp-channel-btn { background-color: #128c7e; }
 
-        .action-links { display: flex; flex-direction: column; gap: 8px; }
-        .link-btn { width: 100%; padding: 11px; border-radius: 10px; font-weight: bold; font-size: 13px; text-align: center; color: #fff; border: none; cursor: pointer; text-decoration: none; display: block; }
-        .download-img-btn { background: #4361ee; }
-        .whatsapp-share-btn { background: #25d366; }
-        .whatsapp-channel-btn { background: #128c7e; }
-        .download-app-btn { background: #7209b7; }
-        .copy-design-btn { background: #4cc9f0; color: #0b132b; }
-        .edit-btn { background: #f72585; color: #fff; }
-
-        .faq-accordion { display: flex; flex-direction: column; gap: 8px; }
-        .faq-item { background: #1c2541; border: 1px solid #3a506b; border-radius: 8px; padding: 10px; font-size: 12px; }
-        .faq-item summary { font-weight: bold; color: #4cc9f0; cursor: pointer; }
-        .faq-content { margin-top: 8px; color: #cbd5e1; line-height: 1.5; }
-
-        .admin-header { background: #4361ee; color: #fff; padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 12px; }
-        .admin-card { background: #111827; border: 1px solid #1f2937; padding: 12px; border-radius: 10px; margin-bottom: 12px; }
-        .admin-card h3 { font-size: 13px; color: #4cc9f0; margin-bottom: 8px; }
-        .btn-main { width: 100%; background: #4361ee; color: #fff; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .btn-exit-admin { width: 100%; background: #f72585; color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .item-list-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: right; margin-top: 8px; }
-        .item-list-table th, .item-list-table td { padding: 6px; border-bottom: 1px solid #1f2937; color: #e0e6ed; }
-        .btn-delete-item { background: #f72585; color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; }
-
-        .client-credits-footer { margin-top: 15px; text-align: center; font-size: 11px; color: #64748b; font-weight: bold; }
+        .client-credits-footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid #e9ecef; text-align: center; font-size: 12px; color: #6c757d; font-weight: 600; }
+        .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
     </style>
 </head>
 <body>
 
-    <div class="app-container" id="mainContainer"></div>
+    <div class="container" id="mainContainer"></div>
 
     <script>
         const firebaseConfig = {
@@ -102,892 +77,633 @@
         };
 
         let db = null;
-        let secretClickCount = 0;
-
-        const AppState = {
-            activeViewSection: 'grid_main',
-            currentAdminPass: 'sky2026',
-            globalLinks: {
-                appUrl: 'https://skymobile-v6jp.vercel.app',
-                whatsappUrl: 'https://whatsapp.com/channel',
-                supportPhone: '738328251',
-                tickerText: '📢 أهلاً بكم في منصة سكاي موبايل - صانع الإعلانات وبطاقات الخدمات الفورية'
-            },
-            categories: [
-                { id: 'cat_net', name: '📶 كروت الشبكات' },
-                { id: 'cat_pay', name: '💳 التسديد والدفع الإلكتروني' }
-            ],
-            networkCodes: [],
-            designs: [
-                { id: 'ds_1', title: 'قالب كروت الواي فاي 1', image: 'https://via.placeholder.com/800x500/0c2461/ffffff?text=WiFi+Card+Template+1', categoryId: 'cat_net' },
-                { id: 'ds_2', title: 'إعلان تسديد الرصيد 1', image: 'https://via.placeholder.com/800x500/10ac84/ffffff?text=Payment+Promo+1', categoryId: 'cat_pay' }
-            ],
-            activeCategory: 'all',
-            searchQuery: '',
-            currentDesignId: 'ds_1',
-            imageCache: {},
-            loadedBaseImage: null,
-            userUploadedLogo: null,
-            renderDebounceTimer: null,
-            savedDataCache: null,
-            isImageLoading: false
+        let currentAdminPass = "sky2026";
+        let globalLinks = { 
+            appUrl: 'https://skymobile-v6jp.vercel.app', 
+            whatsappUrl: 'https://whatsapp.com/channel' 
         };
-
-        (function preDetectUrlParams() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const tplId = urlParams.get('id') || urlParams.get('tpl') || urlParams.get('design');
-            if (tplId) {
-                AppState.activeViewSection = 'single_preview';
-                AppState.currentDesignId = tplId;
-            } else if (urlParams.has('view')) {
-                AppState.activeViewSection = urlParams.get('view');
-            }
-        })();
+        let categories = [
+            { id: 'cat_net', name: '📶 الشبكات والخدمات' },
+            { id: 'cat_pay', name: '💳 الدفع الإلكتروني' }
+        ];
+        let wifiNetworks = [];
+        let designs = [];
+        
+        let selectedFont = "system-ui, -apple-system, sans-serif";
+        let activeCategory = 'all'; 
+        let currentDesignId = null;
+        let loadedBaseImage = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            checkViewState();
-            initFirebaseConnection();
+            checkRoute(); 
+            initFirebaseFast();
         });
 
-        function initFirebaseConnection() {
+        function initFirebaseFast() {
             let attempts = 0;
-            const timer = setInterval(() => {
+            let checkFirebase = setInterval(() => {
                 attempts++;
                 if (typeof firebase !== 'undefined') {
-                    clearInterval(timer);
+                    clearInterval(checkFirebase);
                     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                     db = firebase.database();
-                    syncCloudDataOnce();
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const shareId = urlParams.get('share');
+                    
+                    if (shareId) {
+                        loadSharedConfig(shareId);
+                    } else {
+                        fetchCloudDataOnce();
+                    }
                 }
-                if (attempts > 30) clearInterval(timer);
+                if (attempts > 30) { 
+                    clearInterval(checkFirebase); 
+                    updateUIElements(); 
+                }
             }, 50);
         }
 
-        function preloadAllImages(designsList) {
-            designsList.forEach(item => {
-                if (item.image && !AppState.imageCache[item.image]) {
-                    const img = new Image();
-                    img.crossOrigin = "anonymous";
-                    img.src = item.image;
-                    img.onload = () => { AppState.imageCache[item.image] = img; };
-                }
-            });
-        }
-
-        function syncCloudDataOnce() {
-            if (!db) return;
-            
-            if (AppState.currentDesignId) {
-                db.ref(`sky_data/user_saved_designs/${AppState.currentDesignId}`).once('value').then(snap => {
-                    const saved = snap.val();
-                    if (saved) {
-                        AppState.savedDataCache = saved;
-                        applySavedDesignState(saved);
-                    }
-                });
-            }
-
-            db.ref('sky_data').once('value').then(snapshot => {
+        function loadSharedConfig(shareId) {
+            db.ref('shares/' + shareId).once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if (data.categories) AppState.categories = Object.values(data.categories);
-                    if (data.designs) {
-                        AppState.designs = Object.values(data.designs);
-                        if (!AppState.currentDesignId && AppState.designs.length > 0) {
-                            AppState.currentDesignId = AppState.designs[0].id;
-                        }
-                        preloadAllImages(AppState.designs);
-                    }
-                    if (data.networks) AppState.networkCodes = Object.values(data.networks);
-                    if (data.links) AppState.globalLinks = { ...AppState.globalLinks, ...data.links };
-                    if (data.adminPass) AppState.currentAdminPass = data.adminPass;
-
-                    if (AppState.activeViewSection === 'view_designer' || AppState.activeViewSection === 'single_preview') {
-                        renderCategoriesChips();
-                        renderClientThumbnails(AppState.currentDesignId);
-                    } else if (AppState.activeViewSection === 'view_wifi') {
-                        renderWifiThumbnails(AppState.currentDesignId);
-                    }
-
-                    const targetDesign = AppState.designs.find(d => d.id == (AppState.savedDataCache?.baseDesignId || AppState.currentDesignId));
-                    if (targetDesign) loadSelectedDesign(targetDesign);
-                }
-            }).catch(() => {});
-        }
-
-        function checkViewState() {
-            const container = document.getElementById('mainContainer');
-            const inAdminMode = sessionStorage.getItem('sky_in_admin_mode') === 'true';
-            const isAuthenticated = sessionStorage.getItem('sky_admin_authenticated') === 'true';
-
-            if (inAdminMode) {
-                if (isAuthenticated) {
-                    renderAdminPanel(container);
+                    currentDesignId = data.d || null;
+                    fetchCloudDataOnce(() => {
+                        if (document.getElementById('cShop')) document.getElementById('cShop').value = data.s || '';
+                        if (document.getElementById('cAddress')) document.getElementById('cAddress').value = data.a || 'متوفر لدينا كافة الخدمات';
+                        if (document.getElementById('cPhone')) document.getElementById('cPhone').value = data.p || '738328251';
+                        drawFinalImage();
+                    });
                 } else {
-                    renderLoginForm(container);
+                    fetchCloudDataOnce();
                 }
+            }).catch(() => fetchCloudDataOnce());
+        }
+
+        function fetchCloudDataOnce(callback) {
+            if (!db) return;
+            db.ref('sky_data').once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if (data.categories) categories = Object.values(data.categories);
+                    if (data.designs) designs = Object.values(data.designs);
+                    if (data.links) globalLinks = { ...globalLinks, ...data.links };
+                    if (data.adminPass) currentAdminPass = data.adminPass;
+                    if (data.wifiNetworks) wifiNetworks = Object.values(data.wifiNetworks);
+                }
+                updateUIElements();
+                if (callback) callback();
+            }).catch(() => {
+                updateUIElements();
+            });
+        }
+
+        function checkRoute() {
+            const container = document.getElementById('mainContainer');
+            const isAdminLoggedIn = sessionStorage.getItem('sky_admin_logged') === 'true';
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (isAdminLoggedIn) {
+                renderAdminPanel(container);
+            } else if (urlParams.has('admin')) {
+                renderLoginBox(container);
             } else {
-                renderClientDashboard(container);
+                renderClientPanel(container);
             }
         }
 
-        function handleSecretLogoClick() {
-            secretClickCount++;
-            if (secretClickCount >= 5) {
-                secretClickCount = 0;
-                sessionStorage.setItem('sky_in_admin_mode', 'true');
-                checkViewState();
+        function updateUIElements() {
+            const container = document.getElementById('mainContainer');
+            const isAdminLoggedIn = sessionStorage.getItem('sky_admin_logged') === 'true';
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (!isAdminLoggedIn && !urlParams.has('admin')) {
+                let targetDesign = designs.find(d => d.id == currentDesignId);
+                if (!targetDesign && designs.length > 0) {
+                    let filtered = getFilteredDesigns();
+                    targetDesign = filtered[0] || designs[0];
+                }
+
+                if (targetDesign) {
+                    currentDesignId = targetDesign.id;
+                    renderClientThumbnails(targetDesign.id);
+                    if (!loadedBaseImage || loadedBaseImage.src !== targetDesign.image) {
+                        loadSelectedDesign(targetDesign);
+                    }
+                } else {
+                    renderClientThumbnails(null);
+                }
             }
         }
 
-        function switchView(sectionId) {
-            AppState.activeViewSection = sectionId;
-            if (sectionId === 'view_wifi') {
-                const netDesign = AppState.designs.find(d => d.categoryId === 'cat_net');
-                if (netDesign) AppState.currentDesignId = netDesign.id;
-            }
-            checkViewState();
+        function renderLoginBox(container) {
+            container.innerHTML = `
+                <div class="admin-header">
+                    <h2>🔐 لوحة التحكم خاصة بالمدير فقط</h2>
+                    <p>يرجى إدخال كلمة المرور للوصول</p>
+                </div>
+                <div class="form-group">
+                    <label>كلمة المرور:</label>
+                    <input type="password" id="adminPassInput" placeholder="أدخل كلمة المرور الحصرية">
+                </div>
+                <button class="btn-main" onclick="verifyPassword()">دخول الإدارة</button>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="?" style="color: #007bff; text-decoration: none; font-size: 13px;">⬅ العودة لتصاميم العملاء</a>
+                </div>
+            `;
         }
 
-        function renderClientDashboard(container) {
-            let showBack = AppState.activeViewSection !== 'grid_main';
-            let dynamicBodyHtml = '';
-
-            let networksOptionsHtml = `<option value="">-- اختر الشبكة من القائمة --</option>` + 
-                AppState.networkCodes.map(n => `<option value="${n.code}" data-name="${n.name}">${n.name} (كود: ${n.code})</option>`).join('');
-
-            const loaderHtml = `<div class="canvas-loader" id="canvasLoader" style="display:none;"><div class="spinner"></div><span style="font-size:12px; font-weight:bold; color:#4cc9f0;">جاري تحميل التصميم...</span></div>`;
-
-            if (AppState.activeViewSection === 'single_preview') {
-                dynamicBodyHtml = `
-                    <div class="section-frame" style="text-align:center;">
-                        <div class="frame-title" style="justify-content:center;"><span>🖼️ معاينة التصميم المباشر</span></div>
-                        <div class="preview-box">
-                            <div id="canvasContainer">${loaderHtml}<canvas id="previewCanvas"></canvas></div>
-                            <div class="action-links">
-                                <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم بجودة عالية</button>
-                                <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل تطبيق سكاي موبايل</a>
-                                <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 انضمام لقناة الواتساب الرسمية</a>
-                                <button class="link-btn edit-btn" onclick="switchView('view_designer')">✏️ تعديل هذا التصميم في المحرر</button>
-                                <button class="link-btn copy-design-btn" onclick="switchView('grid_main')">🏠 الانتقال للرئيسية</button>
-                            </div>
-                        </div>
-                    </div>`;
-            } else if (AppState.activeViewSection === 'grid_main') {
-                dynamicBodyHtml = `
-                    <div class="nav-grid">
-                        <div class="nav-card" onclick="switchView('view_designer')">
-                            <span class="icon">🎨</span>
-                            <span class="title">مصمم الإعلانات (النقاط)</span>
-                        </div>
-                        <div class="nav-card" onclick="switchView('view_wifi')">
-                            <span class="icon">📶</span>
-                            <span class="title">صانع إعلانات الشبكات</span>
-                        </div>
-                        <div class="nav-card" onclick="switchView('view_faq')">
-                            <span class="icon">🛠️</span>
-                            <span class="title">الدعم وتصحيح المشاكل</span>
-                        </div>
-                        <a href="${AppState.globalLinks.appUrl}" target="_blank" class="nav-card" style="text-decoration:none;">
-                            <span class="icon">📲</span>
-                            <span class="title">تحميل التطبيق</span>
-                        </a>
-                        <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="nav-card" style="text-decoration:none; grid-column: span 2;">
-                            <span class="icon">📢</span>
-                            <span class="title">انضم لقناة الواتساب الرسمية</span>
-                        </a>
-                    </div>`;
-            } else if (AppState.activeViewSection === 'view_designer') {
-                dynamicBodyHtml = `
-                    <div class="categories-scroll" id="catChipsContainer"></div>
-                    <div class="client-input-card">
-                        <input type="text" placeholder="🔍 بحث في التصاميم..." oninput="handleSearchInput(this.value)">
-                    </div>
-                    <div class="templates-scroll" id="templatesScrollContainer"></div>
-                    
-                    <div class="section-frame">
-                        <div class="frame-title"><span>📝 بيانات العميل والعبارة الترويجية</span></div>
-                        <div class="client-input-card">
-                            <label>إضافة شعار المركز / المحل (اختياري):</label>
-                            <input type="file" id="logoFileInput" accept="image/*" onchange="handleLogoUpload(this)">
-                        </div>
-                        <div class="client-input-card">
-                            <label>اسم المحل / الصفحة / المركز:</label>
-                            <input type="text" id="clientShopInput" placeholder="مثال: مركز البركة للخدمات الإلكترونية" oninput="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>العبارة الرئيسية على التصميم:</label>
-                            <input type="text" id="clientPromoText" placeholder="مثال: شحن فوري لجميع الشبكات - خدمات متكاملة" oninput="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>العبارة التوضيحية التابعة:</label>
-                            <input type="text" id="clientSubText" placeholder="مثال: متوفر لدينا كروت واي فاي وتسديد الفواتير" oninput="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>رقم هاتف التواصل والخدمة:</label>
-                            <input type="text" id="clientPhoneInput" value="${AppState.globalLinks.supportPhone}" oninput="debouncedDraw()">
-                        </div>
-                    </div>
-
-                    <div class="section-frame">
-                        <div class="frame-title"><span>🎨 تخصيص الألوان</span></div>
-                        <div class="client-input-card">
-                            <label>لون الخلفية / الإطار:</label>
-                            <input type="color" id="colBg" value="#0c2461" onchange="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>لون النص الرئيسي:</label>
-                            <input type="color" id="colText1" value="#ffffff" onchange="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>لون النص الثانوي:</label>
-                            <input type="color" id="colText2" value="#00a8ff" onchange="debouncedDraw()">
-                        </div>
-                    </div>
-
-                    <div class="preview-box">
-                        <div id="canvasContainer">${loaderHtml}<canvas id="previewCanvas"></canvas></div>
-                        <div class="action-links">
-                            <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل التصميم</button>
-                            <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة التصميم عبر الواتساب</button>
-                            <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل تطبيق سكاي موبايل</a>
-                            <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 انضمام لقناة الواتساب الرسمية</a>
-                            <button class="link-btn copy-design-btn" onclick="copyDesignLink()">📋 نسخ رابط القالب المباشر</button>
-                        </div>
-                    </div>`;
-            } else if (AppState.activeViewSection === 'view_wifi') {
-                dynamicBodyHtml = `
-                    <div class="section-frame">
-                        <div class="frame-title"><span>🎨 اختار قالب تصميم إعلان الشبكة</span></div>
-                        <div class="templates-scroll" id="wifiTemplatesScrollContainer"></div>
-                    </div>
-
-                    <div class="section-frame">
-                        <div class="frame-title"><span>📶 بيانات إعلان كروت الشبكة</span></div>
-                        <div class="client-input-card">
-                            <label>اختر من قائمة الشبكات المسجلة:</label>
-                            <select id="networkSelect" onchange="syncNetworkSelection(this)">
-                                ${networksOptionsHtml}
-                            </select>
-                        </div>
-                        <div class="client-input-card">
-                            <label>أو أدخل رقم / كود الشبكة مباشرة (سيجلب الاسم تلقائياً):</label>
-                            <input type="text" id="netCodeInput" placeholder="مثال: 6" oninput="handleNetCodeAutoLookup(this.value)">
-                        </div>
-                        <div class="client-input-card">
-                            <label>اسم الشبكة:</label>
-                            <input type="text" id="netNameInput" placeholder="مثال: شبكة الماهر نت" oninput="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>رقم هاتف التواصل والتزويد:</label>
-                            <input type="text" id="clientPhoneInput" placeholder="738328251" value="${AppState.globalLinks.supportPhone}" oninput="debouncedDraw()">
-                        </div>
-                    </div>
-                    
-                    <div class="section-frame">
-                        <div class="frame-title"><span>🎨 تخصيص الألوان</span></div>
-                        <div class="client-input-card">
-                            <label>لون الخلفية / الإطار:</label>
-                            <input type="color" id="colBg" value="#0c2461" onchange="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>لون النص الرئيسي:</label>
-                            <input type="color" id="colText1" value="#ffffff" onchange="debouncedDraw()">
-                        </div>
-                        <div class="client-input-card">
-                            <label>لون النص الثانوي:</label>
-                            <input type="color" id="colText2" value="#00a8ff" onchange="debouncedDraw()">
-                        </div>
-                    </div>
-
-                    <div class="preview-box">
-                        <div id="canvasContainer">${loaderHtml}<canvas id="previewCanvas"></canvas></div>
-                        <div class="action-links">
-                            <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل إعلان الشبكة</button>
-                            <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة عبر الواتساب</button>
-                            <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل تطبيق سكاي موبايل</a>
-                            <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 انضمام لقناة الواتساب الرسمية</a>
-                            <button class="link-btn copy-design-btn" onclick="copyDesignLink()">📋 نسخ رابط الإعلان</button>
-                        </div>
-                    </div>`;
-            } else if (AppState.activeViewSection === 'view_faq') {
-                dynamicBodyHtml = `
-                    <div class="section-frame">
-                        <div class="frame-title"><span>🛠️ أسئلة وأجوبة حل المشاكل الفنية</span></div>
-                        <div class="faq-accordion">
-                            <details class="faq-item">
-                                <summary>فشل عملية الشحن أو الدفع في التطبيق؟</summary>
-                                <div class="faq-content">تأكد من توفر تغطية إنترنت جيدة، وفي حال خصم المبلغ دون وصول الخدمة، قم بتزويد الدعم الفني برقم العملية المرجعي وسيتم التحقق منها فوراً.</div>
-                            </details>
-                            <details class="faq-item">
-                                <summary>كيف يمكنني ربط وتفعيل شبكة الواي فاي في التطبيق؟</summary>
-                                <div class="faq-content">قم بالتواصل مع الإدارة عبر الواتساب لتزويدنا باسم الشبكة والكود الخاص بها لإدراجها ضمن القائمة المعتمدة في النظام.</div>
-                            </details>
-                            <details class="faq-item">
-                                <summary>نسيت كلمة المرور أو تم قفل الحساب؟</summary>
-                                <div class="faq-content">استخدم خيار "نسيت كلمة المرور" في شاشة الدخول أو تواصل مباشرة مع قسم الدعم الفني لإعادة تعيين بياناتك.</div>
-                            </details>
-                        </div>
-                        <div class="action-links" style="margin-top: 15px;">
-                            <a href="${AppState.globalLinks.appUrl}" target="_blank" class="link-btn download-app-btn">📲 تحميل التطبيق الآن</a>
-                            <a href="${AppState.globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">📢 للانضمام لقناة الواتساب</a>
-                        </div>
-                    </div>`;
+        function verifyPassword() {
+            const pass = document.getElementById('adminPassInput').value.trim();
+            if (pass === currentAdminPass) {
+                sessionStorage.setItem('sky_admin_logged', 'true');
+                window.location.href = "?admin=true";
+            } else { 
+                alert('خطأ: كلمة المرور غير صحيحة!'); 
             }
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('sky_admin_logged');
+            window.location.href = "?";
+        }
+
+        function renderClientPanel(container) {
+            let targetDesign = designs.find(d => d.id == currentDesignId);
+            if (!targetDesign && designs.length > 0) {
+                let filtered = getFilteredDesigns();
+                targetDesign = filtered[0] || designs[0];
+            }
+            if (targetDesign) currentDesignId = targetDesign.id;
+
+            let categoriesHtml = `<div class="cat-chip ${activeCategory==='all'?'active':''}" onclick="filterByCategory('all')">📂 الكل (${designs.length})</div>`;
+            categories.forEach(cat => {
+                const count = designs.filter(d => d.categoryId === cat.id).length;
+                categoriesHtml += `<div class="cat-chip ${activeCategory===cat.id?'active':''}" onclick="filterByCategory('${cat.id}')">${cat.name} (${count})</div>`;
+            });
+
+            let wifiOptionsHtml = `<option value="">-- اختر شبكة الواي فاي (اختياري) --</option>` + wifiNetworks.map(net => `<option value="${net.id}">${net.name} ${net.code ? '(' + net.code + ')' : ''}</option>`).join('');
 
             container.innerHTML = `
-                <div class="ticker-wrap"><div class="ticker-move">${AppState.globalLinks.tickerText}</div></div>
-                <div class="brand-header">
-                    <div class="brand-logo-wrapper" onclick="handleSecretLogoClick()">
-                        <svg class="brand-logo-svg" viewBox="0 0 400 90" xmlns="http://www.w3.org/2000/svg">
-                            <defs>
-                                <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#0c2461"/>
-                                    <stop offset="50%" stop-color="#0a3d62"/>
-                                    <stop offset="100%" stop-color="#00a8ff"/>
-                                </linearGradient>
-                            </defs>
-                            <rect width="400" height="90" rx="15" fill="url(#skyGrad)"/>
-                            <text x="200" y="42" font-family="'Cairo', sans-serif" font-weight="900" font-size="28" fill="#ffffff" text-anchor="middle">سكاي موبايل</text>
-                            <text x="200" y="68" font-family="'Cairo', sans-serif" font-weight="600" font-size="13" fill="#00a8ff" text-anchor="middle">SKY MOBILE SERVICES</text>
-                        </svg>
+                <header style="text-align: center; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+                    <h1 style="color: #007bff; font-size: 20px;">🎨 مصمم البطاقات الفوري - سكاي موبايل</h1>
+                </header>
+
+                <div class="categories-scroll" id="categoriesBox">${categoriesHtml}</div>
+
+                <div class="templates-preview-scroll" id="templatesScrollContainer"></div>
+
+                <div class="client-input-card">
+                    <label>📶 اختر شبكة الواي فاي (إذا كنت صاحب شبكة):</label>
+                    <select id="cWifiNet" onchange="toggleInputMode()">
+                        ${wifiOptionsHtml}
+                    </select>
+                </div>
+
+                <div id="normalClientFields">
+                    <div class="client-input-card">
+                        <label>🏪 اسم المحل / العميل:</label>
+                        <input type="text" id="cShop" placeholder="أدخل الاسم هنا" oninput="drawFinalImage()">
+                    </div>
+
+                    <div class="client-input-card">
+                        <label>📍 العنوان:</label>
+                        <input type="text" id="cAddress" value="متوفر لدينا كافة الخدمات" oninput="drawFinalImage()">
                     </div>
                 </div>
-                ${showBack ? `<button class="back-home-btn" onclick="switchView('grid_main')">⬅ العودة للرئيسية</button>` : ''}
-                ${dynamicBodyHtml}
-                <div class="client-credits-footer">جميع الحقوق محفوظة © سكاي موبايل 2026</div>
+
+                <div class="client-input-card">
+                    <label>📞 رقم الهاتف للتواصل:</label>
+                    <input type="text" id="cPhone" value="738328251" oninput="drawFinalImage()">
+                </div>
+
+                <div class="preview-box">
+                    <div id="canvasContainer">
+                        <canvas id="previewCanvas"></canvas>
+                    </div>
+
+                    <div class="external-actions-section">
+                        <div class="action-links">
+                            <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
+                            <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة عبر الواتساب</button>
+                            <button class="link-btn copy-link-btn" onclick="copyDesignLink()">📋 نسخ رابط التصميم المختصر</button>
+                            <a href="${globalLinks.appUrl}" target="_blank" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل</a>
+                            <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 الإنضمام لقناة الواتساب</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="client-credits-footer">
+                    جميع الحقوق محفوظة © سكاي موبايل
+                </div>
             `;
 
-            if (AppState.activeViewSection === 'view_designer') {
-                renderCategoriesChips();
-                renderClientThumbnails(AppState.currentDesignId);
-                const targetDesign = AppState.designs.find(d => d.id == AppState.currentDesignId);
-                if (targetDesign) loadSelectedDesign(targetDesign);
-            } else if (AppState.activeViewSection === 'view_wifi') {
-                renderWifiThumbnails(AppState.currentDesignId);
-                const targetDesign = AppState.designs.find(d => d.id == AppState.currentDesignId);
-                if (targetDesign) loadSelectedDesign(targetDesign);
-            }
-
-            if (AppState.savedDataCache) {
-                applySavedDesignState(AppState.savedDataCache);
-            }
+            renderClientThumbnails(currentDesignId);
+            if (targetDesign) loadSelectedDesign(targetDesign);
         }
 
-        function handleLogoUpload(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = () => {
-                        AppState.userUploadedLogo = img;
-                        debouncedDraw();
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function handleNetCodeAutoLookup(val) {
-            const codeClean = val.trim();
-            const foundNet = AppState.networkCodes.find(n => n.code.toString().trim() === codeClean);
-            
-            const nameInput = document.getElementById('netNameInput');
-            const selectEl = document.getElementById('networkSelect');
-            
-            if (foundNet) {
-                if (nameInput) nameInput.value = foundNet.name;
-                if (selectEl) selectEl.value = foundNet.code;
+        function toggleInputMode() {
+            const wifiVal = document.getElementById('cWifiNet').value;
+            const normalFields = document.getElementById('normalClientFields');
+            if (wifiVal) {
+                if (normalFields) normalFields.style.display = 'none';
             } else {
-                if (selectEl) selectEl.value = "";
+                if (normalFields) normalFields.style.display = 'block';
             }
-            debouncedDraw();
+            drawFinalImage();
         }
 
-        function handleSearchInput(val) {
-            AppState.searchQuery = val.trim().toLowerCase();
-            renderClientThumbnails(AppState.currentDesignId);
+        function filterByCategory(catId) {
+            activeCategory = catId;
+            renderClientPanel(document.getElementById('mainContainer'));
         }
 
-        function renderCategoriesChips() {
-            const container = document.getElementById('catChipsContainer');
-            if (!container) return;
-            let html = `<div class="cat-chip ${AppState.activeCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all')">الكل</div>`;
-            AppState.categories.forEach(c => {
-                html += `<div class="cat-chip ${AppState.activeCategory === c.id ? 'active' : ''}" onclick="filterCategory('${c.id}')">${c.name}</div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        function filterCategory(catId) {
-            AppState.activeCategory = catId;
-            renderCategoriesChips();
-            renderClientThumbnails(AppState.currentDesignId);
+        function getFilteredDesigns() {
+            if (activeCategory === 'all') return designs;
+            return designs.filter(d => d.categoryId === activeCategory);
         }
 
         function renderClientThumbnails(selectedId) {
-            const container = document.getElementById('templatesScrollContainer');
-            if (!container) return;
-            let filtered = AppState.designs;
-            if (AppState.activeCategory !== 'all') {
-                filtered = filtered.filter(d => d.categoryId === AppState.activeCategory);
-            }
-            if (AppState.searchQuery) {
-                filtered = filtered.filter(d => d.title.toLowerCase().includes(AppState.searchQuery));
+            const scrollBox = document.getElementById('templatesScrollContainer');
+            if(!scrollBox) return;
+
+            let displayDesigns = getFilteredDesigns();
+            if (displayDesigns.length === 0) {
+                scrollBox.innerHTML = '<p style="font-size: 13px; color: #777; padding: 10px; width:100%; text-align:center;">لا توجد قوالب مضافة حالياً. يرجى إضافة قوالب من لوحة الأدمن.</p>';
+                return;
             }
 
-            container.innerHTML = '';
-            filtered.forEach(item => {
+            scrollBox.innerHTML = '';
+            displayDesigns.forEach(item => {
                 const card = document.createElement('div');
                 card.className = `thumb-card ${item.id == selectedId ? 'selected' : ''}`;
                 card.onclick = () => {
-                    AppState.currentDesignId = item.id;
+                    currentDesignId = item.id;
                     renderClientThumbnails(item.id);
                     loadSelectedDesign(item);
                 };
                 card.innerHTML = `<img src="${item.image}" alt="${item.title}" loading="lazy">`;
-                container.appendChild(card);
+                scrollBox.appendChild(card);
             });
-        }
-
-        function renderWifiThumbnails(selectedId) {
-            const container = document.getElementById('wifiTemplatesScrollContainer');
-            if (!container) return;
-            let wifiDesigns = AppState.designs.filter(d => d.categoryId === 'cat_net');
-
-            container.innerHTML = '';
-            wifiDesigns.forEach(item => {
-                const card = document.createElement('div');
-                card.className = `thumb-card ${item.id == selectedId ? 'selected' : ''}`;
-                card.onclick = () => {
-                    AppState.currentDesignId = item.id;
-                    renderWifiThumbnails(item.id);
-                    loadSelectedDesign(item);
-                };
-                card.innerHTML = `<img src="${item.image}" alt="${item.title}" loading="lazy">`;
-                container.appendChild(card);
-            });
-        }
-
-        function toggleCanvasLoader(show) {
-            const loader = document.getElementById('canvasLoader');
-            if (loader) loader.style.display = show ? 'flex' : 'none';
         }
 
         function loadSelectedDesign(designObj) {
-            if (!designObj) return;
+            if (!designObj || !designObj.image) return;
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = designObj.image;
+            img.onload = function() {
+                loadedBaseImage = img;
+                drawFinalImage();
+            };
+            img.onerror = function() {
+                console.error("تعذر تحميل صورة التصميم:", designObj.image);
+            };
+        }
 
-            if (AppState.imageCache[designObj.image]) {
-                AppState.loadedBaseImage = AppState.imageCache[designObj.image];
-                toggleCanvasLoader(false);
-                debouncedDraw();
-            } else {
-                toggleCanvasLoader(true);
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.src = designObj.image;
-                img.onload = () => {
-                    AppState.imageCache[designObj.image] = img;
-                    AppState.loadedBaseImage = img;
-                    toggleCanvasLoader(false);
-                    debouncedDraw();
-                };
-                img.onerror = () => {
-                    toggleCanvasLoader(false);
-                };
+        function drawEdgeBanner(ctx, x, y, w, h, fillColor, strokeColor) {
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+            if (strokeColor) {
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 3;
+                ctx.stroke();
             }
         }
 
-        function syncNetworkSelection(selectEl) {
-            const selectedOpt = selectEl.options[selectEl.selectedIndex];
-            const netName = selectedOpt.getAttribute('data-name') || '';
-            const netCode = selectEl.value || '';
-            
-            const nameInput = document.getElementById('netNameInput');
-            const codeInput = document.getElementById('netCodeInput');
-            
-            if (nameInput) nameInput.value = netName;
-            if (codeInput) codeInput.value = netCode;
-            debouncedDraw();
-        }
-
-        function debouncedDraw() {
-            clearTimeout(AppState.renderDebounceTimer);
-            AppState.renderDebounceTimer = setTimeout(drawCanvas, 15);
-        }
-
-        function drawCanvas() {
+        function drawFinalImage() {
             const canvas = document.getElementById('previewCanvas');
-            if (!canvas) return;
+            if (!canvas || !loadedBaseImage) return;
+
             const ctx = canvas.getContext('2d');
+            const img = loadedBaseImage;
 
-            const img = AppState.loadedBaseImage;
-            canvas.width = img ? (img.naturalWidth || 1000) : 1000;
-            canvas.height = img ? (img.naturalHeight || 600) : 600;
+            canvas.width = img.naturalWidth || 1080;
+            canvas.height = img.naturalHeight || 1920;
 
-            if (img) {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.fillStyle = "#111827";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            const colBg = document.getElementById('colBg')?.value || AppState.savedDataCache?.colBg || '#0c2461';
-            const colText1 = document.getElementById('colText1')?.value || AppState.savedDataCache?.colText1 || '#ffffff';
-            const colText2 = document.getElementById('colText2')?.value || AppState.savedDataCache?.colText2 || '#00a8ff';
+            const shopText = document.getElementById('cShop')?.value.trim() || '';
+            const addressText = document.getElementById('cAddress')?.value.trim() || 'متوفر لدينا كافة الخدمات';
+            const phoneText = document.getElementById('cPhone')?.value.trim() || '';
+            const selectedWifiId = document.getElementById('cWifiNet')?.value || '';
 
-            if (AppState.userUploadedLogo) {
-                const logoW = canvas.width * 0.12;
-                const logoH = (AppState.userUploadedLogo.height / AppState.userUploadedLogo.width) * logoW;
-                ctx.drawImage(AppState.userUploadedLogo, 30, 30, logoW, logoH);
-            }
+            if (selectedWifiId) {
+                const netObj = wifiNetworks.find(n => n.id === selectedWifiId);
+                if (netObj) {
+                    const wifiText = `📶 شبكة: ${netObj.name} ${netObj.code ? '(' + netObj.code + ')' : ''}`;
+                    const fontSize = Math.round(canvas.width * 0.045);
+                    ctx.font = `bold ${fontSize}px ${selectedFont}`;
+                    const boxWidth = canvas.width; 
+                    const boxHeight = fontSize * 2.2;
+                    
+                    drawEdgeBanner(ctx, 0, 0, boxWidth, boxHeight, 'rgba(0, 30, 60, 0.95)', '#facc15');
 
-            if (AppState.activeViewSection === 'view_wifi') {
-                const netName = document.getElementById('netNameInput')?.value || AppState.savedDataCache?.netName || 'شبكة الواي فاي';
-                const netCode = document.getElementById('netCodeInput')?.value || AppState.savedDataCache?.netCode || '';
-                const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.savedDataCache?.clientPhone || AppState.globalLinks.supportPhone;
+                    ctx.fillStyle = '#facc15';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(wifiText, canvas.width / 2, boxHeight / 2);
+                }
 
-                const bannerHeight = 75;
-                ctx.fillStyle = colBg;
-                ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
+                const appBuyText = '💳 يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل';
+                const appFontSize = Math.round(canvas.width * 0.038);
+                ctx.font = `bold ${appFontSize}px ${selectedFont}`;
+                const appBoxWidth = canvas.width; 
+                const appBoxHeight = appFontSize * 2.2;
+                const appBoxY = canvas.height - appBoxHeight; 
 
-                ctx.fillStyle = colText2;
-                ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, 3);
+                drawEdgeBanner(ctx, 0, appBoxY, appBoxWidth, appBoxHeight, 'rgba(0, 30, 60, 0.95)', '#007bff');
 
+                ctx.fillStyle = '#ffffff';
                 ctx.textAlign = 'center';
-                ctx.fillStyle = colText1;
-                ctx.font = 'bold 20px Cairo';
-                const fullLabel = netCode ? `${netName} (كود: ${netCode})` : netName;
-                ctx.fillText(fullLabel, canvas.width / 2, canvas.height - 42);
-
-                ctx.fillStyle = colText2;
-                ctx.font = 'bold 15px Cairo';
-                ctx.fillText(`يمكنكم شراء كروت الشبكة عبر تطبيق سكاي موبايل | للتواصل: ${phoneVal}`, canvas.width / 2, canvas.height - 15);
+                ctx.textBaseline = 'middle';
+                ctx.fillText(appBuyText, canvas.width / 2, appBoxY + (appBoxHeight / 2));
 
             } else {
-                const shopName = document.getElementById('clientShopInput')?.value || AppState.savedDataCache?.clientShop || '';
-                const promoText = document.getElementById('clientPromoText')?.value || AppState.savedDataCache?.clientPromo || '';
-                const subText = document.getElementById('clientSubText')?.value || AppState.savedDataCache?.clientSub || '';
-                const phoneVal = document.getElementById('clientPhoneInput')?.value || AppState.savedDataCache?.clientPhone || AppState.globalLinks.supportPhone;
+                if (shopText) {
+                    const shopFontSize = Math.round(canvas.width * 0.05);
+                    ctx.font = `bold ${shopFontSize}px ${selectedFont}`;
+                    const shopBoxW = canvas.width;
+                    const shopBoxH = shopFontSize * 2.2;
+                    const shopBoxX = 0;
+                    const shopBoxY = 0;
 
-                const bannerHeight = 75;
-                ctx.fillStyle = colBg;
-                ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, bannerHeight);
+                    drawEdgeBanner(ctx, shopBoxX, shopBoxY, shopBoxW, shopBoxH, 'rgba(0, 20, 40, 0.92)', '#007bff');
 
-                ctx.fillStyle = colText2;
-                ctx.fillRect(0, canvas.height - bannerHeight, canvas.width, 3);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(shopText, canvas.width / 2, shopBoxY + (shopBoxH / 2));
+                }
 
-                ctx.textAlign = 'center';
+                const badgeText = '✔ نقطة بيع معتمد لتطبيق سكاي موبايل';
+                const badgeFontSize = Math.round(canvas.width * 0.029); 
+                ctx.font = `bold ${badgeFontSize}px ${selectedFont}`;
+                const badgeMetrics = ctx.measureText(badgeText);
                 
-                let mainTitle = shopName ? `${shopName} | للتواصل: ${phoneVal}` : `للتواصل: ${phoneVal}`;
-                if (promoText) mainTitle = `${promoText} | ${mainTitle}`;
+                const padX = 24, padY = 14;
+                const badgeBoxW = badgeMetrics.width + (padX * 2);
+                const badgeBoxH = badgeFontSize + (padY * 2);
+                const badgeBoxX = 0; 
+                const badgeBoxY = canvas.height - badgeBoxH; 
 
-                ctx.fillStyle = colText1;
-                ctx.font = 'bold 20px Cairo';
-                ctx.fillText(mainTitle, canvas.width / 2, canvas.height - 42);
+                drawEdgeBanner(ctx, badgeBoxX, badgeBoxY, badgeBoxW, badgeBoxH, 'rgba(0, 20, 40, 0.92)', '#facc15');
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(badgeText, badgeBoxX + padX, badgeBoxY + (badgeBoxH / 2));
 
-                let fixedText = 'نقطة بيع معتمد لتطبيق سكاي موبايل';
-                if (subText) fixedText += ` - ${subText}`;
+                const addressString = '📍 ' + addressText;
+                const addressFontSize = Math.round(canvas.width * 0.032);
+                ctx.font = `bold ${addressFontSize}px ${selectedFont}`;
+                const addrMetrics = ctx.measureText(addressString);
 
-                ctx.fillStyle = colText2;
-                ctx.font = 'bold 15px Cairo';
-                ctx.fillText(fixedText, canvas.width / 2, canvas.height - 15);
+                const aPadX = 18, aPadY = 10;
+                const addrBoxW = addrMetrics.width + (aPadX * 2);
+                const addrBoxH = addressFontSize + (aPadY * 2);
+
+                let phoneBoxW = 0, phoneBoxH = 0, phoneBoxY = 0;
+                if (phoneText) {
+                    const phoneFontSize = Math.round(canvas.width * 0.03);
+                    ctx.font = `bold ${phoneFontSize}px ${selectedFont}`;
+                    const phoneString = '📞 ' + phoneText;
+                    const phoneMetrics = ctx.measureText(phoneString);
+
+                    const pPadX = 20, pPadY = 10;
+                    phoneBoxW = phoneMetrics.width + (pPadX * 2);
+                    phoneBoxH = phoneFontSize + (pPadY * 2);
+                    
+                    const phoneBoxX = canvas.width - phoneBoxW; 
+                    phoneBoxY = canvas.height - phoneBoxH;
+
+                    drawEdgeBanner(ctx, phoneBoxX, phoneBoxY, phoneBoxW, phoneBoxH, 'rgba(0, 20, 40, 0.92)', '#facc15');
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(phoneString, phoneBoxX + (phoneBoxW / 2), phoneBoxY + (phoneBoxH / 2));
+                }
+
+                const addrBoxX = canvas.width - addrBoxW;
+                const addrBoxY = phoneText ? (phoneBoxY - addrBoxH) : (canvas.height - addrBoxH);
+
+                drawEdgeBanner(ctx, addrBoxX, addrBoxY, addrBoxW, addrBoxH, 'rgba(0, 20, 40, 0.92)', 'rgba(255, 255, 255, 0.3)');
+
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(addressString, addrBoxX + (addrBoxW / 2), addrBoxY + (addrBoxH / 2));
             }
         }
 
         function downloadImage() {
             const canvas = document.getElementById('previewCanvas');
             if (!canvas) return;
-
-            try {
-                const tempCanvas = document.createElement('canvas');
-                const targetWidth = canvas.width < 2000 ? canvas.width * 2 : canvas.width;
-                const scale = targetWidth / canvas.width;
-                tempCanvas.width = canvas.width * scale;
-                tempCanvas.height = canvas.height * scale;
-                
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.scale(scale, scale);
-                tempCtx.drawImage(canvas, 0, 0);
-
-                const link = document.createElement('a');
-                link.download = `sky_design_${AppState.currentDesignId}_hd.png`;
-                link.href = tempCanvas.toDataURL('image/png', 1.0);
-                link.click();
-            } catch (err) {
-                alert('حدث خطأ في استخراج الصورة بسبب إعدادات حماية الصور الخارجي، يرجى إعادة المحاولة.');
-            }
+            const link = document.createElement('a');
+            link.download = `sky_mobile_design_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
         function shareToWhatsApp() {
-            if (db) {
-                const designRef = db.ref('sky_data/user_saved_designs').push();
-                const payload = {
-                    baseDesignId: AppState.currentDesignId,
-                    clientShop: document.getElementById('clientShopInput')?.value || '',
-                    clientPromo: document.getElementById('clientPromoText')?.value || '',
-                    clientSub: document.getElementById('clientSubText')?.value || '',
-                    netName: document.getElementById('netNameInput')?.value || '',
-                    netCode: document.getElementById('netCodeInput')?.value || '',
-                    clientPhone: document.getElementById('clientPhoneInput')?.value || '',
-                    colBg: document.getElementById('colBg')?.value || '#0c2461',
-                    colText1: document.getElementById('colText1')?.value || '#ffffff',
-                    colText2: document.getElementById('colText2')?.value || '#00a8ff',
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                };
-                designRef.set(payload).then(() => {
-                    const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${designRef.key}`;
-                    const text = encodeURIComponent(`شاهد هذا التصميم المخصص من منصة سكاي موبايل:\n${shareableUrl}`);
-                    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-                });
-            } else {
-                const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${AppState.currentDesignId}`;
-                const text = encodeURIComponent(`شاهد هذا التصميم من منصة سكاي موبايل:\n${shareableUrl}`);
-                window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-            }
+            alert('يرجى تحميل الصورة أولاً ثم إرسالها عبر تطبيق الواتساب.');
         }
 
+        // توليد رمز قصير من 6 أحرف وحفظ البيانات بالسحابة
         function copyDesignLink() {
+            const shop = document.getElementById('cShop')?.value.trim() || '';
+            const address = document.getElementById('cAddress')?.value.trim() || '';
+            const phone = document.getElementById('cPhone')?.value.trim() || '';
+            const designId = currentDesignId || '';
+
+            const shortId = Math.random().toString(36).substring(2, 8);
+
+            const shareData = {
+                d: designId,
+                s: shop,
+                a: address,
+                p: phone,
+                created: Date.now()
+            };
+
             if (db) {
-                const designRef = db.ref('sky_data/user_saved_designs').push();
-                const payload = {
-                    baseDesignId: AppState.currentDesignId,
-                    clientShop: document.getElementById('clientShopInput')?.value || '',
-                    clientPromo: document.getElementById('clientPromoText')?.value || '',
-                    clientSub: document.getElementById('clientSubText')?.value || '',
-                    netName: document.getElementById('netNameInput')?.value || '',
-                    netCode: document.getElementById('netCodeInput')?.value || '',
-                    clientPhone: document.getElementById('clientPhoneInput')?.value || '',
-                    colBg: document.getElementById('colBg')?.value || '#0c2461',
-                    colText1: document.getElementById('colText1')?.value || '#ffffff',
-                    colText2: document.getElementById('colText2')?.value || '#00a8ff',
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                };
-                designRef.set(payload).then(() => {
-                    const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${designRef.key}`;
-                    navigator.clipboard.writeText(shareableUrl).then(() => {
-                        alert('تم نسخ رابط التصميم المباشر المعدّل بنجاح!');
+                db.ref('shares/' + shortId).set(shareData).then(() => {
+                    const shortUrl = `${window.location.origin}${window.location.pathname}?share=${shortId}`;
+                    navigator.clipboard.writeText(shortUrl).then(() => {
+                        alert('تم نسخ الرابط المختصر بنجاح!\n\n' + shortUrl);
                     });
-                });
-            } else {
-                const shareableUrl = `${window.location.origin}${window.location.pathname}?id=${AppState.currentDesignId}`;
-                navigator.clipboard.writeText(shareableUrl).then(() => {
-                    alert('تم نسخ رابط القالب المباشر بنجاح!');
+                }).catch(() => {
+                    alert('حدث خطأ في الاتصال بالسحابة');
                 });
             }
-        }
-
-        function applySavedDesignState(savedData) {
-            if (savedData.baseDesignId) AppState.currentDesignId = savedData.baseDesignId;
-            
-            const shopIn = document.getElementById('clientShopInput');
-            const promoIn = document.getElementById('clientPromoText');
-            const subIn = document.getElementById('clientSubText');
-            const nameIn = document.getElementById('netNameInput');
-            const codeIn = document.getElementById('netCodeInput');
-            const phoneIn = document.getElementById('clientPhoneInput');
-            const bgIn = document.getElementById('colBg');
-            const text1In = document.getElementById('colText1');
-            const text2In = document.getElementById('colText2');
-
-            if (shopIn && savedData.clientShop) shopIn.value = savedData.clientShop;
-            if (promoIn && savedData.clientPromo) promoIn.value = savedData.clientPromo;
-            if (subIn && savedData.clientSub) subIn.value = savedData.clientSub;
-            if (nameIn && savedData.netName) nameIn.value = savedData.netName;
-            if (codeIn && savedData.netCode) codeIn.value = savedData.netCode;
-            if (phoneIn && savedData.clientPhone) phoneIn.value = savedData.clientPhone;
-            if (bgIn && savedData.colBg) bgIn.value = savedData.colBg;
-            if (text1In && savedData.colText1) text1In.value = savedData.colText1;
-            if (text2In && savedData.colText2) text2In.value = savedData.colText2;
-
-            debouncedDraw();
-        }
-
-        function renderLoginForm(container) {
-            container.innerHTML = `
-                <div class="admin-header"><h2>🔐 تسجيل دخول الأدمن</h2></div>
-                <div class="admin-card">
-                    <div class="client-input-card">
-                        <label>كلمة المرور:</label>
-                        <input type="password" id="adminPassInput" placeholder="أدخل كلمة مرور الإدارة">
-                    </div>
-                    <button class="btn-main" onclick="processLogin()">دخول</button>
-                    <button class="btn-exit-admin" style="margin-top:10px;" onclick="exitAdminView()">إلغاء والعودة</button>
-                </div>`;
-        }
-
-        function processLogin() {
-            const pass = document.getElementById('adminPassInput').value;
-            if (pass === AppState.currentAdminPass) {
-                sessionStorage.setItem('sky_admin_authenticated', 'true');
-                checkViewState();
-            } else {
-                alert('كلمة المرور غير صحيحة!');
-            }
-        }
-
-        function exitAdminView() {
-            sessionStorage.removeItem('sky_in_admin_mode');
-            sessionStorage.removeItem('sky_admin_authenticated');
-            checkViewState();
         }
 
         function renderAdminPanel(container) {
-            let designsRows = AppState.designs.map((d, index) => `
-                <tr>
-                    <td>${d.title}</td>
-                    <td>${d.categoryId}</td>
-                    <td><button class="btn-delete-item" onclick="deleteAdminDesign(${index})">حذف</button></td>
-                </tr>`).join('');
+            let designsListHtml = '';
+            designs.forEach(d => {
+                designsListHtml += `
+                    <div class="sub-img-list">
+                        <span><b>${d.title}</b> (${d.categoryId})</span>
+                        <button class="btn-delete" onclick="deleteDesign('${d.id}')">حذف</button>
+                    </div>
+                `;
+            });
 
-            let netRows = AppState.networkCodes.map((n, index) => `
-                <tr>
-                    <td>${n.name}</td>
-                    <td>${n.code}</td>
-                    <td><button class="btn-delete-item" onclick="deleteAdminNetwork(${index})">حذف</button></td>
-                </tr>`).join('');
+            let wifiListHtml = '';
+            wifiNetworks.forEach(w => {
+                wifiListHtml += `
+                    <div class="sub-img-list">
+                        <span><b>${w.name}</b> (${w.code})</span>
+                        <button class="btn-delete" onclick="deleteWifi('${w.id}')">حذف</button>
+                    </div>
+                `;
+            });
 
             container.innerHTML = `
-                <div class="admin-header"><h2>⚙️ لوحة تحكم الأدمن المتقدمة</h2></div>
-                <button class="btn-exit-admin" onclick="exitAdminView()">🚪 الخروج من لوحة الأدمن</button>
-                
-                <div class="admin-card">
-                    <h3>📢 إدارة الشريط الترويجي</h3>
-                    <div class="client-input-card">
-                        <label>نص الشريط المتحرك:</label>
-                        <input type="text" id="admTickerInput" value="${AppState.globalLinks.tickerText}">
-                    </div>
-                    <button class="btn-main" onclick="saveAdminTicker()">حفظ الشريط الترويجي</button>
+                <div class="admin-header">
+                    <h2>⚙️ لوحة تحكم الأدمن (خاصة بالمالك)</h2>
+                </div>
+
+                <div class="top-nav-buttons">
+                    <a href="?" class="btn-home">🏠 العودة لتصاميم العملاء</a>
+                    <button class="btn-logout" onclick="logoutAdmin()">🚪 خروج آمن</button>
                 </div>
 
                 <div class="admin-card">
-                    <h3>🔗 إدارة الروابط والدعم الفني</h3>
-                    <div class="client-input-card">
-                        <label>رابط تحميل التطبيق:</label>
-                        <input type="text" id="admAppUrl" value="${AppState.globalLinks.appUrl}">
+                    <h3>إضافة شبكة واي فاي جديدة</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>اسم الشبكة:</label>
+                        <input type="text" id="newWifiName" placeholder="مثال: شبكة العدالة نت">
                     </div>
-                    <div class="client-input-card">
-                        <label>رابط قناة الواتساب:</label>
-                        <input type="text" id="admWhatsappUrl" value="${AppState.globalLinks.whatsappUrl}">
+                    <div class="form-group">
+                        <label>رقم الشبكة (الكود):</label>
+                        <input type="text" id="newWifiCode" placeholder="مثال: NW-105">
                     </div>
-                    <div class="client-input-card">
-                        <label>رقم هاتف الدعم الفني:</label>
-                        <input type="text" id="admSupportPhone" value="${AppState.globalLinks.supportPhone}">
-                    </div>
-                    <button class="btn-main" onclick="saveAdminLinks()">حفظ الروابط</button>
+                    <button class="btn-main" onclick="addNewWifi()">➕ إضافة الشبكة للسحابة</button>
                 </div>
 
                 <div class="admin-card">
-                    <h3>🔑 تغيير كلمة مرور الأدمن</h3>
-                    <div class="client-input-card">
-                        <label>كلمة المرور الجديدة:</label>
-                        <input type="password" id="admNewPass" placeholder="أدخل كلمة المرور الجديدة">
-                    </div>
-                    <button class="btn-main" onclick="saveAdminPassword()">تحديث كلمة المرور</button>
+                    <h3>إدارة الشبكات المتاحة (${wifiNetworks.length})</h3>
+                    ${wifiListHtml || '<p style="font-size:12px; color:#888;">لا توجد شبكات مضافة</p>'}
                 </div>
 
                 <div class="admin-card">
-                    <h3>🎨 إدارة قوالب التصاميم (إضافة)</h3>
-                    <div class="client-input-card"><label>عنوان التصميم:</label><input type="text" id="admDesignTitle"></div>
-                    <div class="client-input-card"><label>رابط الصورة المباشر:</label><input type="text" id="admDesignImg"></div>
-                    <div class="client-input-card">
+                    <h3>إضافة تصميم (قالب) جديد</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>عنوان التصميم:</label>
+                        <input type="text" id="newDesignTitle" placeholder="عنوان التصميم">
+                    </div>
+                    <div class="form-group">
+                        <label>رابط الصورة المباشر:</label>
+                        <input type="text" id="newDesignImg" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
                         <label>القسم:</label>
-                        <select id="admDesignCat">
-                            ${AppState.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        <select id="newDesignCat">
+                            ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                         </select>
                     </div>
-                    <button class="btn-main" onclick="addAdminDesign()">حفظ التصميم</button>
+                    <button class="btn-main" onclick="addNewDesign()">➕ إضافة وحفظ القالب بالسحابة</button>
                 </div>
 
                 <div class="admin-card">
-                    <h3>📋 قوالب التصاميم الحالية</h3>
-                    <table class="item-list-table">
-                        <thead><tr><th>العنوان</th><th>القسم</th><th>إجراء</th></tr></thead>
-                        <tbody>${designsRows}</tbody>
-                    </table>
+                    <h3>إدارة القوالب الحالية وتنسيقها (${designs.length})</h3>
+                    ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم مسجلة</p>'}
                 </div>
 
                 <div class="admin-card">
-                    <h3>📡 إضافة شبكة واي فاي جديدة</h3>
-                    <div class="client-input-card"><label>اسم الشبكة:</label><input type="text" id="admNetName"></div>
-                    <div class="client-input-card"><label>رقم/كود الشبكة:</label><input type="text" id="admNetCode"></div>
-                    <button class="btn-main" onclick="addAdminNetwork()">إضافة الشبكة</button>
+                    <h3>تعديل الروابط الخارجية</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>رابط تحميل التطبيق:</label>
+                        <input type="text" id="appUrlInput" value="${globalLinks.appUrl}">
+                    </div>
+                    <div class="form-group">
+                        <label>رابط قناة الواتساب:</label>
+                        <input type="text" id="whatsappUrlInput" value="${globalLinks.whatsappUrl}">
+                    </div>
+                    <button class="btn-main" onclick="saveGlobalLinks()">حفظ الروابط</button>
                 </div>
 
                 <div class="admin-card">
-                    <h3>📡 الشبكات المسجلة</h3>
-                    <table class="item-list-table">
-                        <thead><tr><th>الاسم</th><th>الكود</th><th>إجراء</th></tr></thead>
-                        <tbody>${netRows}</tbody>
-                    </table>
-                </div>`;
+                    <h3>تغيير كلمة مرور الأدمن الحصرية</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>كلمة المرور الجديدة:</label>
+                        <input type="password" id="newAdminPass" placeholder="أدخل كلمة مرور جديدة قوية">
+                    </div>
+                    <button class="btn-main" onclick="saveAdminPassword()">تغيير كلمة السر</button>
+                </div>
+            `;
         }
 
-        function saveAdminTicker() {
-            const val = document.getElementById('admTickerInput').value.trim();
-            if (!val) return alert('يرجى إدخال نص الشريط!');
-            AppState.globalLinks.tickerText = val;
-            if (db) db.ref('sky_data/links/tickerText').set(val);
-            alert('تم حفظ الشريط الترويجي بنجاح!');
+        function addNewWifi() {
+            if (!db) return;
+            const name = document.getElementById('newWifiName').value.trim();
+            const code = document.getElementById('newWifiCode').value.trim();
+            if (!name) return alert('يرجى كتابة اسم الشبكة على الأقل!');
+
+            const newId = 'wifi_' + Date.now();
+            wifiNetworks.push({ id: newId, name: name, code: code });
+            db.ref('sky_data/wifiNetworks').set(wifiNetworks).then(() => {
+                alert('تمت إضافة الشبكة بنجاح!');
+                renderAdminPanel(document.getElementById('mainContainer'));
+            });
         }
 
-        function saveAdminLinks() {
-            const appUrl = document.getElementById('admAppUrl').value.trim();
-            const whatsappUrl = document.getElementById('admWhatsappUrl').value.trim();
-            const supportPhone = document.getElementById('admSupportPhone').value.trim();
+        function deleteWifi(id) {
+            if (!db) return;
+            if (confirm('هل أنت متأكد من حذف هذه الشبكة؟')) {
+                wifiNetworks = wifiNetworks.filter(w => w.id !== id);
+                db.ref('sky_data/wifiNetworks').set(wifiNetworks).then(() => {
+                    alert('تم الحذف!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
+                });
+            }
+        }
 
-            AppState.globalLinks.appUrl = appUrl;
-            AppState.globalLinks.whatsappUrl = whatsappUrl;
-            AppState.globalLinks.supportPhone = supportPhone;
+        function addNewDesign() {
+            if (!db) return;
+            const title = document.getElementById('newDesignTitle').value.trim();
+            const image = document.getElementById('newDesignImg').value.trim();
+            const categoryId = document.getElementById('newDesignCat').value;
+            if (!title || !image) return alert('يرجى كتابة العنوان ورابط الصورة المباشر!');
 
-            if (db) db.ref('sky_data/links').update({ appUrl, whatsappUrl, supportPhone });
-            alert('تم حفظ الروابط بنجاح!');
+            const newId = 'ds_' + Date.now();
+            designs.push({ id: newId, title: title, image: image, categoryId: categoryId });
+            db.ref('sky_data/designs').set(designs).then(() => {
+                alert('تمت إضافة القالب وتحديث السحابة بنجاح!');
+                renderAdminPanel(document.getElementById('mainContainer'));
+            });
+        }
+
+        function deleteDesign(id) {
+            if (!db) return;
+            if (confirm('هل أنت متأكد من حذف هذا القالب نهائياً؟')) {
+                designs = designs.filter(d => d.id !== id);
+                db.ref('sky_data/designs').set(designs).then(() => {
+                    alert('تم حذف القالب وتحديث السحابة بنجاح!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
+                });
+            }
+        }
+
+        function saveGlobalLinks() {
+            if (!db) return;
+            const appUrl = document.getElementById('appUrlInput').value.trim();
+            const whatsappUrl = document.getElementById('whatsappUrlInput').value.trim();
+            db.ref('sky_data/links').set({ appUrl, whatsappUrl }).then(() => alert('تم حفظ الروابط بنجاح!'));
         }
 
         function saveAdminPassword() {
-            const newPass = document.getElementById('admNewPass').value.trim();
-            if (!newPass) return alert('يرجى إدخال كلمة المرور الجديدة!');
-            
-            AppState.currentAdminPass = newPass;
-            if (db) db.ref('sky_data/adminPass').set(newPass);
-            alert('تم تغيير كلمة المرور بنجاح!');
-            document.getElementById('admNewPass').value = '';
-        }
-
-        function addAdminDesign() {
-            const title = document.getElementById('admDesignTitle').value;
-            const image = document.getElementById('admDesignImg').value;
-            const categoryId = document.getElementById('admDesignCat').value;
-            if (!title || !image) return alert('يرجى ملء جميع الحقول!');
-
-            const newObj = { id: `ds_${Date.now()}`, title, image, categoryId };
-            AppState.designs.push(newObj);
-            if (db) db.ref('sky_data/designs').set(AppState.designs);
-            preloadAllImages(AppState.designs);
-            renderAdminPanel(document.getElementById('mainContainer'));
-        }
-
-        function deleteAdminDesign(index) {
-            AppState.designs.splice(index, 1);
-            if (db) db.ref('sky_data/designs').set(AppState.designs);
-            renderAdminPanel(document.getElementById('mainContainer'));
-        }
-
-        function addAdminNetwork() {
-            const name = document.getElementById('admNetName').value;
-            const code = document.getElementById('admNetCode').value;
-            if (!name || !code) return alert('يرجى ملء جميع الحقول!');
-
-            AppState.networkCodes.push({ name, code });
-            if (db) db.ref('sky_data/networks').set(AppState.networkCodes);
-            renderAdminPanel(document.getElementById('mainContainer'));
-        }
-
-        function deleteAdminNetwork(index) {
-            AppState.networkCodes.splice(index, 1);
-            if (db) db.ref('sky_data/networks').set(AppState.networkCodes);
-            renderAdminPanel(document.getElementById('mainContainer'));
+            if (!db) return;
+            const newPass = document.getElementById('newAdminPass').value.trim();
+            if (newPass) {
+                db.ref('sky_data/adminPass').set(newPass).then(() => alert('تم تغيير كلمة مرور الأدمن بنجاح!'));
+            }
         }
     </script>
 </body>
