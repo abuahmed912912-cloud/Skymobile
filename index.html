@@ -82,12 +82,21 @@
             appUrl: 'https://skymobile-v6jp.vercel.app', 
             whatsappUrl: 'https://whatsapp.com/channel' 
         };
-        let categories = [
+        
+        // أقسام وقوالب افتراضية لحماية المنصة من الإفراغ
+        let defaultCategories = [
             { id: 'cat_net', name: '📶 الشبكات والخدمات' },
             { id: 'cat_pay', name: '💳 الدفع الإلكتروني' }
         ];
+
+        let defaultDesigns = [
+            { id: 'ds_1', title: 'قالب التسديد الشامل', image: 'https://via.placeholder.com/1080x1920/007bff/ffffff?text=Sky+Mobile+Pay', categoryId: 'cat_pay' },
+            { id: 'ds_2', title: 'قالب كروت الشبكة', image: 'https://via.placeholder.com/1080x1920/0056b3/ffffff?text=Sky+Mobile+Net', categoryId: 'cat_net' }
+        ];
+
+        let categories = [...defaultCategories];
+        let designs = [...defaultDesigns];
         let wifiNetworks = [];
-        let designs = [];
         
         let selectedFont = "system-ui, -apple-system, sans-serif";
         let activeCategory = 'all'; 
@@ -146,8 +155,8 @@
             db.ref('sky_data').once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if (data.categories) categories = Object.values(data.categories);
-                    if (data.designs) designs = Object.values(data.designs);
+                    if (data.categories && Object.keys(data.categories).length > 0) categories = Object.values(data.categories);
+                    if (data.designs && Object.keys(data.designs).length > 0) designs = Object.values(data.designs);
                     if (data.links) globalLinks = { ...globalLinks, ...data.links };
                     if (data.adminPass) currentAdminPass = data.adminPass;
                     if (data.wifiNetworks) wifiNetworks = Object.values(data.wifiNetworks);
@@ -178,7 +187,9 @@
             const isAdminLoggedIn = sessionStorage.getItem('sky_admin_logged') === 'true';
             const urlParams = new URLSearchParams(window.location.search);
 
-            if (!isAdminLoggedIn && !urlParams.has('admin')) {
+            if (isAdminLoggedIn) {
+                renderAdminPanel(container);
+            } else if (!urlParams.has('admin')) {
                 let targetDesign = designs.find(d => d.id == currentDesignId);
                 if (!targetDesign && designs.length > 0) {
                     let filtered = getFilteredDesigns();
@@ -330,7 +341,7 @@
 
             let displayDesigns = getFilteredDesigns();
             if (displayDesigns.length === 0) {
-                scrollBox.innerHTML = '<p style="font-size: 13px; color: #777; padding: 10px; width:100%; text-align:center;">لا توجد قوالب مضافة حالياً. يرجى إضافة قوالب من لوحة الأدمن.</p>';
+                scrollBox.innerHTML = '<p style="font-size: 13px; color: #777; padding: 10px; width:100%; text-align:center;">لا توجد قوالب مضافة حالياً في هذا القسم. يرجى إضافتها من لوحة التحكم.</p>';
                 return;
             }
 
@@ -514,7 +525,6 @@
             alert('يرجى تحميل الصورة أولاً ثم إرسالها عبر تطبيق الواتساب.');
         }
 
-        // توليد رمز قصير من 6 أحرف وحفظ البيانات بالسحابة
         function copyDesignLink() {
             const shop = document.getElementById('cShop')?.value.trim() || '';
             const address = document.getElementById('cAddress')?.value.trim() || '';
@@ -543,13 +553,26 @@
             }
         }
 
+        // واجهة لوحة التحكم الشاملة المربوطة بالسحابة
         function renderAdminPanel(container) {
             let designsListHtml = '';
             designs.forEach(d => {
+                const catObj = categories.find(c => c.id === d.categoryId);
+                const catName = catObj ? catObj.name : 'غير محدد';
                 designsListHtml += `
                     <div class="sub-img-list">
-                        <span><b>${d.title}</b> (${d.categoryId})</span>
+                        <span><b>${d.title}</b> (${catName})</span>
                         <button class="btn-delete" onclick="deleteDesign('${d.id}')">حذف</button>
+                    </div>
+                `;
+            });
+
+            let categoriesListHtml = '';
+            categories.forEach(c => {
+                categoriesListHtml += `
+                    <div class="sub-img-list">
+                        <span><b>${c.name}</b></span>
+                        <button class="btn-delete" onclick="deleteCategory('${c.id}')">حذف القسم</button>
                     </div>
                 `;
             });
@@ -574,8 +597,49 @@
                     <button class="btn-logout" onclick="logoutAdmin()">🚪 خروج آمن</button>
                 </div>
 
+                <!-- إدارة الأقسام -->
                 <div class="admin-card">
-                    <h3>إضافة شبكة واي فاي جديدة</h3>
+                    <h3>📁 إضافة قسم تصاميم جديد</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>اسم القسم (مع إيموجي):</label>
+                        <input type="text" id="newCatName" placeholder="مثال: ⚡ عروض سريعة">
+                    </div>
+                    <button class="btn-main" onclick="addNewCategory()">➕ إضافة القسم بالسحابة</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>قائمة الأقسام المتاحة (${categories.length})</h3>
+                    ${categoriesListHtml || '<p style="font-size:12px; color:#888;">لا توجد أقسام</p>'}
+                </div>
+
+                <!-- إدارة القوالب -->
+                <div class="admin-card">
+                    <h3>🖼️ إضافة تصميم (قالب) جديد</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>عنوان التصميم:</label>
+                        <input type="text" id="newDesignTitle" placeholder="عنوان التصميم">
+                    </div>
+                    <div class="form-group">
+                        <label>رابط الصورة المباشر (URL):</label>
+                        <input type="text" id="newDesignImg" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>اختر القسم:</label>
+                        <select id="newDesignCat">
+                            ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <button class="btn-main" onclick="addNewDesign()">➕ إضافة وحفظ القالب بالسحابة</button>
+                </div>
+
+                <div class="admin-card">
+                    <h3>إدارة القوالب الحالية (${designs.length})</h3>
+                    ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم مسجلة</p>'}
+                </div>
+
+                <!-- إدارة الواي فاي -->
+                <div class="admin-card">
+                    <h3>📶 إضافة شبكة واي فاي جديدة</h3>
                     <div class="form-group" style="margin-top:10px;">
                         <label>اسم الشبكة:</label>
                         <input type="text" id="newWifiName" placeholder="مثال: شبكة العدالة نت">
@@ -592,32 +656,9 @@
                     ${wifiListHtml || '<p style="font-size:12px; color:#888;">لا توجد شبكات مضافة</p>'}
                 </div>
 
+                <!-- الروابط الخارجية وكلمة المرور -->
                 <div class="admin-card">
-                    <h3>إضافة تصميم (قالب) جديد</h3>
-                    <div class="form-group" style="margin-top:10px;">
-                        <label>عنوان التصميم:</label>
-                        <input type="text" id="newDesignTitle" placeholder="عنوان التصميم">
-                    </div>
-                    <div class="form-group">
-                        <label>رابط الصورة المباشر:</label>
-                        <input type="text" id="newDesignImg" placeholder="https://...">
-                    </div>
-                    <div class="form-group">
-                        <label>القسم:</label>
-                        <select id="newDesignCat">
-                            ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                        </select>
-                    </div>
-                    <button class="btn-main" onclick="addNewDesign()">➕ إضافة وحفظ القالب بالسحابة</button>
-                </div>
-
-                <div class="admin-card">
-                    <h3>إدارة القوالب الحالية وتنسيقها (${designs.length})</h3>
-                    ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم مسجلة</p>'}
-                </div>
-
-                <div class="admin-card">
-                    <h3>تعديل الروابط الخارجية</h3>
+                    <h3>🔗 تعديل الروابط الخارجية</h3>
                     <div class="form-group" style="margin-top:10px;">
                         <label>رابط تحميل التطبيق:</label>
                         <input type="text" id="appUrlInput" value="${globalLinks.appUrl}">
@@ -630,7 +671,7 @@
                 </div>
 
                 <div class="admin-card">
-                    <h3>تغيير كلمة مرور الأدمن الحصرية</h3>
+                    <h3>🔑 تغيير كلمة مرور الأدمن الحصرية</h3>
                     <div class="form-group" style="margin-top:10px;">
                         <label>كلمة المرور الجديدة:</label>
                         <input type="password" id="newAdminPass" placeholder="أدخل كلمة مرور جديدة قوية">
@@ -638,6 +679,32 @@
                     <button class="btn-main" onclick="saveAdminPassword()">تغيير كلمة السر</button>
                 </div>
             `;
+        }
+
+        // دالة إضافة قسم جديد
+        function addNewCategory() {
+            if (!db) return;
+            const name = document.getElementById('newCatName').value.trim();
+            if (!name) return alert('يرجى ادخال اسم القسم!');
+
+            const newId = 'cat_' + Date.now();
+            categories.push({ id: newId, name: name });
+            db.ref('sky_data/categories').set(categories).then(() => {
+                alert('تمت إضافة القسم بنجاح!');
+                renderAdminPanel(document.getElementById('mainContainer'));
+            });
+        }
+
+        // دالة حذف قسم
+        function deleteCategory(id) {
+            if (!db) return;
+            if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
+                categories = categories.filter(c => c.id !== id);
+                db.ref('sky_data/categories').set(categories).then(() => {
+                    alert('تم حذف القسم!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
+                });
+            }
         }
 
         function addNewWifi() {
