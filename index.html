@@ -48,7 +48,7 @@
 
         .external-actions-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #e9ecef; }
         .action-links { display: flex; flex-direction: column; gap: 10px; }
-        .link-btn { display: block; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 15px; text-align: center; color: white; border: none; cursor: pointer; }
+        .link-btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 15px; text-align: center; color: white; border: none; cursor: pointer; }
         .download-img-btn { background-color: #007bff; }
         .whatsapp-share-btn { background-color: #25d366; }
         .copy-link-btn { background-color: #6c757d; }
@@ -83,7 +83,6 @@
             whatsappUrl: 'https://whatsapp.com/channel' 
         };
         
-        // أقسام وقوالب افتراضية لحماية المنصة من الإفراغ
         let defaultCategories = [
             { id: 'cat_net', name: '📶 الشبكات والخدمات' },
             { id: 'cat_pay', name: '💳 الدفع الإلكتروني' }
@@ -134,7 +133,7 @@
         }
 
         function loadSharedConfig(shareId) {
-            db.ref('shares/' + shareId).once('value').then((snapshot) => {
+            db.ref('sky_data/shares/' + shareId).once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     currentDesignId = data.d || null;
@@ -155,11 +154,11 @@
             db.ref('sky_data').once('value').then((snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if (data.categories && Object.keys(data.categories).length > 0) categories = Object.values(data.categories);
-                    if (data.designs && Object.keys(data.designs).length > 0) designs = Object.values(data.designs);
+                    if (data.categories) categories = Array.isArray(data.categories) ? data.categories : Object.values(data.categories);
+                    if (data.designs) designs = Array.isArray(data.designs) ? data.designs : Object.values(data.designs);
                     if (data.links) globalLinks = { ...globalLinks, ...data.links };
                     if (data.adminPass) currentAdminPass = data.adminPass;
-                    if (data.wifiNetworks) wifiNetworks = Object.values(data.wifiNetworks);
+                    if (data.wifiNetworks) wifiNetworks = Array.isArray(data.wifiNetworks) ? data.wifiNetworks : Object.values(data.wifiNetworks);
                 }
                 updateUIElements();
                 if (callback) callback();
@@ -205,6 +204,12 @@
                 } else {
                     renderClientThumbnails(null);
                 }
+                
+                // تحديث رابط التطبيق وقناة الواتساب فوراً
+                const btnApp = document.getElementById('btnAppDownload');
+                const btnWa = document.getElementById('btnWhatsappChannel');
+                if(btnApp) btnApp.href = globalLinks.appUrl || '#';
+                if(btnWa) btnWa.href = globalLinks.whatsappUrl || '#';
             }
         }
 
@@ -299,8 +304,8 @@
                             <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
                             <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة عبر الواتساب</button>
                             <button class="link-btn copy-link-btn" onclick="copyDesignLink()">📋 نسخ رابط التصميم المختصر</button>
-                            <a href="${globalLinks.appUrl}" target="_blank" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل</a>
-                            <a href="${globalLinks.whatsappUrl}" target="_blank" class="link-btn whatsapp-channel-btn">💬 الإنضمام لقناة الواتساب</a>
+                            <a id="btnAppDownload" href="${globalLinks.appUrl}" target="_blank" rel="noopener noreferrer" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل</a>
+                            <a id="btnWhatsappChannel" href="${globalLinks.whatsappUrl}" target="_blank" rel="noopener noreferrer" class="link-btn whatsapp-channel-btn">💬 الإنضمام لقناة الواتساب</a>
                         </div>
                     </div>
                 </div>
@@ -542,7 +547,7 @@
             };
 
             if (db) {
-                db.ref('shares/' + shortId).set(shareData).then(() => {
+                db.ref('sky_data/shares/' + shortId).set(shareData).then(() => {
                     const shortUrl = `${window.location.origin}${window.location.pathname}?share=${shortId}`;
                     navigator.clipboard.writeText(shortUrl).then(() => {
                         alert('تم نسخ الرابط المختصر بنجاح!\n\n' + shortUrl);
@@ -553,12 +558,11 @@
             }
         }
 
-        // واجهة لوحة التحكم الشاملة المربوطة بالسحابة
         function renderAdminPanel(container) {
             let designsListHtml = '';
             designs.forEach(d => {
                 const catObj = categories.find(c => c.id === d.categoryId);
-                const catName = catObj ? catObj.name : 'غير محدد';
+                const catName = catObj ? catObj.name : 'عام';
                 designsListHtml += `
                     <div class="sub-img-list">
                         <span><b>${d.title}</b> (${catName})</span>
@@ -681,95 +685,133 @@
             `;
         }
 
-        // دالة إضافة قسم جديد
         function addNewCategory() {
-            if (!db) return;
-            const name = document.getElementById('newCatName').value.trim();
-            if (!name) return alert('يرجى ادخال اسم القسم!');
+            const nameInput = document.getElementById('newCatName');
+            const name = nameInput ? nameInput.value.trim() : '';
+            if (!name) return alert('يرجى أدخال اسم القسم!');
 
-            const newId = 'cat_' + Date.now();
-            categories.push({ id: newId, name: name });
-            db.ref('sky_data/categories').set(categories).then(() => {
-                alert('تمت إضافة القسم بنجاح!');
+            const newCat = { id: 'cat_' + Date.now(), name: name };
+            categories.push(newCat);
+            
+            if (db) {
+                db.ref('sky_data/categories').set(categories).then(() => {
+                    alert('تمت إضافة القسم بنجاح!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
+                }).catch(err => {
+                    alert('خطأ في حفظ البيانات: ' + err.message);
+                });
+            } else {
                 renderAdminPanel(document.getElementById('mainContainer'));
-            });
+            }
         }
 
-        // دالة حذف قسم
         function deleteCategory(id) {
-            if (!db) return;
             if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
                 categories = categories.filter(c => c.id !== id);
-                db.ref('sky_data/categories').set(categories).then(() => {
-                    alert('تم حذف القسم!');
+                if (db) {
+                    db.ref('sky_data/categories').set(categories).then(() => {
+                        alert('تم حذف القسم!');
+                        renderAdminPanel(document.getElementById('mainContainer'));
+                    });
+                } else {
                     renderAdminPanel(document.getElementById('mainContainer'));
-                });
+                }
             }
         }
 
         function addNewWifi() {
-            if (!db) return;
-            const name = document.getElementById('newWifiName').value.trim();
-            const code = document.getElementById('newWifiCode').value.trim();
+            const nameInput = document.getElementById('newWifiName');
+            const codeInput = document.getElementById('newWifiCode');
+            const name = nameInput ? nameInput.value.trim() : '';
+            const code = codeInput ? codeInput.value.trim() : '';
             if (!name) return alert('يرجى كتابة اسم الشبكة على الأقل!');
 
-            const newId = 'wifi_' + Date.now();
-            wifiNetworks.push({ id: newId, name: name, code: code });
-            db.ref('sky_data/wifiNetworks').set(wifiNetworks).then(() => {
-                alert('تمت إضافة الشبكة بنجاح!');
+            const newWifi = { id: 'wifi_' + Date.now(), name: name, code: code };
+            wifiNetworks.push(newWifi);
+
+            if (db) {
+                db.ref('sky_data/wifiNetworks').set(wifiNetworks).then(() => {
+                    alert('تمت إضافة الشبكة بنجاح!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
+                });
+            } else {
                 renderAdminPanel(document.getElementById('mainContainer'));
-            });
+            }
         }
 
         function deleteWifi(id) {
-            if (!db) return;
             if (confirm('هل أنت متأكد من حذف هذه الشبكة؟')) {
                 wifiNetworks = wifiNetworks.filter(w => w.id !== id);
-                db.ref('sky_data/wifiNetworks').set(wifiNetworks).then(() => {
-                    alert('تم الحذف!');
+                if (db) {
+                    db.ref('sky_data/wifiNetworks').set(wifiNetworks).then(() => {
+                        alert('تم الحذف!');
+                        renderAdminPanel(document.getElementById('mainContainer'));
+                    });
+                } else {
                     renderAdminPanel(document.getElementById('mainContainer'));
-                });
+                }
             }
         }
 
         function addNewDesign() {
-            if (!db) return;
-            const title = document.getElementById('newDesignTitle').value.trim();
-            const image = document.getElementById('newDesignImg').value.trim();
-            const categoryId = document.getElementById('newDesignCat').value;
+            const titleInput = document.getElementById('newDesignTitle');
+            const imgInput = document.getElementById('newDesignImg');
+            const catSelect = document.getElementById('newDesignCat');
+
+            const title = titleInput ? titleInput.value.trim() : '';
+            const image = imgInput ? imgInput.value.trim() : '';
+            const categoryId = catSelect ? catSelect.value : '';
+
             if (!title || !image) return alert('يرجى كتابة العنوان ورابط الصورة المباشر!');
 
-            const newId = 'ds_' + Date.now();
-            designs.push({ id: newId, title: title, image: image, categoryId: categoryId });
-            db.ref('sky_data/designs').set(designs).then(() => {
-                alert('تمت إضافة القالب وتحديث السحابة بنجاح!');
+            const newDesign = { id: 'ds_' + Date.now(), title: title, image: image, categoryId: categoryId };
+            designs.push(newDesign);
+
+            if (db) {
+                db.ref('sky_data/designs').set(designs).then(() => {
+                    alert('تمت إضافة القالب وتحديث السحابة بنجاح!');
+                    renderAdminPanel(document.getElementById('mainContainer'));
+                }).catch(err => {
+                    alert('حدث خطأ أثناء الحفظ بالسحابة: ' + err.message);
+                });
+            } else {
                 renderAdminPanel(document.getElementById('mainContainer'));
-            });
+            }
         }
 
         function deleteDesign(id) {
-            if (!db) return;
             if (confirm('هل أنت متأكد من حذف هذا القالب نهائياً؟')) {
                 designs = designs.filter(d => d.id !== id);
-                db.ref('sky_data/designs').set(designs).then(() => {
-                    alert('تم حذف القالب وتحديث السحابة بنجاح!');
+                if (db) {
+                    db.ref('sky_data/designs').set(designs).then(() => {
+                        alert('تم حذف القالب وتحديث السحابة بنجاح!');
+                        renderAdminPanel(document.getElementById('mainContainer'));
+                    });
+                } else {
                     renderAdminPanel(document.getElementById('mainContainer'));
-                });
+                }
             }
         }
 
         function saveGlobalLinks() {
-            if (!db) return;
             const appUrl = document.getElementById('appUrlInput').value.trim();
             const whatsappUrl = document.getElementById('whatsappUrlInput').value.trim();
-            db.ref('sky_data/links').set({ appUrl, whatsappUrl }).then(() => alert('تم حفظ الروابط بنجاح!'));
+            globalLinks = { appUrl, whatsappUrl };
+
+            if (db) {
+                db.ref('sky_data/links').set(globalLinks).then(() => alert('تم حفظ الروابط بنجاح!'));
+            } else {
+                alert('تم الحفظ محلياً');
+            }
         }
 
         function saveAdminPassword() {
-            if (!db) return;
             const newPass = document.getElementById('newAdminPass').value.trim();
             if (newPass) {
-                db.ref('sky_data/adminPass').set(newPass).then(() => alert('تم تغيير كلمة مرور الأدمن بنجاح!'));
+                currentAdminPass = newPass;
+                if (db) {
+                    db.ref('sky_data/adminPass').set(newPass).then(() => alert('تم تغيير كلمة مرور الأدمن بنجاح!'));
+                }
             }
         }
     </script>
