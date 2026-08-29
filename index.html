@@ -79,8 +79,8 @@
         let db = null;
         let currentAdminPass = "sky2026";
         let globalLinks = { 
-            appUrl: 'https://skymobile-v6jp.vercel.app', 
-            whatsappUrl: 'https://whatsapp.com/channel' 
+            appUrl: 'https://play.google.com/store/apps', 
+            whatsappUrl: 'https://whatsapp.com/channel/0029VaXXXXXXXXXX' 
         };
         
         let defaultCategories = [
@@ -205,7 +205,6 @@
                     renderClientThumbnails(null);
                 }
                 
-                // تحديث رابط التطبيق وقناة الواتساب فوراً
                 const btnApp = document.getElementById('btnAppDownload');
                 const btnWa = document.getElementById('btnWhatsappChannel');
                 if(btnApp) btnApp.href = globalLinks.appUrl || '#';
@@ -304,8 +303,8 @@
                             <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
                             <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة عبر الواتساب</button>
                             <button class="link-btn copy-link-btn" onclick="copyDesignLink()">📋 نسخ رابط التصميم المختصر</button>
-                            <a id="btnAppDownload" href="${globalLinks.appUrl}" target="_blank" rel="noopener noreferrer" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل</a>
-                            <a id="btnWhatsappChannel" href="${globalLinks.whatsappUrl}" target="_blank" rel="noopener noreferrer" class="link-btn whatsapp-channel-btn">💬 الإنضمام لقناة الواتساب</a>
+                            <a id="btnAppDownload" href="${globalLinks.appUrl}" target="_blank" rel="noopener noreferrer" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل من المتجر</a>
+                            <a id="btnWhatsappChannel" href="${globalLinks.whatsappUrl}" target="_blank" rel="noopener noreferrer" class="link-btn whatsapp-channel-btn">💬 الانضمام لقناة الواتساب الرسمية</a>
                         </div>
                     </div>
                 </div>
@@ -601,6 +600,20 @@
                     <button class="btn-logout" onclick="logoutAdmin()">🚪 خروج آمن</button>
                 </div>
 
+                <!-- قسم إدارة الروابط الخارجية المفعل -->
+                <div class="admin-card" style="border: 2px solid #007bff;">
+                    <h3>🔗 تعديل روابط المتجر والواتساب الرسمية</h3>
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>رابط تحميل التطبيق المباشر (Google Play / APK):</label>
+                        <input type="text" id="appUrlInput" value="${globalLinks.appUrl}" placeholder="ضع رابط التطبيق هنا">
+                    </div>
+                    <div class="form-group">
+                        <label>رابط قناة الواتساب المباشر:</label>
+                        <input type="text" id="whatsappUrlInput" value="${globalLinks.whatsappUrl}" placeholder="https://whatsapp.com/channel/...">
+                    </div>
+                    <button class="btn-main" onclick="saveGlobalLinks()">💾 حفظ الروابط وتحديث الموقع</button>
+                </div>
+
                 <!-- إدارة الأقسام -->
                 <div class="admin-card">
                     <h3>📁 إضافة قسم تصاميم جديد</h3>
@@ -623,10 +636,17 @@
                         <label>عنوان التصميم:</label>
                         <input type="text" id="newDesignTitle" placeholder="عنوان التصميم">
                     </div>
+                    
                     <div class="form-group">
-                        <label>رابط الصورة المباشر (URL):</label>
+                        <label>📁 اختر صورة القالب من الاستديو / المعرض:</label>
+                        <input type="file" id="newDesignFile" accept="image/*" onchange="handleImageFileUpload(event)" style="padding: 8px;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>أو ضع رابط الصورة المباشر (URL):</label>
                         <input type="text" id="newDesignImg" placeholder="https://...">
                     </div>
+
                     <div class="form-group">
                         <label>اختر القسم:</label>
                         <select id="newDesignCat">
@@ -660,20 +680,6 @@
                     ${wifiListHtml || '<p style="font-size:12px; color:#888;">لا توجد شبكات مضافة</p>'}
                 </div>
 
-                <!-- الروابط الخارجية وكلمة المرور -->
-                <div class="admin-card">
-                    <h3>🔗 تعديل الروابط الخارجية</h3>
-                    <div class="form-group" style="margin-top:10px;">
-                        <label>رابط تحميل التطبيق:</label>
-                        <input type="text" id="appUrlInput" value="${globalLinks.appUrl}">
-                    </div>
-                    <div class="form-group">
-                        <label>رابط قناة الواتساب:</label>
-                        <input type="text" id="whatsappUrlInput" value="${globalLinks.whatsappUrl}">
-                    </div>
-                    <button class="btn-main" onclick="saveGlobalLinks()">حفظ الروابط</button>
-                </div>
-
                 <div class="admin-card">
                     <h3>🔑 تغيير كلمة مرور الأدمن الحصرية</h3>
                     <div class="form-group" style="margin-top:10px;">
@@ -683,6 +689,43 @@
                     <button class="btn-main" onclick="saveAdminPassword()">تغيير كلمة السر</button>
                 </div>
             `;
+        }
+
+        function handleImageFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    const maxDim = 1200;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+                    const urlInput = document.getElementById('newDesignImg');
+                    if (urlInput) urlInput.value = compressedBase64;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         function addNewCategory() {
@@ -762,7 +805,7 @@
             const image = imgInput ? imgInput.value.trim() : '';
             const categoryId = catSelect ? catSelect.value : '';
 
-            if (!title || !image) return alert('يرجى كتابة العنوان ورابط الصورة المباشر!');
+            if (!title || !image) return alert('يرجى اختيار صورة من الاستديو أو إدخال عنوان ورابط الصورة!');
 
             const newDesign = { id: 'ds_' + Date.now(), title: title, image: image, categoryId: categoryId };
             designs.push(newDesign);
@@ -799,7 +842,10 @@
             globalLinks = { appUrl, whatsappUrl };
 
             if (db) {
-                db.ref('sky_data/links').set(globalLinks).then(() => alert('تم حفظ الروابط بنجاح!'));
+                db.ref('sky_data/links').set(globalLinks).then(() => {
+                    alert('تم حفظ الروابط بنجاح في السحابة!');
+                    updateUIElements();
+                });
             } else {
                 alert('تم الحفظ محلياً');
             }
