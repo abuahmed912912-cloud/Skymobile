@@ -59,6 +59,7 @@
         .admin-card { background: #fff; border: 1px solid #e9ecef; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
         .sub-img-list { font-size: 13px; color: #555; margin: 8px 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-delete { background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+        .status-msg { font-size: 12px; margin-top: 5px; color: #28a745; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -80,7 +81,7 @@
         let currentAdminPass = "sky2026";
         let globalLinks = { 
             appUrl: 'https://play.google.com/store/apps', 
-            whatsappUrl: 'https://whatsapp.com/channel/0029VaXXXXXXXXXX' 
+            whatsappUrl: 'https://whatsapp.com/channel' 
         };
         
         let defaultCategories = [
@@ -303,8 +304,8 @@
                             <button class="link-btn download-img-btn" onclick="downloadImage()">📥 تحميل وحفظ الصورة</button>
                             <button class="link-btn whatsapp-share-btn" onclick="shareToWhatsApp()">📱 مشاركة عبر الواتساب</button>
                             <button class="link-btn copy-link-btn" onclick="copyDesignLink()">📋 نسخ رابط التصميم المختصر</button>
-                            <a id="btnAppDownload" href="${globalLinks.appUrl}" target="_blank" rel="noopener noreferrer" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل من المتجر</a>
-                            <a id="btnWhatsappChannel" href="${globalLinks.whatsappUrl}" target="_blank" rel="noopener noreferrer" class="link-btn whatsapp-channel-btn">💬 الانضمام لقناة الواتساب الرسمية</a>
+                            <a id="btnAppDownload" href="${globalLinks.appUrl}" target="_blank" rel="noopener noreferrer" class="link-btn app-download-btn">📲 تحميل تطبيق سكاي موبايل</a>
+                            <a id="btnWhatsappChannel" href="${globalLinks.whatsappUrl}" target="_blank" rel="noopener noreferrer" class="link-btn whatsapp-channel-btn">💬 الانضمام لقناة الواتساب</a>
                         </div>
                     </div>
                 </div>
@@ -600,7 +601,6 @@
                     <button class="btn-logout" onclick="logoutAdmin()">🚪 خروج آمن</button>
                 </div>
 
-                <!-- قسم إدارة الروابط الخارجية المفعل -->
                 <div class="admin-card" style="border: 2px solid #007bff;">
                     <h3>🔗 تعديل روابط المتجر والواتساب الرسمية</h3>
                     <div class="form-group" style="margin-top:10px;">
@@ -614,7 +614,6 @@
                     <button class="btn-main" onclick="saveGlobalLinks()">💾 حفظ الروابط وتحديث الموقع</button>
                 </div>
 
-                <!-- إدارة الأقسام -->
                 <div class="admin-card">
                     <h3>📁 إضافة قسم تصاميم جديد</h3>
                     <div class="form-group" style="margin-top:10px;">
@@ -629,7 +628,7 @@
                     ${categoriesListHtml || '<p style="font-size:12px; color:#888;">لا توجد أقسام</p>'}
                 </div>
 
-                <!-- إدارة القوالب -->
+                <!-- إدارة القوالب مع حل مشكلة الرفع من الاستديو -->
                 <div class="admin-card">
                     <h3>🖼️ إضافة تصميم (قالب) جديد</h3>
                     <div class="form-group" style="margin-top:10px;">
@@ -640,6 +639,7 @@
                     <div class="form-group">
                         <label>📁 اختر صورة القالب من الاستديو / المعرض:</label>
                         <input type="file" id="newDesignFile" accept="image/*" onchange="handleImageFileUpload(event)" style="padding: 8px;">
+                        <div id="fileUploadStatus" class="status-msg"></div>
                     </div>
 
                     <div class="form-group">
@@ -661,7 +661,6 @@
                     ${designsListHtml || '<p style="font-size:12px; color:#888;">لا توجد تصاميم مسجلة</p>'}
                 </div>
 
-                <!-- إدارة الواي فاي -->
                 <div class="admin-card">
                     <h3>📶 إضافة شبكة واي فاي جديدة</h3>
                     <div class="form-group" style="margin-top:10px;">
@@ -691,37 +690,43 @@
             `;
         }
 
+        // دالة تحجيم وضغط صور الاستديو الكبيرة تلقائياً دون تجميد
         function handleImageFileUpload(event) {
             const file = event.target.files[0];
+            const statusDiv = document.getElementById('fileUploadStatus');
             if (!file) return;
+
+            if (statusDiv) {
+                statusDiv.style.color = "#007bff";
+                statusDiv.innerText = "⏳ جاري ضغط ومعالجة الصورة من الاستديو...";
+            }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
                     
-                    const maxDim = 1200;
-                    if (width > maxDim || height > maxDim) {
-                        if (width > height) {
-                            height = Math.round((height * maxDim) / width);
-                            width = maxDim;
-                        } else {
-                            width = Math.round((width * maxDim) / height);
-                            height = maxDim;
-                        }
-                    }
+                    // تحجيم ذكي يحفظ العرض 1080 وتعديل الارتفاع تلقائياً
+                    let targetWidth = 1080;
+                    let targetHeight = Math.round((img.height * targetWidth) / img.width);
 
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+                    
                     const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+                    // ضغط جودة الصورة إلى 70% للحصول على كود خفيف وسريع في الفايربيس
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.70);
+                    
                     const urlInput = document.getElementById('newDesignImg');
                     if (urlInput) urlInput.value = compressedBase64;
+
+                    if (statusDiv) {
+                        statusDiv.style.color = "#28a745";
+                        statusDiv.innerText = "✅ تم سحب الصورة وضغطها بنجاح! اضغط 'إضافة وحفظ القالب بالسحابة'";
+                    }
                 };
                 img.src = e.target.result;
             };
